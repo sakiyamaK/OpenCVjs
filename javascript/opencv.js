@@ -107,8 +107,7 @@ function cvDilate(src, dst, element, iterations){
 							}
 						}
 						dst.RGBA[c + (iw + ih * dst.width) * CHANNELS] = max
-					}
-					
+					}					
 				}
 			}
 		}			
@@ -235,7 +234,6 @@ function cvLoadImage(event, imgId, iplImage, maxSize){
 
 function cvShowImage(imgId, iplImage){
 	try{
-		// コピーしたピクセル情報をCanvasに転送
 		iplImage.context.putImageData(iplImage.imageData, 0, 0);
 		
 		if (iplImage.canvas.getContext) {
@@ -255,9 +253,10 @@ function cvShowImage(imgId, iplImage){
 }
 
 function cvCloneImage(src){
-	var dst = cvCreateImage(src.width, src.height);
+	var dst = null;
 
 	try{
+		dst = cvCreateImage(src.width, src.height);
 		for(i = 0 ; i < src.height ; i++){
 			for(j = 0 ; j < src.width ; j++){
 				for(c = 0 ; c < CHANNELS ; c++){
@@ -275,8 +274,9 @@ function cvCloneImage(src){
 }
 
 function cvCreateImage(width, height){
-	var dst = new IplImage();
+	var dst = null;
 	try{
+		dst = new IplImage();
 		dst.canvas = document.createElement('canvas');
 		dst.canvas.width = width;
 		dst.canvas.height = height;
@@ -914,38 +914,49 @@ function cvCvtColor(src, dst, code){
 					
 						var r = src.RGBA[(j + i * dst.width) * CHANNELS];
 						var g = src.RGBA[1 + (j + i * dst.width) * CHANNELS];
-						var v = src.RGBA[2 + (j + i * dst.width) * CHANNELS];
-
+						var b = src.RGBA[2 + (j + i * dst.width) * CHANNELS];
+						
 						var max, mid, min;
-						if(r == g && g == v) dst.RGBA[(j + i * dst.width) * CHANNELS] = 0;
-						else if(r >= g && g >= v){ //0~60
-							max = r; mid = g; min = v; 
-							dst.RGBA[(j + i * dst.width) * CHANNELS] = (mid - min) / (max - min) * 60;
+						if(r == g && g == b){
+							max = r; mid = r; min = r;
+							dst.RGBA[(j + i * dst.width) * CHANNELS] = 0;
 						}
-						else if(g >= r && r >= v){//60~120
-							max = g; mid = r; min = v; 
-							dst.RGBA[(j + i * dst.width) * CHANNELS] = (max - mid) / (max - min) * 60 + 60; 
+						else if(r >= g && g >= b){ //0~60
+							max = r; mid = g; min = b; 
+							dst.RGBA[(j + i * dst.width) * CHANNELS] = 
+								cvChangePixelValue((max == min) ? max : (mid - min) / (max - min) * 60);
 						}
-						else if(g >= v && v >= r){//120~180
-							max = g; mid = v; min = r;
-							dst.RGBA[(j + i * dst.width) * CHANNELS] = (mid - min) / (max - min) * 60 + 120;
+						else if(g >= r && r >= b){//60~120
+							max = g; mid = r; min = b; 
+							dst.RGBA[(j + i * dst.width) * CHANNELS] = 
+								cvChangePixelValue((max == min) ? max : (max - mid) / (max - min) * 60 + 60); 
 						}
-						else if(v >= g && g >= r){//180~240
-							max = v; mid = g; min = r; 
-							dst.RGBA[(j + i * dst.width) * CHANNELS] = (max - mid) / (max - min) * 60 + 180; 
+						else if(g >= b && b >= r){//120~180
+							max = g; mid = b; min = r;
+							dst.RGBA[(j + i * dst.width) * CHANNELS] = 
+								cvChangePixelValue((max == min) ? max : (mid - min) / (max - min) * 60 + 120);
 						}
-						else if(v >= r && r >= g){//240~300
-							max = v; mid = r; min = g;
-							dst.RGBA[(j + i * dst.width) * CHANNELS] = (mid - min) / (max - min) * 60 + 240;
+						else if(b >= g && g >= r){//180~240
+							max = b; mid = g; min = r; 
+							dst.RGBA[(j + i * dst.width) * CHANNELS] = 
+								cvChangePixelValue((max == min) ? max : (max - mid) / (max - min) * 60 + 180); 
 						}
-						else if(r >= v && v >= g){//300~360
-							max = r; mid = v; min = g;
-							dst.RGBA[(j + i * dst.width) * CHANNELS] = (max - mid) / (max - min) * 60 + 300; 
+						else if(b >= r && r >= g){//240~300
+							max = b; mid = r; min = g;
+							dst.RGBA[(j + i * dst.width) * CHANNELS] = 
+								cvChangePixelValue((max == min) ? max : (mid - min) / (max - min) * 60 + 240);
+						}
+						else if(r >= b && b >= g){//300~360
+							max = r; mid = b; min = g;
+							dst.RGBA[(j + i * dst.width) * CHANNELS] = 
+								cvChangePixelValue((max == min) ? max : (max - mid) / (max - min) * 60 + 300); 
 						}
 
-						dst.RGBA[1 + (j + i * dst.width) * CHANNELS] = ( max != 0 ) ? (max - min) / max * 255 : 0;
-						dst.RGBA[2 + (j + i * dst.width) * CHANNELS] = max;
+						dst.RGBA[1 + (j + i * dst.width) * CHANNELS] = 
+							cvChangePixelValue(( max == 0 ) ? 0 : (max - min) / max * 255) ;
+						dst.RGBA[2 + (j + i * dst.width) * CHANNELS] = cvChangePixelValue(max);
 						dst.RGBA[3 + (j + i * dst.width) * CHANNELS] = src.RGBA[3 + (j + i * dst.width) * CHANNELS];
+						
 					}
 				}
 			break;
@@ -957,7 +968,7 @@ function cvCvtColor(src, dst, code){
 						var h = src.RGBA[(j + i * dst.width) * CHANNELS];
 						var s = src.RGBA[1 + (j + i * dst.width) * CHANNELS];
 						var v = src.RGBA[2 + (j + i * dst.width) * CHANNELS];
-
+						
 						var red, green, blue;
 						if(0 <= h && h < 60){
 							red = v;
@@ -990,9 +1001,9 @@ function cvCvtColor(src, dst, code){
 							blue = red - (h - 300) * (red - green) / 60;
 						}
 						
-						dst.RGBA[(j + i * dst.width) * CHANNELS] = red;
-						dst.RGBA[1 + (j + i * dst.width) * CHANNELS] = green;
-						dst.RGBA[2 + (j + i * dst.width) * CHANNELS] = blue;
+						dst.RGBA[(j + i * dst.width) * CHANNELS] = cvChangePixelValue(red);
+						dst.RGBA[1 + (j + i * dst.width) * CHANNELS] = cvChangePixelValue(green);
+						dst.RGBA[2 + (j + i * dst.width) * CHANNELS] = cvChangePixelValue(blue);
 						dst.RGBA[3 + (j + i * dst.width) * CHANNELS] = src.RGBA[3 + (j + i * dst.width) * CHANNELS];
 					}
 				}
