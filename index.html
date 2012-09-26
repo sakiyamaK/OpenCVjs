@@ -1,0 +1,28 @@
+        <meta charset="UTF-8">
+        <title>OpenCVjs</title>
+        <script type="text/javascript" charset="UTF-8" src = "javascript/statistic.js"></script>
+        <script type="text/javascript" charset="UTF-8" src = "javascript/opencv.js"></script>
+        <script type="text/javascript" charset="UTF-8" src = "javascript/image_filter.js"></script>
+                
+        <script type="text/javascript" charset="UTF-8">
+        	var iplImage = new IplImage();
+        </script>
+    </head>
+    
+    <body>
+    	<h1>OpenCVjs</h1>
+    	<hr />
+    	<img id="dispImage" name="saveImage" src="">
+    	<hr />
+    	<input type="file" id="file1" onclick="cvLoadImagePre(event, 'file1')"  onchange="cvLoadImage(event, 'dispImage', iplImage, 800)"> 	<br />		
+		<input type="button" value="original" onClick="Original('dispImage', iplImage)" />
+		<input type="button" value="amaro" onClick="Amaro('dispImage', iplImage)">
+		<input type="button" value="sepia" onClick="Sepia('dispImage', iplImage)">
+		<input type="button" value="white_black" onClick="WhiteBlack('dispImage', iplImage)">
+		<input type="button" value="light" onClick="Light('dispImage', iplImage)"> <br />
+		<input type="button" value="sobel" onClick="Sobel('dispImage', iplImage)">
+		<input type="button" value="threshold" onClick="Threshold('dispImage', iplImage)">
+	</body>
+</html>
+
+	
