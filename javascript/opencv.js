@@ -14,7 +14,9 @@ var Size = function(){
 var CV_CODE = {
 	RGB2GRAY: 0,
 	RGB2HSV: 1,
-	HSV2RGB: 2
+	HSV2RGB: 2,
+	RGB2HLS: 3,
+	HLS2RGB: 4
 }
 
 var CV_BLEND_MODE = {
@@ -955,8 +957,7 @@ function cvCvtColor(src, dst, code){
 						dst.RGBA[1 + (j + i * dst.width) * CHANNELS] = 
 							cvChangePixelValue(( max == 0 ) ? 0 : (max - min) / max * 255) ;
 						dst.RGBA[2 + (j + i * dst.width) * CHANNELS] = cvChangePixelValue(max);
-						dst.RGBA[3 + (j + i * dst.width) * CHANNELS] = src.RGBA[3 + (j + i * dst.width) * CHANNELS];
-						
+						dst.RGBA[3 + (j + i * dst.width) * CHANNELS] = src.RGBA[3 + (j + i * dst.width) * CHANNELS];		
 					}
 				}
 			break;
@@ -1008,6 +1009,82 @@ function cvCvtColor(src, dst, code){
 					}
 				}
 			break;
+			
+			case CV_CODE.RGB2HLS:
+				for (i = 0; i < dst.height; i++) {
+					for (j = 0; j < dst.width; j++) {
+					
+						var r = src.RGBA[(j + i * dst.width) * CHANNELS];
+						var g = src.RGBA[1 + (j + i * dst.width) * CHANNELS];
+						var b = src.RGBA[2 + (j + i * dst.width) * CHANNELS];
+						
+						var h;
+				        if(Math.max(r, g, b) == r) {
+				            h = ((g - b) / (Math.max(r, g, b) - Math.min(r, g, b))) * 60;
+				        } else if(Math.max(r, g, b) == g) {
+				            h = ((b - r) / (Math.max(r, g, b) - Math.min(r, g, b))) * 60 + 120;
+				        } else {
+				            h = ((r - g) / (Math.max(r, g, b) - Math.min(r, g, b))) * 60 + 240;
+				        }
+				        
+				        var l = (Math.max(r, g, b) / 255 + Math.min(r, g, b) / 255) / 2;
+				        var s;
+				        if(l <= 0.5) {
+				            s = (Math.max(r, g, b) - Math.min(r, g, b)) / (Math.max(r, g, b) + Math.min(r, g, b));
+				        } else {
+				            s = (Math.max(r, g, b) - Math.min(r, g, b)) / (2 * 255 - Math.max(r, g, b) - Math.min(r, g, b));
+				        }
+						dst.RGBA[(j + i * dst.width) * CHANNELS] = cvChangePixelValue(h);
+						dst.RGBA[1 + (j + i * dst.width) * CHANNELS] =  cvChangePixelValue(255 * l);
+						dst.RGBA[2 + (j + i * dst.width) * CHANNELS] = cvChangePixelValue(255 * s);
+
+						dst.RGBA[3 + (j + i * dst.width) * CHANNELS] = src.RGBA[3 + (j + i * dst.width) * CHANNELS];
+					}
+				}
+			break;
+			
+			case CV_CODE.HLS2RGB:
+				for (i = 0; i < dst.height; i++) {
+					for (j = 0; j < dst.width; j++) {	
+						var max;
+						var h = dst.RGBA[(j + i * dst.width) * CHANNELS];
+						var l = dst.RGBA[1 + (j + i * dst.width) * CHANNELS];
+						var s = dst.RGBA[2 + (j + i * dst.width) * CHANNELS];
+						
+						l /= 255;
+						s /= 255;
+						if(l <= 0.5) {
+						    max = l * (1 + s);
+						} else {
+						    max = l + s - l * s;
+						}
+						var min = 2 * l - max;
+						
+						var r = Math.floor(calc(max, min, h + 120) * 255);
+						var g = Math.floor(calc(max, min, h) * 255);
+						var b = Math.floor(calc(max, min, h - 120) * 255);
+						
+						dst.RGBA[(j + i * dst.width) * CHANNELS] = r;
+						dst.RGBA[1 + (j + i * dst.width) * CHANNELS] = g;
+						dst.RGBA[2 + (j + i * dst.width) * CHANNELS] = b;
+						dst.RGBA[3 + (j + i * dst.width) * CHANNELS] = src.RGBA[3 + (j + i * dst.width) * CHANNELS];
+						
+						function calc(n1, n2, hue) {
+						    hue = (hue + 180) % 360;
+						    if(hue < 60) {
+						        return n1 + (n2 - n1) * hue / 60;
+						    } else if(hue < 180) {
+						        return n2;
+						    } else if(hue < 240) {
+						        return n1 + (n2 - n1) * (240 - hue) / 60;
+						    } else {
+						        return n1;
+						    }
+						}						
+					}
+				}
+			break;
+				
 			default:
 				throw "codeの値が正しくありません";
 			break;

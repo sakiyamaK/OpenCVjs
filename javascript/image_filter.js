@@ -1,3 +1,21 @@
+function Vivit(imgId, iplImage){
+	try{
+		var newIplImage = cvCloneImage(iplImage);
+		cvCvtColor(iplImage, newIplImage, CV_CODE.RGB2HLS);
+		
+		for(i = 0 ; i < newIplImage.height ; i++){
+			for(j = 0 ; j < newIplImage.width ; j++){
+				newIplImage.RGBA[2 + (j + i * newIplImage.width) * CHANNELS] = 255;
+			}
+		}
+		cvCvtColor(newIplImage, newIplImage, CV_CODE.HLS2RGB);		
+		cvShowImage(imgId, newIplImage);
+	}
+	catch(ex){
+		alert("Vivit : " + ex);
+	}
+}
+
 function Sepia(imgId, iplImage){
 	var HUE=22;
 	var SATURATION=90;
@@ -77,9 +95,16 @@ function Amaro(imgId, iplImage){
 // whiteblack
 function WhiteBlack(imgId, iplImage){
 	try{
+		var UNDER = 50;
+		var OVER = 150;
+		
 		var newIplImage = cvCloneImage(iplImage);
 
 		cvCvtColor(iplImage, newIplImage, CV_CODE.RGB2GRAY);
+		
+		cvToneCurve(newIplImage, newIplImage, UNDER, 0, OVER, 255, 0);
+		cvToneCurve(newIplImage, newIplImage, UNDER, 0, OVER, 255, 1);
+		cvToneCurve(newIplImage, newIplImage, UNDER, 0, OVER, 255, 2);
 
 		cvShowImage(imgId, newIplImage);
 	}
