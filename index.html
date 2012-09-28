@@ -15,8 +15,6 @@
     <body>
     	<h1>OpenCVjs</h1>
     	<hr />
-    	<img id="dispImage" name="saveImage" src="">
-    	<hr />
     	<input type="file" id="file1" onclick="cvLoadImagePre(event, 'file1')"  onchange="cvLoadImage(event, 'dispImage', iplImage, 800)"> 	<br />		
 		<input type="button" value="original" onClick="Original('dispImage', iplImage)" />
 		<input type="button" value="amaro" onClick="Amaro('dispImage', iplImage)">
@@ -26,6 +24,10 @@
 		<input type="button" value="light" onClick="Light('dispImage', iplImage)"> <br />
 		<input type="button" value="sobel" onClick="Sobel('dispImage', iplImage)">
 		<input type="button" value="threshold" onClick="Threshold('dispImage', iplImage)">
+		<input type="button" value="bilateral" onClick="Bilateral('dispImage', iplImage)">
+
+		<hr />
+		<img id="dispImage" name="saveImage" src="">	
 	</body>
 </html>
 

@@ -1,3 +1,124 @@
+function Bilateral(imgId, iplImage){
+	var newIplImage = cvCloneImage(iplImage);
+	cvSmooth(iplImage, newIplImage, CV_SMOOTH_TYPE.BILATERAL);
+	cvShowImage(imgId, newIplImage);
+}
+
+function Dilate(imgId, iplImage){
+	var newIplImage = cvCloneImage(iplImage);
+	cvCvtColor(iplImage, newIplImage, CV_CODE.RGB2GRAY);
+	cvThreshold(newIplImage, newIplImage, 128, 255, CV_THRESHOLD_TYPE.THRESH_OTSU);
+	cvDilate(newIplImage, newIplImage);
+	cvShowImage(imgId, newIplImage);
+}
+
+function Erode(imgId, iplImage){
+	var newIplImage = cvCloneImage(iplImage);
+	cvCvtColor(iplImage, newIplImage, CV_CODE.RGB2GRAY);
+	cvThreshold(newIplImage, newIplImage, 128, 255, CV_THRESHOLD_TYPE.THRESH_OTSU);
+	cvErode(newIplImage, newIplImage);
+	cvShowImage(imgId, newIplImage);
+}
+
+function Open(imgId, iplImage){
+	var newIplImage = cvCloneImage(iplImage);
+	cvCvtColor(iplImage, newIplImage, CV_CODE.RGB2GRAY);
+	cvThreshold(newIplImage, newIplImage, 128, 255, CV_THRESHOLD_TYPE.THRESH_OTSU);
+	var dstIplImage = cvCloneImage(newIplImage);
+	cvMorphologyEx(newIplImage, dstIplImage, null, CV_MOP.OPEN);
+	cvShowImage(imgId, dstIplImage);
+}
+
+function Close(imgId, iplImage){
+	var newIplImage = cvCloneImage(iplImage);
+	cvCvtColor(iplImage, newIplImage, CV_CODE.RGB2GRAY);
+	cvThreshold(newIplImage, newIplImage, 128, 255, CV_THRESHOLD_TYPE.THRESH_OTSU);
+	var dstIplImage = cvCloneImage(newIplImage);
+	cvMorphologyEx(newIplImage, newIplImage, null, CV_MOP.CLOSE);
+	cvShowImage(imgId, dstIplImage);
+}
+
+function Gradient(imgId, iplImage){
+	var newIplImage = cvCloneImage(iplImage);
+	cvCvtColor(iplImage, newIplImage, CV_CODE.RGB2GRAY);
+	cvThreshold(newIplImage, newIplImage, 128, 255, CV_THRESHOLD_TYPE.THRESH_OTSU);
+	var dstIplImage = cvCloneImage(newIplImage);
+	cvMorphologyEx(newIplImage, newIplImage, null, CV_MOP.GRADIENT);
+	cvShowImage(imgId, dstIplImage);
+}
+
+function Tophat(imgId, iplImage){
+	var newIplImage = cvCloneImage(iplImage);
+	cvCvtColor(iplImage, newIplImage, CV_CODE.RGB2GRAY);
+	cvThreshold(newIplImage, newIplImage, 128, 255, CV_THRESHOLD_TYPE.THRESH_OTSU);
+	var dstIplImage = cvCloneImage(newIplImage);
+	cvMorphologyEx(newIplImage, newIplImage, null, CV_MOP.TOPHAT);
+	cvShowImage(imgId, dstIplImage);
+}
+
+function Blackhat(imgId, iplImage){
+	var newIplImage = cvCloneImage(iplImage);
+	cvCvtColor(iplImage, newIplImage, CV_CODE.RGB2GRAY);
+	cvThreshold(newIplImage, newIplImage, 128, 255, CV_THRESHOLD_TYPE.THRESH_OTSU);
+	var dstIplImage = cvCloneImage(newIplImage);
+	cvMorphologyEx(newIplImage, newIplImage, null, CV_MOP.BLACKHAT);
+	cvShowImage(imgId, dstIplImage);
+}
+
+
+function Smooth(imgId, iplImage){
+	var newIplImage = cvCloneImage(iplImage);
+	cvSmooth(iplImage, newIplImage);
+	cvShowImage(imgId, newIplImage);
+}
+
+function Original(imgId, iplImage){
+	var newIplImage = cvCloneImage(iplImage);
+	cvShowImage(imgId, newIplImage);
+}
+
+function Threshold(imgId, iplImage){
+	var newIplImage = cvCloneImage(iplImage);
+	cvThreshold(iplImage, newIplImage, 128, 255, CV_THRESHOLD_TYPE.THRESH_OTSU);
+	cvShowImage(imgId, newIplImage); 
+}
+
+function Sobel(imgId, iplImage){
+	try{
+		var dmyImage = cvCreateImage(iplImage.width, iplImage.height);
+		var sobelXImage = cvCreateImage(iplImage.width, iplImage.height);
+		var sobelYImage = cvCreateImage(iplImage.width, iplImage.height);
+		
+		cvCvtColor(iplImage, dmyImage, CV_CODE.RGB2GRAY);
+		cvSobel(dmyImage, sobelXImage, 1, 0);
+		cvSobel(dmyImage, sobelYImage, 0, 1);
+		
+		cvAdd(sobelXImage, sobelYImage, sobelXImage);
+		
+		cvConvertScaleAbs(sobelXImage, sobelXImage);
+		
+		cvShowImage(imgId, sobelXImage);
+	}
+	catch(ex){
+		alert("Sobel : " + ex);
+	}	
+}
+
+function Canny(imgId, iplImage){
+	try{
+		var cannyImage = cvCreateImage(iplImage.width, iplImage.height);
+		cvCvtColor(iplImage, cannyImage, CV_CODE.RGB2GRAY);
+		cvCanny(cannyImage, cannyImage, 50, 200);
+		cvShowImage(imgId, cannyImage);
+	}
+	catch(ex){
+		alert("Canny : " + ex);
+	}	
+}
+
+
+
+
 function Vivit(imgId, iplImage){
 	try{
 		var newIplImage = cvCloneImage(iplImage);
@@ -8,7 +129,7 @@ function Vivit(imgId, iplImage){
 				newIplImage.RGBA[2 + (j + i * newIplImage.width) * CHANNELS] = 255;
 			}
 		}
-		cvCvtColor(newIplImage, newIplImage, CV_CODE.HLS2RGB);		
+		cvCvtColor(newIplImage, newIplImage, CV_CODE.HLS2RGB);
 		cvShowImage(imgId, newIplImage);
 	}
 	catch(ex){
@@ -35,23 +156,6 @@ function Sepia(imgId, iplImage){
 	
 	cvShowImage(imgId, newIplImage);
 
-}
-
-function Smooth(imgId, iplImage){
-	var newIplImage = cvCloneImage(iplImage);
-	cvSmooth(iplImage, newIplImage);
-	cvShowImage(imgId, newIplImage);
-}
-
-function Original(imgId, iplImage){
-	var newIplImage = cvCloneImage(iplImage);
-	cvShowImage(imgId, newIplImage);
-}
-
-function Threshold(imgId, iplImage){
-	var newIplImage = cvCloneImage(iplImage);
-	cvThreshold(iplImage, newIplImage, 128, 255, CV_THRESHOLD_TYPE.THRESH_OTSU);
-	cvShowImage(imgId, newIplImage); 
 }
 
 function Amaro(imgId, iplImage){
@@ -113,38 +217,6 @@ function WhiteBlack(imgId, iplImage){
 	}	
 }
 
-function Sobel(imgId, iplImage){
-	try{
-		var dmyImage = cvCreateImage(iplImage.width, iplImage.height);
-		var sobelXImage = cvCreateImage(iplImage.width, iplImage.height);
-		var sobelYImage = cvCreateImage(iplImage.width, iplImage.height);
-		
-		cvCvtColor(iplImage, dmyImage, CV_CODE.RGB2GRAY);
-		cvSobel(dmyImage, sobelXImage, 1, 0);
-		cvSobel(dmyImage, sobelYImage, 0, 1);
-		
-		cvAdd(sobelXImage, sobelYImage, sobelXImage);
-		
-		cvConvertScaleAbs(sobelXImage, sobelXImage);
-		
-		cvShowImage(imgId, sobelXImage);
-	}
-	catch(ex){
-		alert("Sobel : " + ex);
-	}	
-}
-
-function Canny(imgId, iplImage){
-	try{
-		var cannyImage = cvCreateImage(iplImage.width, iplImage.height);
-		cvCvtColor(iplImage, cannyImage, CV_CODE.RGB2GRAY);
-		cvCanny(cannyImage, cannyImage, 50, 200);
-		cvShowImage(imgId, cannyImage);
-	}
-	catch(ex){
-		alert("Canny : " + ex);
-	}	
-}
 function Light(imgId, iplImage){
 	try{
 		var lightImage = MakeLightImage(iplImage.width, iplImage.height, 255, 1, 2, iplImage.width/2, iplImage.height/2);
