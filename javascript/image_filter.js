@@ -1,3 +1,30 @@
+function Test(imgId, imgId1, imgId2, imgId3){
+
+	var testImage = cvCreateImage(128, 128);
+	cvSetRGBA(testImage, 1, 1, 1, 255);
+	
+	var inte = cvCreateImage(128, 128);
+	var intsq = cvCreateImage(128, 128);
+	var naname = cvCreateImage(128, 128);
+
+	cvIntegral(testImage, inte, intsq, naname);
+
+	cvShowImage(imgId, testImage);
+	cvShowImage(imgId1, inte);
+	cvShowImage(imgId2, intsq);
+	cvShowImage(imgId3, naname);
+	
+	var xx = 4;
+	var yy = 4;
+	
+	for(y = 0 ; y <= yy ; y++){
+		for(x = 0 ; x <= xx ; x++){
+			var v = naname.RGBA[(x + y * naname.width) * CHANNELS] ;
+			console.log(v);
+		}
+	}
+}
+
 function Bilateral(imgId, iplImage){
 	var newIplImage = cvCloneImage(iplImage);
 	cvSmooth(iplImage, newIplImage, CV_SMOOTH_TYPE.BILATERAL);
