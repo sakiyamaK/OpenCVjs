@@ -159,7 +159,6 @@ function cvIntegral(src, dst, sqsum, tilted_sum){
 			cvZero(tilted_sum);
 		}
 		
-		var debug = 0;
 		for(i = 0 ; i < dst.height ; i++){
 			for(j = 0 ; j < dst.width ; j++){
 				for(c = 0 ; c < CHANNELS - 1; c++){
@@ -169,7 +168,7 @@ function cvIntegral(src, dst, sqsum, tilted_sum){
 						sqsum.RGBA[c + (j + i * sqsum.width) * CHANNELS] = 
 							src.RGBA[c + (j + i * src.width) * CHANNELS] * src.RGBA[c + (j + i * src.width) * CHANNELS]
 							 + ((j == 0) ? 0 : sqsum.RGBA[c + (j-1 + i * sqsum.width) * CHANNELS]);
-					if(!cvUndefinedOrNull(sqsum))
+					if(!cvUndefinedOrNull(tilted_sum))
 						tilted_sum.RGBA[c + (j + i * tilted_sum.width) * CHANNELS] = src.RGBA[c + (j + i * src.width) * CHANNELS] + 
 							((j == 0 || i == 0) ? 0 : tilted_sum.RGBA[c + (j-1 + (i-1) * tilted_sum.width) * CHANNELS]);
 				}
@@ -180,10 +179,23 @@ function cvIntegral(src, dst, sqsum, tilted_sum){
 				for(c = 0 ; c < CHANNELS - 1; c++){
 					dst.RGBA[c + (j + i * dst.width) * CHANNELS] += ((i == 0) ? 0 : dst.RGBA[c + (j + (i-1) * dst.width) * CHANNELS]);
 					if(!cvUndefinedOrNull(sqsum))
-						sqsum.RGBA[c + (j + i * sqsum.width) * CHANNELS] +=	((i == 0) ? 0 : sqsum.RGBA[c + (j + (i-1) * sqsum.width) * CHANNELS]);
-					if(!cvUndefinedOrNull(tilted_sum))
-						tilted_sum.RGBA[c + (j + i * tilted_sum.width) * CHANNELS] += 
-							((j == tilted_sum.width - 1 || i == 0) ? 0 : tilted_sum.RGBA[c + (j+1 + (i-1) * tilted_sum.width) * CHANNELS]);
+						sqsum.RGBA[c + (j + i * sqsum.width) * CHANNELS] += ((i == 0) ? 0 : sqsum.RGBA[c + (j + (i-1) * sqsum.width) * CHANNELS]);
+
+					if(!cvUndefinedOrNull(tilted_sum)){
+						tilted_sum.RGBA[c + (j + i * tilted_sum.width) * CHANNELS]  = src.RGBA[c + (j + i * src.width) * CHANNELS];
+						for(y = 1 ; y <= i ; y++){
+							var ii = i - y;
+							var jl = j - y;
+							var jr = j + y;
+							if(jl >= 0) 
+								tilted_sum.RGBA[c + (j + i * tilted_sum.width) * CHANNELS] += src.RGBA[c + (jl + ii * tilted_sum.width) * CHANNELS];
+							if(jr < tilted_sum.width) 
+								tilted_sum.RGBA[c + (j + i * tilted_sum.width) * CHANNELS] += src.RGBA[c + (jr + ii * tilted_sum.width) * CHANNELS];
+						}
+						if(i != 0)
+							tilted_sum.RGBA[c + (j + i * tilted_sum.width) * CHANNELS] += tilted_sum.RGBA[c + (j + (i - 1) * tilted_sum.width) * CHANNELS];	
+					}
+				
 				}
 			}
 		}
