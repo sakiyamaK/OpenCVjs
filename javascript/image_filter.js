@@ -1,28 +1,79 @@
-function Test(imgId, imgId1, imgId2, imgId3){
+function Test(imgId, iplImage){
+	try{
+		var newIplImage = cvCloneImage(iplImage);
+	cvThreshold(iplImage, newIplImage, 128, 255, CV_THRESHOLD_TYPE.THRESH_OTSU);
+		
+		var layer1 = cvCreateImage(iplImage.width, iplImage.height);
+		var layer2 = cvCreateImage(iplImage.width, iplImage.height);
+		
+		var max = layer1.width*layer1.width + layer1.height*layer1.height;
+		
+		for(i = 0 ; i < layer1.height ; i++){
+			for(j = 0 ; j < layer1.width ; j++){
+				layer1.RGBA[(j + i * layer1.width) * CHANNELS] = 255*i/(2*layer1.height);
+				layer1.RGBA[1 + (j + i * layer1.width) * CHANNELS] = 255;
+				layer1.RGBA[2 + (j + i * layer1.width) * CHANNELS] = 255;
+				layer1.RGBA[3 + (j + i * layer1.width) * CHANNELS] = 255;
+			}
+		}
+		
+		for(i = 0 ; i < layer2.height ; i++){
+			for(j = 0 ; j < layer2.width ; j++){
+				layer2.RGBA[(j + i * layer2.width) * CHANNELS] = 255 - 255*i/(2*layer2.height);
+				layer2.RGBA[1 + (j + i * layer2.width) * CHANNELS] = 255;
+				layer2.RGBA[2 + (j + i * layer2.width) * CHANNELS] = 255;
+				layer2.RGBA[3 + (j + i * layer2.width) * CHANNELS] = 255;
+			}
+		}
+		
+		cvCvtColor(layer1, layer1, CV_CODE.HSV2RGB);
+		cvCvtColor(layer2, layer2, CV_CODE.HSV2RGB);
+		
+		for(i = 0 ; i < newIplImage.height ; i++){
+			for(j = 0 ; j < newIplImage.width ; j++){
+				if(newIplImage.RGBA[(j + i * layer1.width) * CHANNELS] == 255){
+					newIplImage.RGBA[(j + i * layer1.width) * CHANNELS] = layer1.RGBA[(j + i * layer1.width) * CHANNELS];
+					newIplImage.RGBA[1 + (j + i * layer1.width) * CHANNELS] = layer1.RGBA[1 + (j + i * layer1.width) * CHANNELS];
+					newIplImage.RGBA[2 + (j + i * layer1.width) * CHANNELS] = layer1.RGBA[2 + (j + i * layer1.width) * CHANNELS];
+				}
+				else{
+					newIplImage.RGBA[(j + i * layer1.width) * CHANNELS] = layer2.RGBA[(j + i * layer1.width) * CHANNELS];
+					newIplImage.RGBA[1 + (j + i * layer1.width) * CHANNELS] = layer2.RGBA[1 + (j + i * layer1.width) * CHANNELS];
+					newIplImage.RGBA[2 + (j + i * layer1.width) * CHANNELS] = layer2.RGBA[2 + (j + i * layer1.width) * CHANNELS];
+				}
+			}
+		}
+		
+		cvShowImage(imgId, newIplImage);
+	}
+	catch(ex){
+		alert("Sobel : " + ex);
+	}	
+}
 
-	var testImage = cvCreateImage(128, 128);
-	cvSetRGBA(testImage, 1, 1, 1, 255);
+function Rainbow(imgId, iplImage){
+	var layer1 = cvCreateImage(iplImage.width, iplImage.height);
 	
-	var inte = cvCreateImage(128, 128);
-	var intsq = cvCreateImage(128, 128);
-	var naname = cvCreateImage(128, 128);
-
-	cvIntegral(testImage, inte, intsq, naname);
-
-	cvShowImage(imgId, testImage);
-	cvShowImage(imgId1, inte);
-	cvShowImage(imgId2, intsq);
-	cvShowImage(imgId3, naname);
+	var max = layer1.width*layer1.width + layer1.height*layer1.height;
 	
-	var xx = 4;
-	var yy = 4;
-	
-	for(y = 0 ; y <= yy ; y++){
-		for(x = 0 ; x <= xx ; x++){
-			var v = naname.RGBA[(x + y * naname.width) * CHANNELS] ;
-			console.log(v);
+	for(i = 0 ; i < layer1.height ; i++){
+		for(j = 0 ; j < layer1.width ; j++){
+			var v = j*j + i*i;
+			layer1.RGBA[(j + i * layer1.width) * CHANNELS] = 255*v/max;
+			layer1.RGBA[1 + (j + i * layer1.width) * CHANNELS] = 255;
+			layer1.RGBA[2 + (j + i * layer1.width) * CHANNELS] = 255;
+			layer1.RGBA[3 + (j + i * layer1.width) * CHANNELS] = 255;
 		}
 	}
+	
+	cvCvtColor(layer1, layer1, CV_CODE.HSV2RGB);
+	
+	var newIplImage = cvCloneImage(iplImage);
+	
+	cvBlendImage(newIplImage, layer1, newIplImage, CV_BLEND_MODE.SOFT_LIGHT);
+
+	cvShowImage(imgId, newIplImage);
+
 }
 
 function Bilateral(imgId, iplImage){
@@ -146,6 +197,7 @@ function Canny(imgId, iplImage){
 
 
 
+
 function Vivit(imgId, iplImage){
 	try{
 		var newIplImage = cvCloneImage(iplImage);
@@ -223,7 +275,7 @@ function Amaro(imgId, iplImage){
 	}
 }
 
-// whiteblack
+
 function WhiteBlack(imgId, iplImage){
 	try{
 		var UNDER = 50;
@@ -271,8 +323,6 @@ function MakeLightImage(width, height, power, bunbo, bunshi, radiusX, radiusY){
 				var v = power;
 				var dis2 = (y * y) / (radiusY * radiusY) + (x * x) / (radiusX * radiusX);
 				if(dis2 > 1) v /= Math.pow(dis2, bunshi / bunbo) ;
-
-				v = cvChangePixelValue(v);
 
 				for( c = 0 ; c < CHANNELS ; c++){
 					iplImage.RGBA[c + (j + i * width) * CHANNELS] = v;
