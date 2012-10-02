@@ -1,7 +1,29 @@
-function Test(imgId, iplImage){
+nction Test(imgId, iplImage){
 	try{
 		var newIplImage = cvCloneImage(iplImage);
-	cvThreshold(iplImage, newIplImage, 128, 255, CV_THRESHOLD_TYPE.THRESH_OTSU);
+		var pt1 = new Point();
+		pt1.x = Math.floor(newIplImage.width * Math.random());
+		pt1.y = Math.floor(newIplImage.height * Math.random());
+		var pt2 = new Point();
+		pt2.x = Math.floor(newIplImage.width * Math.random());
+		pt2.y = Math.floor(newIplImage.height * Math.random());
+
+		var color = new Scalar();
+		color.r = color.g = color.b = 255;
+		
+		cvLine(newIplImage, pt1, pt2, color, 11, false);
+		
+		cvShowImage(imgId, newIplImage);
+	}
+	catch(ex){
+		alert("Test : " + ex);
+	}	
+}
+
+function iPod(imgId, iplImage){
+	try{
+		var newIplImage = cvCloneImage(iplImage);
+		cvThreshold(iplImage, newIplImage, 128, 255, CV_THRESHOLD_TYPE.THRESH_OTSU);
 		
 		var layer1 = cvCreateImage(iplImage.width, iplImage.height);
 		var layer2 = cvCreateImage(iplImage.width, iplImage.height);
@@ -47,7 +69,7 @@ function Test(imgId, iplImage){
 		cvShowImage(imgId, newIplImage);
 	}
 	catch(ex){
-		alert("Sobel : " + ex);
+		alert("iPod : " + ex);
 	}	
 }
 

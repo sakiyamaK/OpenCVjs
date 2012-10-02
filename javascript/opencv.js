@@ -91,81 +91,198 @@ var ERROR = {
 	APERTURE_SIZE : "aperture_sizeは1, 3, 5または7 のいずれかにしてください",
 }
 
+function cvCircle(img, center, radius, color, thickness){
+	try{
+		if(cvUndefinedOrNull(img) || cvUndefinedOrNull(center) 
+			|| cvUndefinedOrNull(radius) || cvUndefinedOrNull(color))
+				throw "img or center or radius or color" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(cvUndefinedOrNull(thickness)) thickness = 1;
+		else if(thickness > 0 && thickness %2 == 0) throw "thickness" + ERROR.ONLY_ADD_NUMBER;
+		
+		if(thickness > 0){
+			var thick2 = Math.floor(thickness/2);
+			var radiusMax = radius + thick2;
+			var radiusMin = radius - thick2;
+			
+			var xS = center.x - radiusMax;
+			var xE = center.x + radiusMax;
+			var yS = center.y - radiusMax;
+			var yE = center.y + radiusMax;
+			
+			if(xS < 0) xS = 0 ;
+			else if(xS > img.width - 1) xS = img.width - 1;
+			if(xE < 0) xE = 0 ;
+			else if(xE > img.width - 1) xE = img.width - 1;
+			if(yS < 0) yS = 0 ;
+			else if(yS > img.height - 1) yS = img.height - 1;
+			if(yE < 0) yE = 0 ;
+			else if(yE > img.height - 1) yE = img.height - 1;
 
-function cvLine(img, pt1, pt2, color, thickness){
+			for(x = xS ; x <= xE ; x++){
+				for(y = yS ; y <= yE ; y++){
+					var r = (x - center.x) * (x - center.x) + (y - center.y) * (y - center.y);
+					if(r >= radiusMin*radiusMin && r <= radiusMax*radiusMax){
+						img.RGBA[(x + y * img.width) * CHANNELS] = color.r;
+						img.RGBA[1 + (x + y * img.width) * CHANNELS] = color.g;
+						img.RGBA[2 + (x + y * img.width) * CHANNELS] = color.b;
+					}
+				}
+			}
+		}
+		else{
+			var xS = center.x - radius;
+			var xE = center.x + radius;
+			var yS = center.y - radius;
+			var yE = center.y + radius;
+			
+			if(xS < 0) xS = 0 ;
+			else if(xS > img.width - 1) xS = img.width - 1;
+			if(xE < 0) xE = 0 ;
+			else if(xE > img.width - 1) xE = img.width - 1;
+			if(yS < 0) yS = 0 ;
+			else if(yS > img.height - 1) yS = img.height - 1;
+			if(yE < 0) yE = 0 ;
+			else if(yE > img.height - 1) yE = img.height - 1;
+
+			for(x = xS ; x <= xE ; x++){
+				for(y = yS ; y <= yE ; y++){
+					var r = (x - center.x) * (x - center.x) + (y - center.y) * (y - center.y);
+					if(r <= radius*radius){
+						img.RGBA[(x + y * img.width) * CHANNELS] = color.r;
+						img.RGBA[1 + (x + y * img.width) * CHANNELS] = color.g;
+						img.RGBA[2 + (x + y * img.width) * CHANNELS] = color.b;
+					}
+				}
+			}
+		}
+	}
+	catch(ex){
+		alert("cvCircle : " + ex);
+	}
+}
+
+function cvRectangle(img, pt1, pt2, color, thickness){
+	try{
+		if(cvUndefinedOrNull(img) || cvUndefinedOrNull(pt1) 
+			|| cvUndefinedOrNull(pt2) || cvUndefinedOrNull(color))
+				throw "img or pt1 or pt2 or color" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(cvUndefinedOrNull(thickness)) thickness = 1;
+		else if(thickness > 0 && thickness %2 == 0) throw "thickness" + ERROR.ONLY_ADD_NUMBER;
+		
+		var xS = (pt1.x < pt2.x) ? pt1.x : pt2.x;
+		var xE = (pt1.x < pt2.x) ? pt2.x : pt1.x;
+		var yS = (pt1.y < pt2.y) ? pt1.y : pt2.y;
+		var yE = (pt1.y < pt2.y) ? pt2.y : pt1.y;
+		
+		if(xS < 0) xS = 0 ;
+		else if(xS > img.width - 1) xS = img.width - 1;
+		if(xE < 0) xE = 0 ;
+		else if(xE > img.width - 1) xE = img.width - 1;
+		if(yS < 0) yS = 0 ;
+		else if(yS > img.height - 1) yS = img.height - 1;
+		if(yE < 0) yE = 0 ;
+		else if(yE > img.height - 1) yE = img.height - 1;
+
+		if(thickness <= 0){
+			for(y = yS ; y <= yE ; y++){
+				for(x = xS ; x <= xE ; x++){
+					img.RGBA[(x + y * img.width) * CHANNELS] = color.r;
+					img.RGBA[1 + (x + y * img.width) * CHANNELS] = color.g;
+					img.RGBA[2 + (x + y * img.width) * CHANNELS] = color.b;
+				}
+			}
+		}
+		else{
+			var pt3 = new Point();
+			var pt4 = new Point();
+			pt3.x = pt1.x; pt3.y = pt2.y;
+			pt4.x = pt2.x; pt4.y = pt1.y;
+			
+			cvLine(img, pt1, pt3, color, thickness);
+			cvLine(img, pt3, pt2, color, thickness);
+			cvLine(img, pt2, pt4, color, thickness);
+			cvLine(img, pt1, pt4, color, thickness);
+		}
+	}
+	catch(ex){
+		alert("cvRectangle : " + ex);
+	}
+}
+
+function cvLine(img, pt1, pt2, color, thickness, isSegment){
 	try{
 		if(cvUndefinedOrNull(img) || cvUndefinedOrNull(pt1) 
 			|| cvUndefinedOrNull(pt2) || cvUndefinedOrNull(color))
 				throw "img or pt1 or pt2 or color" + ERROR.IS_UNDEFINED_OR_NULL;
 				
 		if(cvUndefinedOrNull(thickness)) thickness = 1;
-		else if(thickness %2 == 0) throw "thickness" + ONLY_ADD_NUMBER;
+		else if(thickness %2 == 0) throw "thickness" + ERROR.ONLY_ADD_NUMBER;
 		
+		if(cvUndefinedOrNull(isSegment)) isSegment = true;
+
 		var tE = Math.floor(thickness/2);
 		var tS = -1*tE;
-		
-		console.log(color);
-		console.log(pt1);
-		console.log(pt2);
-		console.log(thickness);
-		console.log(tS);
-		console.log(tE);
 
-		if(pt1.y < pt2.y){
-			for(t = tS ; t <= tE ; t++){
-				console.log("a");
-				for(y = pt1.y ; y < pt2.y ; y++){
-					var yy = y + t;
-					if(yy >= 0 && yy < img.height){
-						if(pt1.x < pt2.x){
-							for(x = pt1.x ; x < pt2.x ; x++){
-								var xx = x + t;
-								if(xx >= 0 && xx < img.width){
-									
-									img.RGBA[(xx + yy * img.width) * CHANNELS] = color.r;
-									img.RGBA[1 + (xx + yy * img.width) * CHANNELS] = color.g;
-									img.RGBA[2 + (xx + yy * img.width) * CHANNELS] = color.b;
-								}
-							}
-						}
-						else{
-							for(x = pt1.x ; x >= pt2.x ; x--){
-								var xx = x + t;
-								if(xx >= 0 && xx < img.width){
-									img.RGBA[(xx + yy * img.width) * CHANNELS] = color.r;
-									img.RGBA[1 + (xx + yy * img.width) * CHANNELS] = color.g;
-									img.RGBA[2 + (xx + yy * img.width) * CHANNELS] = color.b;
-								}
-							}
+		if(pt1.x == pt2.x){
+			var x = pt1.x;
+			var yS, yE;
+			if(isSegment){
+				yS = (pt1.y < pt2.y) ? pt1.y : pt2.y;
+				yE = (pt1.y < pt2.y) ? pt2.y : pt1.y;
+				if(yS < 0) yS = 0 ;
+				else if(yS > img.height - 1) yS = img.height - 1;
+				if(yE < 0) yE = 0 ;
+				else if(yE > img.height - 1) yE = img.height - 1;
+			}
+			else{
+				yS = 0; yE = img.height - 1;
+			}
+			
+			
+			for(y = yS ; y <= yE ; y++){
+				for(tx = tS ; tx <= tE ; tx++){
+					for(ty = tS ; ty <= tE ; ty++){
+						var xx = x + tx;
+						var yy = y + ty;
+						if(xx >= 0 && xx <= img.width - 1 && yy >= 0 && yy <= img.height - 1 &&
+							tx * tx + ty * ty <= tE * tE){
+							img.RGBA[(xx + yy * img.width) * CHANNELS] = color.r;
+							img.RGBA[1 + (xx + yy * img.width) * CHANNELS] = color.g;
+							img.RGBA[2 + (xx + yy * img.width) * CHANNELS] = color.b;
 						}
 					}
 				}
 			}
 		}
 		else{
-			for(t = tS ; t <= tE ; t++){
-				for(y = pt1.y ; y >= pt2.y ; y--){
-					var yy = y + t;
-					if(yy >= 0 && yy < img.height){
-						if(pt1.x < pt2.x){
-							for(x = pt1.x ; x < pt2.x ; x++){
-								var xx = x + t;
-								if(xx >= 0 && xx < img.width){
-									img.RGBA[(xx + yy * img.width) * CHANNELS] = color.r;
-									img.RGBA[1 + (xx + yy * img.width) * CHANNELS] = color.g;
-									img.RGBA[2 + (xx + yy * img.width) * CHANNELS] = color.b;
-								}
-							}
-						}
-						else{
-							for(x = pt1.x ; x >= pt2.x ; x--){
-								var xx = x + t;
-								if(xx >= 0 && xx < img.width){
-									img.RGBA[(xx + yy * img.width) * CHANNELS] = color.r;
-									img.RGBA[1 + (xx + yy * img.width) * CHANNELS] = color.g;
-									img.RGBA[2 + (xx + yy * img.width) * CHANNELS] = color.b;
-								}
-							}
+			var katamuki = (pt1.y - pt2.y)/(pt1.x - pt2.x);
+			
+			var xS, xE;
+			if(isSegment){
+				xS = (pt1.x < pt2.x) ? pt1.x : pt2.x;
+				xE = (pt1.x < pt2.x) ? pt2.x : pt1.x;
+				if(xS < 0) xS = 0 ;
+				else if(xS > img.width - 1) xS = img.width - 1;
+				if(xE < 0) xE = 0 ;
+				else if(xE > img.width - 1) xE = img.width - 1;
+			}
+			else{
+				xS = 0; xE = img.width - 1;
+			}
+
+			for(x = xS ; x <= xE ; x++){
+				var y = Math.floor(katamuki * (x - pt1.x)) + pt1.y;
+				
+				for(tx = tS ; tx <= tE ; tx++){
+					for(ty = tS ; ty <= tE ; ty++){
+						var xx = x + tx;
+						var yy = y + ty;
+						if(xx >= 0 && xx <= img.width - 1 && yy >= 0 && yy <= img.height - 1 &&
+							tx * tx + ty * ty <= tE * tE){
+							
+							img.RGBA[(xx + yy * img.width) * CHANNELS] = color.r;
+							img.RGBA[1 + (xx + yy * img.width) * CHANNELS] = color.g;
+							img.RGBA[2 + (xx + yy * img.width) * CHANNELS] = color.b;
 						}
 					}
 				}
@@ -1059,9 +1176,6 @@ function cvCvtColor(src, dst, code){
 		break;
 		
 		case CV_CODE.HSV2RGB:
-		
-			var debug = 0;
-	
 			for (i = 0; i < dst.height; i++) {
 				for (j = 0; j < dst.width; j++) {
 				
@@ -1492,9 +1606,8 @@ function cvCreateImage(width, height){
 		dst.RGBA = new Array(dst.width * dst.width * CHANNELS);
 	    for(i = 0 ; i < dst.height ; i++){
 	    	for(j = 0 ; j < dst.width ; j++){
-	    		for(c = 0 ; c < CHANNELS ; c++){
-		    		dst.RGBA[c + (j + i * dst.width) * CHANNELS] = dst.imageData.data[c + (j + i * dst.width) * CHANNELS];
-		    	}
+	    		for(c = 0 ; c < CHANNELS - 1; dst.RGBA[c++ + (j + i * dst.width) * CHANNELS] = 0);
+		    	dst.RGBA[3 + (j + i * dst.width) * CHANNELS] = 255;
 	    	}
 	    }
 	}
@@ -1559,68 +1672,4 @@ function cvGetCanvasAtImgElement(image){
 		alert("cvGetCanvasAtImgElement : " + ex);
 	}
 	return canvas;
-}
-
-// get Image true size
-function cvGetOriginalSizeAtImgElement(image){
-    var w = image.width ,
-        h = image.height ;
- 
-    if ( image.naturalWidth !== undefined ) {  // for Firefox, Safari, Chrome
-        w = image.naturalWidth;
-        h = image.naturalHeight;
- 
-    } else if ( image.runtimeStyle !== undefined ) {    // for IE
-        var run = image.runtimeStyle;
-        var mem = { w: run.width, h: run.height };  // keep runtimeStyle
-        run.width  = "auto";
-        run.height = "auto";
-        w = image.width;
-        h = image.height;
-        run.width  = mem.w;
-        run.height = mem.h;
- 
-    } else {         // for Opera
-        var mem = { w: image.width, h: image.height };  // keep original style
-        image.removeAttribute("width");
-        image.removeAttribute("height");
-        w = image.width;
-        h = image.height;
-        image.width  = mem.w;
-        image.height = mem.h;
-    }
-
-    return {width:w, height:h};
-}
-
-
-// get Image true size
-function cvGetOriginalSizeAtImgElement(image){
-    var w = image.width ,
-        h = image.height ;
- 
-    if ( image.naturalWidth !== undefined ) {  // for Firefox, Safari, Chrome
-        w = image.naturalWidth;
-        h = image.naturalHeight;
- 
-    } else if ( image.runtimeStyle !== undefined ) {    // for IE
-        var run = image.runtimeStyle;
-        var mem = { w: run.width, h: run.height };  // keep runtimeStyle
-        run.width  = "auto";
-        run.height = "auto";
-        w = image.width;
-        h = image.height;
-        run.width  = mem.w;
-        run.height = mem.h;
- 
-    } else {         // for Opera
-        var mem = { w: image.width, h: image.height };  // keep original style
-        image.removeAttribute("width");
-        image.removeAttribute("height");
-        w = image.width;
-        h = image.height;
-        image.width  = mem.w;
-        image.height = mem.h;
-    }
-   return {width:w, height:h};
 }
