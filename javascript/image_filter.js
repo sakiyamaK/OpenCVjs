@@ -1,4 +1,4 @@
-nction Test(imgId, iplImage){
+function Test(imgId, iplImage){
 	try{
 		var newIplImage = cvCloneImage(iplImage);
 		var pt1 = new Point();
