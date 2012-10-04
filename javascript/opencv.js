@@ -208,7 +208,6 @@ function cvRectangle(img, pt1, pt2, color, thickness){
 		alert("cvRectangle : " + ex);
 	}
 }
-
 function cvLine(img, pt1, pt2, color, thickness, isSegment){
 	try{
 		if(cvUndefinedOrNull(img) || cvUndefinedOrNull(pt1) 
@@ -257,42 +256,81 @@ function cvLine(img, pt1, pt2, color, thickness, isSegment){
 		else{
 			var katamuki = (pt1.y - pt2.y)/(pt1.x - pt2.x);
 			
-			var xS, xE;
-			if(isSegment){
-				xS = (pt1.x < pt2.x) ? pt1.x : pt2.x;
-				xE = (pt1.x < pt2.x) ? pt2.x : pt1.x;
-				if(xS < 0) xS = 0 ;
-				else if(xS > img.width - 1) xS = img.width - 1;
-				if(xE < 0) xE = 0 ;
-				else if(xE > img.width - 1) xE = img.width - 1;
+			
+			
+			if(Math.abs(katamuki) > 1){
+				var yS, yE;
+				if(isSegment){
+					yS = (pt1.y < pt2.y) ? pt1.y : pt2.y;
+					yE = (pt1.y < pt2.y) ? pt2.y : pt1.y;
+					if(yS < 0) yS = 0 ;
+					else if(yS > img.height - 1) yS = img.height - 1;
+					if(yE < 0) yE = 0 ;
+					else if(yE > img.height - 1) yE = img.height - 1;
+				}
+				else{
+					yS = 0; yE = img.height - 1;
+				}
+				
+				for(y = yS ; y <= yE ; y++){
+					var x = Math.floor((y - pt1.y) / katamuki) + pt1.x ;
+					for(tx = tS ; tx <= tE ; tx++){
+						for(ty = tS ; ty <= tE ; ty++){
+							var xx = x + tx;
+							var yy = y + ty;
+							if(xx >= 0 && xx <= img.width - 1 && yy >= 0 && yy <= img.height - 1 &&
+								tx * tx + ty * ty <= tE * tE){
+								
+								img.RGBA[(xx + yy * img.width) * CHANNELS] = color.r;
+								img.RGBA[1 + (xx + yy * img.width) * CHANNELS] = color.g;
+								img.RGBA[2 + (xx + yy * img.width) * CHANNELS] = color.b;
+							}
+						}
+					}
+				}	
 			}
 			else{
-				xS = 0; xE = img.width - 1;
-			}
-
-			for(x = xS ; x <= xE ; x++){
-				var y = Math.floor(katamuki * (x - pt1.x)) + pt1.y;
+				var xS, xE;
+				if(isSegment){
+					xS = (pt1.x < pt2.x) ? pt1.x : pt2.x;
+					xE = (pt1.x < pt2.x) ? pt2.x : pt1.x;
+					if(xS < 0) xS = 0 ;
+					else if(xS > img.width - 1) xS = img.width - 1;
+					if(xE < 0) xE = 0 ;
+					else if(xE > img.width - 1) xE = img.width - 1;
+				}
+				else{
+					xS = 0; xE = img.width - 1;
+				}
 				
-				for(tx = tS ; tx <= tE ; tx++){
-					for(ty = tS ; ty <= tE ; ty++){
-						var xx = x + tx;
-						var yy = y + ty;
-						if(xx >= 0 && xx <= img.width - 1 && yy >= 0 && yy <= img.height - 1 &&
-							tx * tx + ty * ty <= tE * tE){
-							
-							img.RGBA[(xx + yy * img.width) * CHANNELS] = color.r;
-							img.RGBA[1 + (xx + yy * img.width) * CHANNELS] = color.g;
-							img.RGBA[2 + (xx + yy * img.width) * CHANNELS] = color.b;
+				for(x = xS ; x <= xE ; x++){
+					var y = Math.floor(katamuki * (x - pt1.x)) + pt1.y;
+					
+					for(tx = tS ; tx <= tE ; tx++){
+						for(ty = tS ; ty <= tE ; ty++){
+							var xx = x + tx;
+							var yy = y + ty;
+							if(xx >= 0 && xx <= img.width - 1 && yy >= 0 && yy <= img.height - 1 &&
+								tx * tx + ty * ty <= tE * tE){
+								
+								img.RGBA[(xx + yy * img.width) * CHANNELS] = color.r;
+								img.RGBA[1 + (xx + yy * img.width) * CHANNELS] = color.g;
+								img.RGBA[2 + (xx + yy * img.width) * CHANNELS] = color.b;
+							}
 						}
 					}
 				}
 			}
+			
+			
+			
 		}
 	}
 	catch(ex){
 		alert("cvLine : " + ex);
 	}
 }
+
 
 
 function cvMorphologyEx(src, dst, element, operation, iterations){

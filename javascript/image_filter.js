@@ -1,6 +1,112 @@
 function Test(imgId, iplImage){
 	try{
 		var newIplImage = cvCloneImage(iplImage);
+		var bg = cvCloneImage(iplImage);
+
+		cvSmooth(bg, bg, CV_SMOOTH_TYPE.GAUSSIAN, 7);
+		cvBlendImage(bg, newIplImage, newIplImage, CV_BLEND_MODE.SCREEN);
+
+		cvCvtColor(newIplImage, newIplImage, CV_CODE.RGB2HSV);
+
+		for(i = 0 ; i < newIplImage.height; i++){
+			for(j = 0 ; j < newIplImage.width ; j++){
+				var s = newIplImage.RGBA[1 + (j + i * newIplImage.width) * CHANNELS] + 30;
+				if(s > 255) s = 255;
+				newIplImage.RGBA[1 + (j + i * newIplImage.width) * CHANNELS] = s;
+			}
+		}
+		cvCvtColor(newIplImage, newIplImage, CV_CODE.HSV2RGB);
+		
+		cvToneCurve(newIplImage, newIplImage, 10, 0, 200, 255, 0);
+		cvToneCurve(newIplImage, newIplImage, 10, 0, 200, 255, 1);
+		cvToneCurve(newIplImage, newIplImage, 10, 0, 200, 255, 2);
+		
+		cvShowImage(imgId, newIplImage);
+	}
+	catch(ex){
+		alert("Test : " + ex);
+	}
+}
+
+
+function Rainbow(imgId, iplImage){
+	try{
+		console.log("softfocus");
+		var layer1 = cvCreateImage(iplImage.width, iplImage.height);
+		
+		var max = layer1.width*layer1.width + layer1.height*layer1.height;
+		
+		for(i = 0 ; i < layer1.height ; i++){
+			for(j = 0 ; j < layer1.width ; j++){
+				var v = j*j + i*i;
+				layer1.RGBA[(j + i * layer1.width) * CHANNELS] = 255*v/max;
+				layer1.RGBA[1 + (j + i * layer1.width) * CHANNELS] = 255;
+				layer1.RGBA[2 + (j + i * layer1.width) * CHANNELS] = 255;
+				layer1.RGBA[3 + (j + i * layer1.width) * CHANNELS] = 255;
+			}
+		}
+	
+		cvCvtColor(layer1, layer1, CV_CODE.HSV2RGB);
+		
+		var newIplImage = cvCloneImage(iplImage);
+		var bg = cvCloneImage(iplImage);
+		
+		cvSmooth(bg, bg, CV_SMOOTH_TYPE.GAUSSIAN, 7);
+		cvBlendImage(bg, newIplImage, newIplImage, CV_BLEND_MODE.SCREEN);
+			
+		cvBlendImage(newIplImage, layer1, newIplImage, CV_BLEND_MODE.SOFT_LIGHT);
+	
+		cvShowImage(imgId, newIplImage);
+	}
+	catch(ex){
+		alert("Rainbow : " + ex);
+	}
+}
+
+function Gradetion(imgId, iplImage){
+	try{
+		var newIplImage = cvCloneImage(iplImage);
+		var filter = cvCreateImage(iplImage.width, iplImage.height);
+
+		for(i = 0 ; i < filter.height ; i++){
+			for(j = 0 ; j < filter.width ; j++){
+				filter.RGBA[(j + i * filter.width) * CHANNELS] = j*210/filter.width + 45;
+				filter.RGBA[1 + (j + i * filter.width) * CHANNELS] = j*110/filter.width + 10;
+				filter.RGBA[2 + (j + i * filter.width) * CHANNELS] = 90 - j*90/filter.width;
+				filter.RGBA[3 + (j + i * filter.width) * CHANNELS] = 255;
+			}
+		}
+		
+		cvBlendImage(newIplImage, filter, newIplImage, CV_BLEND_MODE.SCREEN);
+		
+		cvShowImage(imgId, newIplImage);
+	}
+	catch(ex){
+		alert("Test : " + ex);
+	}
+}
+
+function SoftFocus(imgId, iplImage){
+	try{	
+		
+		var newIplImage = cvCloneImage(iplImage);
+		var bg = cvCloneImage(iplImage);
+
+		cvSmooth(bg, bg, CV_SMOOTH_TYPE.GAUSSIAN, 7);
+		cvBlendImage(bg, newIplImage, newIplImage, CV_BLEND_MODE.SCREEN);
+		
+		cvShowImage(imgId, newIplImage);
+	}
+	catch(ex){
+		alert("Test : " + ex);
+	}
+}
+
+function Kamisama(imgId, iplImage){
+	try{
+		var newIplImage = cvCloneImage(iplImage);
+		cvCvtColor(newIplImage, newIplImage, CV_CODE.RGB2GRAY);
+		
 		var pt1 = new Point();
 		pt1.x = Math.floor(newIplImage.width * Math.random());
 		pt1.y = Math.floor(newIplImage.height * Math.random());
@@ -8,17 +114,37 @@ function Test(imgId, iplImage){
 		pt2.x = Math.floor(newIplImage.width * Math.random());
 		pt2.y = Math.floor(newIplImage.height * Math.random());
 
+		if(pt1.x == pt2.x){
+		}
+		else{
+			var katamuki = (pt1.y - pt2.y)/(pt1.x - pt2.x);
+			
+			for(i = 0 ; i < newIplImage.height ; i++){
+				for(j = 0 ; j < newIplImage.width ; j++){
+					if(i > katamuki * (j - pt1.x) + pt1.y){
+						newIplImage.RGBA[1 + (j + i * newIplImage.width) * CHANNELS] = 0;
+						newIplImage.RGBA[2 + (j + i * newIplImage.width) * CHANNELS] = 0;
+					}
+					else{
+						newIplImage.RGBA[(j + i * newIplImage.width) * CHANNELS] = 0;
+						newIplImage.RGBA[1 + (j + i * newIplImage.width) * CHANNELS] = 0;
+					}
+				}
+			}
+		}
+
 		var color = new Scalar();
 		color.r = color.g = color.b = 255;
-		
+
 		cvLine(newIplImage, pt1, pt2, color, 11, false);
-		
+
 		cvShowImage(imgId, newIplImage);
 	}
 	catch(ex){
-		alert("Test : " + ex);
+		alert("Kamisama : " + ex);
 	}	
 }
+
 
 function iPod(imgId, iplImage){
 	try{
@@ -71,31 +197,6 @@ function iPod(imgId, iplImage){
 	catch(ex){
 		alert("iPod : " + ex);
 	}	
-}
-
-function Rainbow(imgId, iplImage){
-	var layer1 = cvCreateImage(iplImage.width, iplImage.height);
-	
-	var max = layer1.width*layer1.width + layer1.height*layer1.height;
-	
-	for(i = 0 ; i < layer1.height ; i++){
-		for(j = 0 ; j < layer1.width ; j++){
-			var v = j*j + i*i;
-			layer1.RGBA[(j + i * layer1.width) * CHANNELS] = 255*v/max;
-			layer1.RGBA[1 + (j + i * layer1.width) * CHANNELS] = 255;
-			layer1.RGBA[2 + (j + i * layer1.width) * CHANNELS] = 255;
-			layer1.RGBA[3 + (j + i * layer1.width) * CHANNELS] = 255;
-		}
-	}
-	
-	cvCvtColor(layer1, layer1, CV_CODE.HSV2RGB);
-	
-	var newIplImage = cvCloneImage(iplImage);
-	
-	cvBlendImage(newIplImage, layer1, newIplImage, CV_BLEND_MODE.SOFT_LIGHT);
-
-	cvShowImage(imgId, newIplImage);
-
 }
 
 function Bilateral(imgId, iplImage){
