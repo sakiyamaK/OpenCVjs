@@ -91,6 +91,84 @@ var ERROR = {
 	APERTURE_SIZE : "aperture_sizeは1, 3, 5または7 のいずれかにしてください",
 }
 
+function cvLabeling(src){
+	var dst = null;
+	try{
+		var dmy = cvCloneImage(src);
+		dst = cvCreateImage(src.width, src.height);
+				
+		for(i = 0 ; i < dst.height ; i++){
+			for(j = 0 ; j < dst.width ; j++){
+				dst.RGBA[(j + i * dst.width) * CHANNELS] = 0;
+			}
+		}
+		
+		var lut = new Array(dmy.width * dmy.height);
+		for(i = 0 ; i < lut.length ; i++) lut[i] = i;
+		
+		var newNumber = 1;
+		var MAX = dmy.width * dmy.height;
+		var check = new Array(4);
+		
+		for(i = 0 ; i < dmy.height ; i++){
+			for(j = 0 ; j < dmy.width ; j++){
+				if(dmy.RGBA[(j + i * dmy.width) * CHANNELS] == 255){
+					if(i == 0 && j == 0){
+						dst.RGBA[(j + i * dst.width) * CHANNELS] = newNumber;
+						newNumber++;
+					}
+					else{
+						check[0] = (j - 1 < 0 || i - 1 < 0) ? MAX : dst.RGBA[(j - 1 + (i - 1) * dmy.width) * CHANNELS];
+						check[1] = (i - 1 < 0) ? MAX : dst.RGBA[(j + (i - 1) * dmy.width) * CHANNELS];
+						check[2] = (j + 1 > dmy.width - 1 || i - 1 < 0) ? MAX : dst.RGBA[(j + 1 + (i - 1) * dmy.width) * CHANNELS];
+						check[3] = (j - 1 < 0) ? MAX : dst.RGBA[(j - 1 + i * dmy.width) * CHANNELS];
+						check.sort( function(a,b) {return a-b;} );
+						
+						var m = check.length;
+						for(n = 3 ; n >= 0 ; n--){
+							if(check[n] != 0 && check[n] != MAX) m = n;
+						}
+						
+						if(m == check.length){
+							dst.RGBA[(j + i * dst.width) * CHANNELS] = newNumber;
+							newNumber++;
+						}
+						else{
+							
+							dst.RGBA[(j + i * dst.width) * CHANNELS] = check[m];
+							c = m + 1;
+							for(n = c ; n < check.length ; n++){
+								if(check[n] != MAX && lut[check[n]] > check[m])	lut[check[n]] = check[m];
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		for(i = 0 ; i < lut.length ; i++){
+			if(i != lut[i]){
+				console.log(i + ", " + lut[i]);
+			}
+		}
+		
+		for(i = 0 ; i < dmy.height ; i++){
+			for(j = 0 ; j < dmy.width ; j++){
+				while(true){
+					var v = dst.RGBA[(j + i * dst.width) * CHANNELS];
+					var n = lut[v];
+					if(v == n) break;
+					dst.RGBA[(j + i * dst.width) * CHANNELS] = n;
+				}
+			}
+		}
+	}
+	catch(ex){
+		alert("cvLabeling : " + ex);
+	}
+	return dst;
+}
+
 function cvCircle(img, center, radius, color, thickness){
 	try{
 		if(cvUndefinedOrNull(img) || cvUndefinedOrNull(center) 
