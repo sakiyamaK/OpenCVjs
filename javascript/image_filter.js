@@ -28,10 +28,36 @@ function Test(imgId, iplImage){
 	}
 }
 
+function Xpro(imgId, iplImage){
+	try{
+		var newIplImage = cvCloneImage(iplImage);
+
+		var X_PRO_GREEN_TONE_CURVE_UNDER_X = 50;
+		var X_PRO_GREEN_TONE_CURVE_UNDER_Y = 0;
+		var X_PRO_GREEN_TONE_CURVE_OVER_X = 200;
+		var X_PRO_GREEN_TONE_CURVE_OVER_Y = 255;
+		var X_PRO_RED_TONE_CURVE_UNDER_X = 50;
+		var X_PRO_RED_TONE_CURVE_UNDER_Y = 0;
+		var X_PRO_RED_TONE_CURVE_OVER_X = 200;
+		var X_PRO_RED_TONE_CURVE_OVER_Y = 255;
+
+		cvToneCurve(newIplImage, newIplImage,
+			X_PRO_RED_TONE_CURVE_UNDER_X, X_PRO_RED_TONE_CURVE_UNDER_Y,
+			X_PRO_RED_TONE_CURVE_OVER_X, X_PRO_RED_TONE_CURVE_OVER_Y, 0);
+
+		cvToneCurve(newIplImage, newIplImage,
+			X_PRO_GREEN_TONE_CURVE_UNDER_X, X_PRO_GREEN_TONE_CURVE_UNDER_Y,
+			X_PRO_GREEN_TONE_CURVE_OVER_X, X_PRO_GREEN_TONE_CURVE_OVER_Y, 1);
+
+		cvShowImage(imgId, newIplImage);
+	}
+	catch(ex){
+		alert("xpro : " + ex);
+	}
+}
 
 function Rainbow(imgId, iplImage){
 	try{
-		console.log("softfocus");
 		var layer1 = cvCreateImage(iplImage.width, iplImage.height);
 		
 		var max = layer1.width*layer1.width + layer1.height*layer1.height;
@@ -82,7 +108,7 @@ function Gradetion(imgId, iplImage){
 		cvShowImage(imgId, newIplImage);
 	}
 	catch(ex){
-		alert("Test : " + ex);
+		alert("Gradetion : " + ex);
 	}
 }
 
@@ -98,7 +124,7 @@ function SoftFocus(imgId, iplImage){
 		cvShowImage(imgId, newIplImage);
 	}
 	catch(ex){
-		alert("Test : " + ex);
+		alert("SoftFocus : " + ex);
 	}
 }
 

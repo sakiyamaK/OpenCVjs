@@ -1742,7 +1742,7 @@ function cvShowImage(imgId, iplImage){
 		    var imgElement = document.getElementById(imgId);
 		    if(imgElement == null) throw imgId + ERROR.IS_UNDEFINED_OR_NULL;
 		 
-		    imgElement.src = "javascript/dmy.jpg";
+		    imgElement.src = DMY_IMG;
 		    imgElement.onload = function(event){
 			    imgElement.src = iplImage.canvas.toDataURL('image/jpeg');
 			};
