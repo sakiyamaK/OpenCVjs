@@ -5,6 +5,15 @@ var IplImage = function(){
 	imageData: null;
 	RGBA: null;
 }
+
+var CvHistogram = function(){
+	type;
+	bins;
+	thres;
+	thres2;
+	mat;
+}
+
 var Point = function(){
 	x: 0;
 	y: 0;
@@ -19,6 +28,11 @@ var Scalar = function(){
 	g: 0;
 	b: 0;
 	a: 255;
+}
+
+var CV_HIST = {
+	ARRAY: 0,
+	SPARSE: 1
 }
 
 var CV_CODE = {
@@ -82,6 +96,7 @@ var CHANNELS = 4;
 var ERROR = {
 	IS_UNDEFINED_OR_NULL : "がundefinedかnullです",
 	DIFFERENT_SIZE : "IplImageサイズは全て同じにして下さい",
+	DIFFERENT_LENGTH: "の長さは全て同じにして下さい",
 	ONLY_ADD_NUMBER : "は奇数にして下さい",
 	ONLY_INTERGER_NUMBER : "は整数にして下さい",
 	ONLY_POSITIVE_NUMBER : "は正の値にして下さい",
@@ -89,6 +104,30 @@ var ERROR = {
 	NOT_GET_CONTEXT : "contextが読み込めません",
 	SWITCH_VALUE : "の値が正しくありません",
 	APERTURE_SIZE : "aperture_sizeは1, 3, 5または7 のいずれかにしてください",
+}
+
+function cvCreateHist(dims, sizes, type, ranges, uniform){
+	var hist = new CvHistgram();
+	try{
+		if(cvUndefinedOrNull(sizes.length) || cvUndefinedOrNull(ranges.length))
+			throw "sizes or ranges" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(dims != sizes.length)
+			throw "dims と sizes" + ERROR.DIFFERENT_LENGTH;
+		if(cvUndefinedOrNull(uniform)) uniform = 1;
+		
+		switch(type){
+			case CV_HIST.ARRAY:
+			break;
+			case CV_HIST.SPARSE:
+			break;
+			default:
+				throw "type " + ERROR.SWITCH_VALUE;
+			break;
+		}
+	}
+	catch(ex){
+		alert("cvLabeling : " + ex);
+	}
 }
 
 function cvLabeling(src){
@@ -1690,7 +1729,7 @@ function cvLoadImage(event, imgId, iplImage, maxSize){
 					    			iplImage.imageData.data[c + (j + i * iplImage.width) * CHANNELS];
 					    	}
 				    	}
-				    }
+				    }				    
 				};
 			};
 			reader.onerror = function(event){
