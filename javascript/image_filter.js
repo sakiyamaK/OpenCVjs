@@ -1,27 +1,11 @@
 function Test(imgId, iplImage){
 	try{
-		var newIplImage = cvCloneImage(iplImage);
-		var bg = cvCloneImage(iplImage);
-
-		cvSmooth(bg, bg, CV_SMOOTH_TYPE.GAUSSIAN, 7);
-		cvBlendImage(bg, newIplImage, newIplImage, CV_BLEND_MODE.SCREEN);
-
-		cvCvtColor(newIplImage, newIplImage, CV_CODE.RGB2HSV);
-
-		for(i = 0 ; i < newIplImage.height; i++){
-			for(j = 0 ; j < newIplImage.width ; j++){
-				var s = newIplImage.RGBA[1 + (j + i * newIplImage.width) * CHANNELS] + 30;
-				if(s > 255) s = 255;
-				newIplImage.RGBA[1 + (j + i * newIplImage.width) * CHANNELS] = s;
-			}
+		var hist = cvCreateHist(1, [256], CV_HIST.ARRAY, [[0, 256]]);
+		cvCalcHist(iplImage, hist);
+		
+		for(j = 0 ; j < hist.bins[0].length ; j++){
+			console.log(j+ " : " + hist.bins[0][j]);
 		}
-		cvCvtColor(newIplImage, newIplImage, CV_CODE.HSV2RGB);
-		
-		cvToneCurve(newIplImage, newIplImage, 10, 0, 200, 255, 0);
-		cvToneCurve(newIplImage, newIplImage, 10, 0, 200, 255, 1);
-		cvToneCurve(newIplImage, newIplImage, 10, 0, 200, 255, 2);
-		
-		cvShowImage(imgId, newIplImage);
 	}
 	catch(ex){
 		alert("Test : " + ex);

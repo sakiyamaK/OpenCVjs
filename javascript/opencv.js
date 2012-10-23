@@ -7,11 +7,16 @@ var IplImage = function(){
 }
 
 var CvHistogram = function(){
-	type;
-	bins;
-	thres;
-	thres2;
-	mat;
+	type: 0;
+	bins: null;
+	thres: null;
+	thres2: null;
+	mat: null;
+	ranges: null;
+}
+
+var Scalar = function(){
+	this.val = new Array(0, 0, 0, 255);
 }
 
 var Point = function(){
@@ -22,12 +27,6 @@ var Point = function(){
 var Size = function(){
 	width: 0;
 	height: 0;
-}
-var Scalar = function(){
-	r: 0;
-	g: 0;
-	b: 0;
-	a: 255;
 }
 
 var CV_HIST = {
@@ -106,28 +105,273 @@ var ERROR = {
 	APERTURE_SIZE : "aperture_sizeは1, 3, 5または7 のいずれかにしてください",
 }
 
+//CvHistogram型のインスタンスを返す
+//入力
+//dims 整数　ヒストグラムの次元数を表す
+//sizes 整数の配列　要素数=dimsでなければならない　ヒストグラムのビン数
+//type ヒストグラムの種類　CV_HISTの値のどちらかを代入
+//ranges 整数の２次元配列 ヒストグラムとしてカウントする値域 [[0, 256]]とすれば0~255の画素値をカウントする
+//uniform 整数 一様性に関するフラグ．非0の場合，ヒストグラムは等間隔のビンを持つ
+//出力
+//CvHistogramのインスタンス
+//説明
+//ヒストグラムのビン幅はsizesとrangesで決まる
 function cvCreateHist(dims, sizes, type, ranges, uniform){
-	var hist = new CvHistgram();
+	var hist = new CvHistogram();
 	try{
 		if(cvUndefinedOrNull(sizes.length) || cvUndefinedOrNull(ranges.length))
 			throw "sizes or ranges" + ERROR.IS_UNDEFINED_OR_NULL;
 		if(dims != sizes.length)
 			throw "dims と sizes" + ERROR.DIFFERENT_LENGTH;
 		if(cvUndefinedOrNull(uniform)) uniform = 1;
+		if(type != CV_HIST.ARRAY) throw "type は現在CV_HIST.ARRAYしかサポートされていません";
+		if(dims != 1) throw "dims は現在1しかサポートされていません";
+		if(uniform == 0) throw "uniform は現在0はサポートされていません";
 		
 		switch(type){
-			case CV_HIST.ARRAY:
-			break;
-			case CV_HIST.SPARSE:
-			break;
-			default:
-				throw "type " + ERROR.SWITCH_VALUE;
-			break;
+		case CV_HIST.ARRAY:
+			hist.ranges = ranges;
+			hist.type = type;
+			hist.bins = new Array(new Array(sizes[0]));
+			for(i = 0 ; i < hist.bins[0].length ; hist.bins[0][i++] = 0);
+			hist.thres = null;
+			hist.thres2 = null;
+			hist.mat = null;
+		break;
+		case CV_HIST.SPARSE:
+		break;
+		default:
+			throw "type " + ERROR.SWITCH_VALUE;
+		break;
 		}
 	}
 	catch(ex){
-		alert("cvLabeling : " + ex);
+		alert("cvCreateHist : " + ex);
 	}
+	
+	return hist;
+}
+
+//ヒストグラムを計算する
+//
+//入力
+//src IplImage型 ヒストグラムを調べる対象
+//hist CvHistogram型 結果が代入される
+//accumulate 整数 計算フラグで0でないならヒストグラムの値が追加されていく 0でビンが0になる
+//mask IplImage型 0か255のマスク画像
+//出力
+//なし 第２引数のhistに結果が代入される 
+function cvCalcHist(src, hist, accumulate, mask){
+	try{
+		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(hist))
+			throw "src or hist" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(cvUndefinedOrNull(accumulate)) accumulate = 0;
+		if(cvUndefinedOrNull(mask)) mask = 0;
+		if(mask != 0) throw "mask は現在サポートされていません";
+
+		for(k = 0 ; k < hist.ranges.length ; k++){
+			if(accumulate == 0){
+				for(i = 0; i < hist.bins[k].length; i++) hist.bins[k][i] = 0;
+			}
+			
+			var binWidth = (hist.ranges[k][1] - hist.ranges[k][0])/hist.bins[k].length;
+			for(i = 0 ; i < src.height ; i++){
+				for(j = 0 ; j < src.width ; j++){
+					var v = src.RGBA[(j + i * src.width) * CHANNELS + k] ;
+					if(hist.ranges[k][0] <= v && hist.ranges[k][1] > v){
+						v = Math.floor((v - hist.ranges[k][0])/binWidth);
+						if(v < hist.bins[k].length) hist.bins[k][v]++;
+					}
+				}
+			}
+		}
+	}
+	catch(ex){
+		alert("cvCalcHist : " + ex);
+	}
+}
+
+//最大値と最小値とその座標を求める
+//入力
+//src IplImage型 計算対象となる画像
+//min_val 数値型の配列 要素数4 RGB表色系ならばr,g,b,aの最小値が入る 
+//max_val 数値型の配列 要素数4 RGB表色系ならばr,g,b,aの最大値が入る 
+//min_locs Point型の配列 要素数4 RGB表色系ならばr,g,b,aの最小値のピクセルの座標が入る
+//max_locs Point型の配列 要素数4 RGB表色系ならばr,g,b,aの最大値のピクセルの座標が入る
+//mask IplImage型 0か255のマスク画像
+//出力
+//なし
+function cvMinMaxLoc(src, min_val, max_val, min_locs, max_locs, mask){
+	
+	try{
+		if(cvUndefinedOrNull(src) || 
+			cvUndefinedOrNull(min_val) || cvUndefinedOrNull(max_val) ||
+			cvUndefinedOrNull(min_locs) || cvUndefinedOrNull(max_locs))
+				throw "src or min_val or max_val or min_locs or max_locs " + ERROR.IS_UNDEFINED_OR_NULL;
+		for(i = 0 ; i < min_locs.length ; i++)
+			if(cvUndefinedOrNull(min_locs[i])) throw "min_locs[" + i + "]" + ERROR.IS_UNDEFINED_OR_NULL;
+		for(i = 0 ; i < max_locs.length ; i++)
+			if(cvUndefinedOrNull(max_locs[i])) throw "max_locs[" + i + "]" + ERROR.IS_UNDEFINED_OR_NULL;
+			
+		if(cvUndefinedOrNull(mask)) mask = 0;
+		if(mask != 0) throw "mask は現在サポートされていません";
+		
+		for(c = 0 ; c < CHANNELS ; c++){
+			min_val[c] = src.RGBA[c];
+			max_val[c] = src.RGBA[c];
+			min_locs[c].x = 0 ;
+			min_locs[c].y = 0;
+			max_locs[c].x = 0 ;
+			max_locs[c].y = 0;
+			for(i = 0 ; i < src.height ; i++){
+				for(j = 0 ; j < src.width ; j++){
+					if(src.RGBA[c + (j + i * src.width) * CHANNELS] < min_val[c]){
+						min_val[c] = src.RGBA[c + (j + i * src.width) * CHANNELS];
+						min_locs[c].x = j;
+						min_locs[c].y = i;
+					}
+					if(src.RGBA[c + (j + i * src.width) * CHANNELS] > max_val[c]){
+						max_val[c] = src.RGBA[c + (j + i * src.width) * CHANNELS];
+						max_locs[c].x = j;
+						max_locs[c].y = i;
+					}
+				}
+			}
+		}
+	}
+	catch(ex){
+		alert("cvMinMaxLoc : " + ex);
+	}
+}
+
+//画像のゼロでない画素数を数える
+//入力
+//src IplImage型 計算対象となる画像
+//出力
+//Scalar型 RGB表色系ならr,g,b,aの結果が代入されている
+function cvCountNonZero(src){
+	var rtn = null;	
+	try{
+		if(cvUndefinedOrNull(src)) throw "src" + ERROR.IS_UNDEFINED_OR_NULL;
+		
+		rtn = new Scalar();
+		for(k = 0 ; k < rtn.length ; rtn.val[k++] = 0);
+		
+		for(i = 0 ; i < src.height ; i++){
+			for(j = 0 ; j < src.width ; j++){
+				for(c = 0 ; c < CHANNELS ; c++){
+					if(src.RGBA[c + (j + i * src.width) * CHANNELS] != 0)
+						rtn.val[c]++;
+				}
+			}
+		}
+	}
+	catch(ex){
+		alert("cvCountNonZero : " + ex);
+	}
+	
+	return rtn;
+}
+
+//画像の画素の合計値
+//入力
+//src IplImage型 計算対象となる画像
+//出力
+//Scalar型 RGB表色系ならr,g,b,aの結果が代入されている
+function cvSum(src){
+	var rtn = null;
+	try{
+		if(cvUndefinedOrNull(src)) throw "src" + ERROR.IS_UNDEFINED_OR_NULL;
+		
+		rtn = new Scalar();
+		
+		for(k = 0 ; k < rtn.length ; rtn[k++] = 0);
+		
+		for(i = 0 ; i < src.height ; i++){
+			for(j = 0 ; j < src.width ; j++){
+				for(c = 0 ; c < CHANNELS ; c++)
+					rtn[c] = src.RGBA[c + (j + i * src.width) * CHANNELS];
+			}
+		}
+	}
+	catch(ex){
+		alert("cvSum : " + ex);
+	}
+	
+	return rtn;
+}
+
+//画像の画素の平均値
+//入力
+//src IplImage型 計算対象となる画像
+//出力
+//Scalar型 RGB表色系ならr,g,b,aの結果が代入されている
+function cvAvg(src, mask){
+	var rtn = null;
+	try{
+		if(cvUndefinedOrNull(src)) throw "src" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(cvUndefinedOrNull(mask)) mask = 0;
+		if(mask != 0) throw "mask は現在サポートされていません";
+		
+		rtn = cvSum(src);
+		var len = src.width * src.height;
+		
+		for(k = 0 ; k < rtn.length ; rtn[k++] /= len);
+		
+	}
+	catch(ex){
+		alert("cvAvg : " + ex);
+	}
+	
+	return rtn;
+}
+
+//画像の画素の平均値と分散を求める
+//入力
+//src IplImage型 計算対象となる画像
+//mean Scalar型 平均値が入る RGB表色系ならr,g,b,aの結果が代入されている
+//vrn Scalar型 分散が入る RGB表色系ならr,g,b,aの結果が代入されている
+//mask IplImage型 0か255のマスク画像
+//出力
+//なし
+function cvAvgVrn(src, mean, vrn, mask){
+	try{
+		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(mean) || cvUndefinedOrNull(std))
+			throw "src or mean or std" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(cvUndefinedOrNull(mask)) mask = 0;
+		if(mask != 0) throw "mask は現在サポートされていません";
+		
+		var avg = cvAvg(src);
+		for(c = 0 ; c < CHANNELS ; c++){
+			mean[c] = avg[c];
+			vrn[c] = 0;
+			var len = src.width * src.height;
+			for(i = 0 ; i < src.height ; i++){
+				for(j = 0 ; j < src.width ; j++){				
+					var a = src.RGBA[c + (j + i * src.width) * CHANNELS] - mean[c];
+					vrn[c] += a * a;
+				}
+			}
+			vrn[c] /= len;
+		}
+	}
+	catch(ex){
+		alert("cvAvgVrn : " + ex);
+	}
+}
+
+//画像の画素の平均値と標準偏差を求める
+//入力
+//src IplImage型 計算対象となる画像
+//mean Scalar型 平均値が入る RGB表色系ならr,g,b,aの結果が代入されている
+//vrn Scalar型 標準偏差が入る RGB表色系ならr,g,b,aの結果が代入されている
+//mask IplImage型 0か255のマスク画像
+//出力
+//なし
+function cvAvgSdv(src, mean, std, mask){
+	cvAvgVrn(src, mean, std, mask);
+	for(k = 0 ; k < std.length ; k++)
+		std[k] = Math.sqrt(std[k]);
 }
 
 function cvLabeling(src){
@@ -239,9 +483,9 @@ function cvCircle(img, center, radius, color, thickness){
 				for(y = yS ; y <= yE ; y++){
 					var r = (x - center.x) * (x - center.x) + (y - center.y) * (y - center.y);
 					if(r >= radiusMin*radiusMin && r <= radiusMax*radiusMax){
-						img.RGBA[(x + y * img.width) * CHANNELS] = color.r;
-						img.RGBA[1 + (x + y * img.width) * CHANNELS] = color.g;
-						img.RGBA[2 + (x + y * img.width) * CHANNELS] = color.b;
+						img.RGBA[(x + y * img.width) * CHANNELS] = color.val[0];
+ 						img.RGBA[1 + (x + y * img.width) * CHANNELS] = color.val[1];
+ 						img.RGBA[2 + (x + y * img.width) * CHANNELS] = color.val[2];
 					}
 				}
 			}
@@ -265,9 +509,9 @@ function cvCircle(img, center, radius, color, thickness){
 				for(y = yS ; y <= yE ; y++){
 					var r = (x - center.x) * (x - center.x) + (y - center.y) * (y - center.y);
 					if(r <= radius*radius){
-						img.RGBA[(x + y * img.width) * CHANNELS] = color.r;
-						img.RGBA[1 + (x + y * img.width) * CHANNELS] = color.g;
-						img.RGBA[2 + (x + y * img.width) * CHANNELS] = color.b;
+						img.RGBA[(x + y * img.width) * CHANNELS] = color.val[0];
+ 						img.RGBA[1 + (x + y * img.width) * CHANNELS] = color.val[1];
+ 						img.RGBA[2 + (x + y * img.width) * CHANNELS] = color.val[2];
 					}
 				}
 			}
@@ -303,9 +547,9 @@ function cvRectangle(img, pt1, pt2, color, thickness){
 		if(thickness <= 0){
 			for(y = yS ; y <= yE ; y++){
 				for(x = xS ; x <= xE ; x++){
-					img.RGBA[(x + y * img.width) * CHANNELS] = color.r;
-					img.RGBA[1 + (x + y * img.width) * CHANNELS] = color.g;
-					img.RGBA[2 + (x + y * img.width) * CHANNELS] = color.b;
+					img.RGBA[(x + y * img.width) * CHANNELS] = color.val[0];
+ 					img.RGBA[1 + (x + y * img.width) * CHANNELS] = color.val[1];
+ 					img.RGBA[2 + (x + y * img.width) * CHANNELS] = color.val[2];
 				}
 			}
 		}
@@ -362,10 +606,9 @@ function cvLine(img, pt1, pt2, color, thickness, isSegment){
 						var yy = y + ty;
 						if(xx >= 0 && xx <= img.width - 1 && yy >= 0 && yy <= img.height - 1 &&
 							tx * tx + ty * ty <= tE * tE){
-							img.RGBA[(xx + yy * img.width) * CHANNELS] = color.r;
-							img.RGBA[1 + (xx + yy * img.width) * CHANNELS] = color.g;
-							img.RGBA[2 + (xx + yy * img.width) * CHANNELS] = color.b;
-						}
+							img.RGBA[(xx + yy * img.width) * CHANNELS] = color.val[0];
+ 							img.RGBA[1 + (xx + yy * img.width) * CHANNELS] = color.val[1];
+ 							img.RGBA[2 + (xx + yy * img.width) * CHANNELS] = color.val[2];						}
 					}
 				}
 			}
@@ -397,10 +640,9 @@ function cvLine(img, pt1, pt2, color, thickness, isSegment){
 							var yy = y + ty;
 							if(xx >= 0 && xx <= img.width - 1 && yy >= 0 && yy <= img.height - 1 &&
 								tx * tx + ty * ty <= tE * tE){
-								
-								img.RGBA[(xx + yy * img.width) * CHANNELS] = color.r;
-								img.RGBA[1 + (xx + yy * img.width) * CHANNELS] = color.g;
-								img.RGBA[2 + (xx + yy * img.width) * CHANNELS] = color.b;
+ 								img.RGBA[(xx + yy * img.width) * CHANNELS] = color.val[0];
+ 								img.RGBA[1 + (xx + yy * img.width) * CHANNELS] = color.val[1];
+ 								img.RGBA[2 + (xx + yy * img.width) * CHANNELS] = color.val[2];
 							}
 						}
 					}
@@ -429,18 +671,14 @@ function cvLine(img, pt1, pt2, color, thickness, isSegment){
 							var yy = y + ty;
 							if(xx >= 0 && xx <= img.width - 1 && yy >= 0 && yy <= img.height - 1 &&
 								tx * tx + ty * ty <= tE * tE){
-								
-								img.RGBA[(xx + yy * img.width) * CHANNELS] = color.r;
-								img.RGBA[1 + (xx + yy * img.width) * CHANNELS] = color.g;
-								img.RGBA[2 + (xx + yy * img.width) * CHANNELS] = color.b;
+								img.RGBA[(xx + yy * img.width) * CHANNELS] = color.val[0];
+ 								img.RGBA[1 + (xx + yy * img.width) * CHANNELS] = color.val[1];
+ 								img.RGBA[2 + (xx + yy * img.width) * CHANNELS] = color.val[2];
 							}
 						}
 					}
 				}
 			}
-			
-			
-			
 		}
 	}
 	catch(ex){
@@ -666,14 +904,17 @@ function cvThreshold(src, dst, threshold, max_value, threshold_type){
 			}
 			break;
 		case CV_THRESHOLD_TYPE.THRESH_OTSU:
-			var values = new Array(src.width * src.height);
-			var num = 0;
-			for(i = 0 ; i < src.height; i++){
-				for(j = 0 ; j < src.width ; j++){
-					values[num++] = src.RGBA[(j + i * dst.width) * CHANNELS];
-				}
-			}
-			var hist = Histgram(values, 255);
+
+ 			var histColor = cvCreateHist(1, [256], CV_HIST.ARRAY, [[0, 256]]);
+ 			cvCalcHist(src, histColor);
+ 			
+ 			var hist = histColor.bins[0];
+ 
+ 			function Sum(values){
+ 				var rtn = 0;
+ 				for(i = 0 ; i < values.length ; rtn += values[i++]);
+ 				return rtn;
+ 			}
 
 			var varDst = 0;
 			var sTh = 1;
@@ -1609,7 +1850,6 @@ function cvDilateOrErode(src, dst, element, iterations, isDilate){
 	}
 } 
 
-
 function cvSetRGBA(src, r, g, b, a){
 	try{
 		if(cvUndefinedOrNull(r)) r = 255;
@@ -1618,25 +1858,25 @@ function cvSetRGBA(src, r, g, b, a){
 		if(cvUndefinedOrNull(a)) a = 255;
 
 		var scalar = new Scalar();
-		scalar.r = r;
-		scalar.g = g;
-		scalar.b = b;
-		scalar.a = a;
+ 		scalar.val[0] = r;
+ 		scalar.val[1] = g;
+ 		scalar.val[2] = b;
+ 		scalar.val[3] = a;
 		
 		cvSet(src, scalar);
 	}
 	catch(ex){
-		alert("cvSet : " + ex);
+		alert("cvSetRGBA : " + ex);
 	}
 }
 function cvSet(src, value){
 	try{
 		for(i = 0 ; i < src.height ; i++){
 			for(j = 0 ; j < src.width ; j++){
-				src.RGBA[(j + i * src.width) * CHANNELS] = value.r;
-				src.RGBA[1 + (j + i * src.width) * CHANNELS] = value.g;
-				src.RGBA[2 + (j + i * src.width) * CHANNELS] = value.b;
-				src.RGBA[3 + (j + i * src.width) * CHANNELS] = value.a;
+ 				src.RGBA[(j + i * src.width) * CHANNELS] = value.val[0];
+ 				src.RGBA[1 + (j + i * src.width) * CHANNELS] = value.val[1];
+ 				src.RGBA[2 + (j + i * src.width) * CHANNELS] = value.val[2];
+ 				src.RGBA[3 + (j + i * src.width) * CHANNELS] = value.val[3];
 			}
 		}
 	}
