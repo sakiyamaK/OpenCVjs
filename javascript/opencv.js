@@ -1,3 +1,4 @@
+//データ型
 var IplImage = function(){
 	width: 0;
 	height: 0;
@@ -29,11 +30,14 @@ var Size = function(){
 	height: 0;
 }
 
+//定数
+//ヒストグラムの種類
 var CV_HIST = {
 	ARRAY: 0,
 	SPARSE: 1
 }
 
+//表色系変換の種類
 var CV_CODE = {
 	RGB2GRAY: 0,
 	RGB2HSV: 1,
@@ -42,6 +46,7 @@ var CV_CODE = {
 	HLS2RGB: 4
 }
 
+//ブレンドの種類
 var CV_BLEND_MODE = {
 	OVER_LAY: 0, //オーバーレイ
 	SCREEN: 1, //スクリーン
@@ -58,6 +63,7 @@ var CV_BLEND_MODE = {
 	MUL: 12 //掛け算
 }
 
+//スムージングの種類
 var CV_SMOOTH_TYPE = {
 	BLUR_NO_SCALE: 0,
 	BLUR: 1,
@@ -66,6 +72,7 @@ var CV_SMOOTH_TYPE = {
 	BILATERAL: 4
 }
 
+//閾値処理の種類
 var CV_THRESHOLD_TYPE = {
 	THRESH_BINARY: 0,
 	THRESH_BINARY_INV: 1,
@@ -75,6 +82,7 @@ var CV_THRESHOLD_TYPE = {
 	THRESH_OTSU: 5
 }
 
+//モルフォロジー変換の種類
 var CV_MOP = {
 	OPEN : 0,
 	CLOSE : 1,
@@ -83,6 +91,7 @@ var CV_MOP = {
 	BLACKHAT : 4
 }
 
+//四則演算の種類
 var FOUR_ARITHMETIC = {
 	ADD : 0,
 	SUB : 1,
@@ -90,8 +99,10 @@ var FOUR_ARITHMETIC = {
 	DIV : 3
 }
 
+//チャンネル数
 var CHANNELS = 4;
 
+//エラー文
 var ERROR = {
 	IS_UNDEFINED_OR_NULL : "がundefinedかnullです",
 	DIFFERENT_SIZE : "IplImageサイズは全て同じにして下さい",
@@ -111,7 +122,7 @@ var ERROR = {
 //sizes 整数の配列　要素数=dimsでなければならない　ヒストグラムのビン数
 //type ヒストグラムの種類　CV_HISTの値のどちらかを代入
 //ranges 整数の２次元配列 ヒストグラムとしてカウントする値域 [[0, 256]]とすれば0~255の画素値をカウントする
-//uniform 整数 一様性に関するフラグ．非0の場合，ヒストグラムは等間隔のビンを持つ
+//uniform 整数 一様性に関するフラグ．非0の場合，ヒストグラムは等間隔のビンを持つ  省略可
 //出力
 //CvHistogramのインスタンス
 //説明
@@ -153,12 +164,11 @@ function cvCreateHist(dims, sizes, type, ranges, uniform){
 }
 
 //ヒストグラムを計算する
-//
 //入力
 //src IplImage型 ヒストグラムを調べる対象
 //hist CvHistogram型 結果が代入される
 //accumulate 整数 計算フラグで0でないならヒストグラムの値が追加されていく 0でビンが0になる
-//mask IplImage型 0か255のマスク画像
+//mask IplImage型 0か255のマスク画像 省略可
 //出力
 //なし 第２引数のhistに結果が代入される 
 function cvCalcHist(src, hist, accumulate, mask){
@@ -198,7 +208,7 @@ function cvCalcHist(src, hist, accumulate, mask){
 //max_val 数値型の配列 要素数4 RGB表色系ならばr,g,b,aの最大値が入る 
 //min_locs Point型の配列 要素数4 RGB表色系ならばr,g,b,aの最小値のピクセルの座標が入る
 //max_locs Point型の配列 要素数4 RGB表色系ならばr,g,b,aの最大値のピクセルの座標が入る
-//mask IplImage型 0か255のマスク画像
+//mask IplImage型 0か255のマスク画像 省略可
 //出力
 //なし
 function cvMinMaxLoc(src, min_val, max_val, min_locs, max_locs, mask){
@@ -304,6 +314,7 @@ function cvSum(src){
 //画像の画素の平均値
 //入力
 //src IplImage型 計算対象となる画像
+//mask IplImage型 0か255のマスク画像 省略可
 //出力
 //Scalar型 RGB表色系ならr,g,b,aの結果が代入されている
 function cvAvg(src, mask){
@@ -331,7 +342,7 @@ function cvAvg(src, mask){
 //src IplImage型 計算対象となる画像
 //mean Scalar型 平均値が入る RGB表色系ならr,g,b,aの結果が代入されている
 //vrn Scalar型 分散が入る RGB表色系ならr,g,b,aの結果が代入されている
-//mask IplImage型 0か255のマスク画像
+//mask IplImage型 0か255のマスク画像 省略可
 //出力
 //なし
 function cvAvgVrn(src, mean, vrn, mask){
@@ -365,7 +376,7 @@ function cvAvgVrn(src, mean, vrn, mask){
 //src IplImage型 計算対象となる画像
 //mean Scalar型 平均値が入る RGB表色系ならr,g,b,aの結果が代入されている
 //vrn Scalar型 標準偏差が入る RGB表色系ならr,g,b,aの結果が代入されている
-//mask IplImage型 0か255のマスク画像
+//mask IplImage型 0か255のマスク画像 省略可
 //出力
 //なし
 function cvAvgSdv(src, mean, std, mask){
@@ -374,6 +385,13 @@ function cvAvgSdv(src, mean, std, mask){
 		std[k] = Math.sqrt(std[k]);
 }
 
+//画像のラベリングをおこなう
+//入力
+//src IplImage型 GRAY表色系の2値画像推奨(RGB表色系ならRの数値だけで処理する 画素は0か255にしておく)
+//出力
+//IplImage型
+//GRAY表色系の画像
+//各画素に0からnまでのラベルが代入されている
 function cvLabeling(src){
 	var dst = null;
 	try{
@@ -452,6 +470,15 @@ function cvLabeling(src){
 	return dst;
 }
 
+//円を描く
+//入力
+//src IplImage型 図が描かれる画像
+//center Point型 円の中心座標
+//radius int型 半径
+//color Scalar型 円の色
+//thickness 奇数 円周の太さ 0以上の値 0の場合、円は塗り潰される 省略可
+//出力
+//なし
 function cvCircle(img, center, radius, color, thickness){
 	try{
 		if(cvUndefinedOrNull(img) || cvUndefinedOrNull(center) 
@@ -522,6 +549,15 @@ function cvCircle(img, center, radius, color, thickness){
 	}
 }
 
+//矩形を描く
+//入力
+//src IplImage型 図が描かれる画像
+//pt1 Point型 矩形の左上の座標
+//pt2 Point型 矩形の右下の座標
+//color Scalar型 矩形の色
+//thickness 奇数 外周の太さ 0以上の値 0の場合、矩形は塗り潰される 省略可
+//出力
+//なし
 function cvRectangle(img, pt1, pt2, color, thickness){
 	try{
 		if(cvUndefinedOrNull(img) || cvUndefinedOrNull(pt1) 
@@ -569,6 +605,16 @@ function cvRectangle(img, pt1, pt2, color, thickness){
 		alert("cvRectangle : " + ex);
 	}
 }
+
+//線分または直線を描く
+//src IplImage型 図が描かれる画像
+//pt1 Point型 直線の左上の座標
+//pt2 Point型 直線の右下の座標
+//color Scalar型 矩形の色
+//thickness 奇数 外周の太さ 1以上の値 省略可
+//isSegment true/false trueなら線分 falseなら直線 省略可
+//出力
+//なし
 function cvLine(img, pt1, pt2, color, thickness, isSegment){
 	try{
 		if(cvUndefinedOrNull(img) || cvUndefinedOrNull(pt1) 
@@ -686,8 +732,15 @@ function cvLine(img, pt1, pt2, color, thickness, isSegment){
 	}
 }
 
-
-
+//モルフォロジー変換
+//入力
+//src IplImage型 変換する前の画像
+//dst IplImage型 変換した後の画像
+//element Size型 変換する際に確認する中心画素からの範囲 width,heightともに 3以上の奇数
+//operation CV_MOP配列 モルフォロジーの種類
+//iterations 整数 変換する回数
+//出力
+//なし
 function cvMorphologyEx(src, dst, element, operation, iterations){
 	try{
 		if(cvUndefinedOrNull(operation)) throw "operation" + ERROR.IS_UNDEFINED_OR_NULL;
@@ -728,6 +781,14 @@ function cvMorphologyEx(src, dst, element, operation, iterations){
 	}
 }
 
+//画像の収縮
+//入力
+//src IplImage型 変換する前の画像
+//dst IplImage型 変換した後の画像
+//element Size型 変換する際に確認する中心画素からの範囲 width,heightともに 3以上の奇数
+//iterations 整数 変換する回数
+//出力
+//なし
 function cvErode(src, dst, element, iterations){
 	try{
 		cvDilateOrErode(src, dst, element, iterations, true);
@@ -736,6 +797,15 @@ function cvErode(src, dst, element, iterations){
 		alert("cvErode : " + ex);
 	}
 }
+
+//画像の膨張
+//入力
+//src IplImage型 変換する前の画像
+//dst IplImage型 変換した後の画像
+//element Size型 変換する際に確認する中心画素からの範囲 width,heightともに 3以上の奇数
+//iterations 整数 変換する回数
+//出力
+//なし
 function cvDilate(src, dst, element, iterations){
 	try{
 		cvDilateOrErode(src, dst, element, iterations, false);
@@ -745,6 +815,14 @@ function cvDilate(src, dst, element, iterations){
 	}
 }
 
+//積分画像を生成
+//入力
+//src IplImage型 原画像
+//dst IplImage型 生成される積分画像
+//squm IplImage型 各ピクセルを2乗して積分画像
+//tilted_sum IplImage型 45度回転させた積分画像
+//出力
+//なし
 function cvIntegral(src, dst, sqsum, tilted_sum){
 	try{
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL;
@@ -808,7 +886,11 @@ function cvIntegral(src, dst, sqsum, tilted_sum){
 	}
 }
 
-
+//画像の複製
+//入力
+//src IplImage型 複製される画像
+//出力
+//IplImage型 複製された画像
 function cvCloneImage(src){
 	var dst = null;
 
@@ -823,8 +905,12 @@ function cvCloneImage(src){
 	return dst;
 }
 
-
-
+//画像の画素のコピー
+//入力
+//src IplImage型 画素を複製する画像
+//dst IplImage型 複製された画素の画像
+//出力
+//なし
 function cvCopy(src, dst){
 	try{
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL;
@@ -843,6 +929,21 @@ function cvCopy(src, dst){
 	}
 }
 
+//閾値処理
+//入力
+//src IplImage型 GRAY表色系を推奨(RGB表色系ならRの数値だけで処理する)
+//dst IplImage型 閾値処理された画像が代入される
+//threshold 整数 解説参照
+//max_value 整数 解説参照
+//threshold_type CV_THRESHOLD_TYPE 閾値処理の種類
+//解説
+//CV_THRESHOLD_TYPE.THRESH_BINARYなら srcの画素 > thresholdでmax_value、違えば0をdstの画素に代入
+//CV_THRESHOLD_TYPE.THRESH_BINARY_INVなら srcの画素 > thresholdで0、違えばmax_valueをdstの画素に代入
+//CV_THRESHOLD_TYPE.THRESH_TRUNCなら srcの画素 > thresholdでthresholdをdstの画素に代入
+//CV_THRESHOLD_TYPE.THRESH_TRUNC_TOZEROなら srcの画素 > thresholdでthreshold、違えば0をdstの画素に代入
+//CV_THRESHOLD_TYPE.THRESH_TRUNC_TOZERO_INVなら srcの画素 > thresholdで0、違えばthresholdをdstの画素に代入
+//出力
+//なし
 function cvThreshold(src, dst, threshold, max_value, threshold_type){
 	try{
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL; 
@@ -951,6 +1052,12 @@ function cvThreshold(src, dst, threshold, max_value, threshold_type){
 	}
 }
 
+//画像サイズの変更 現在は縮小にしか対応していない
+//入力
+//src IplImage型 原画像
+//dst IplImage型 サイズ変換後の画像 この画像サイズに変換される
+//出力
+//なし
 function cvResize(src, dst){
 	try{
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL; 
@@ -975,6 +1082,14 @@ function cvResize(src, dst){
 	}
 }
 
+//ルックアップテーブルに従って画素を変換
+//入力
+//src IplImage型 原画像
+//dst IplImage型 画素を変換された後の画像
+//lut 整数の配列 長さが256の整数配列 0～255の値が1つずつ代入されている
+//color 整数 画像のどの色を変換するか決める値 0～2
+//出力
+//なし
 function cvLUT(src, dst, lut, color){
 	try{
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL; 
@@ -991,6 +1106,18 @@ function cvLUT(src, dst, lut, color){
 	}
 }
 
+//トーンカーブに従って画素を変換
+//左下、右上の2点を指定しその2点間を結ぶ直線をトーンカーブの曲線とみなして変換する
+//入力
+//src IplImage型 原画像
+//dst IplImage型 画素を変換された後の画像
+//underX 整数 左下の点のx座標
+//underY 整数 左下の点のy座標
+//overX 整数 右上の点のx座標
+//overY 整数 右上の点のy座標
+//color 整数 画像のどの色を変換するか決める値 0～2
+//出力
+//なし
 function cvToneCurve(src, dst, underX, underY, overX, overY, color){
 	try{
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL;
@@ -1012,6 +1139,14 @@ function cvToneCurve(src, dst, underX, underY, overX, overY, color){
 	}
 }
 
+//２つの画像を混ぜる
+//入力
+//bg IplImage型 後面の画像
+//fg IplImage型 前面の画像
+//dst IplImage型 混ぜた後の画像
+//blend_mode CV_BLEND_MODE 混ぜ方の種類
+//出力
+//なし
 function cvBlendImage(bg, fg, dst, blend_mode){
 	try{
 		if(cvUndefinedOrNull(bg) || cvUndefinedOrNull(fg)  || cvUndefinedOrNull(dst))
@@ -1113,6 +1248,34 @@ function cvBlendImage(bg, fg, dst, blend_mode){
 	}
 }
 
+//スムージング
+//入力
+//src IplImage型 原画像
+//dst IplImage型 スムージング後の画像
+//smooth_type CV_SMOOTH スムージングの種類
+//param1 解説参照
+//param2 解説参照
+//param3 解説参照
+//param4 解説参照
+//出力
+//なし
+//解説
+//smooth_typeによってparam1～param4の意味が変わる
+//CV_SMOOTH_TYPE.BLUR_NO_SCALE、CV_SMOOTH_TYPE.BLUR、CV_SMOOTH_TYPE.MEDIANの場合
+//param1 奇数 スムージング窓の横幅 1以上 省略可
+//param2 奇数 スムージング窓の縦幅 1以上 省略可
+//param3 未使用
+//param4 未使用
+//CV_SMOOTH_TYPE.GAUSSIANの場合
+//param1 奇数 スムージング窓の横幅 1以上 省略可
+//param2 奇数 スムージング窓の縦幅 1以上 省略可
+//param3 整数 ガウス関数の横のsigmaの値 0以上 省略可
+//param4 整数 ガウス関数の縦のsigmaの値 0以上 省略可
+//CV_SMOOTH_TYPE.BILATERALの場合
+//param1 奇数 色のsigmaの値 省略可
+//param2 奇数 距離のsigmaの値 省略可
+//param3 未使用
+//param4 未使用
 function cvSmooth(src, dst, smooth_type, param1, param2, param3, param4){
 	try{
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL; 
@@ -1336,6 +1499,15 @@ function cvSmooth(src, dst, smooth_type, param1, param2, param3, param4){
 	}
 }
 
+//ソーベルフィルタ
+//入力
+//src
+//dst
+//xorder
+//yorder
+//aperture_size
+//出力
+//なし
 function cvSobel(src, dst, xorder, yorder, aperture_size){
 	try{
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL;
@@ -1407,6 +1579,15 @@ function cvSobel(src, dst, xorder, yorder, aperture_size){
 	}
 }
 
+//ケニーフィルタ
+//入力
+//src
+//dst
+//threshold1
+//threshodl2
+//aperture_size
+//出力
+//なし
 function cvCanny(src, dst, threshold1, threshold2, aperture_size){
 	try{
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL; 
@@ -1521,6 +1702,12 @@ function cvCanny(src, dst, threshold1, threshold2, aperture_size){
 	}
 }
 
+//表色系変換
+//入力
+//src IplImage型
+//dst IplImage型
+//code 
+//出力
 function cvCvtColor(src, dst, code){
 	try{
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL; 
@@ -1702,6 +1889,15 @@ function cvCvtColor(src, dst, code){
 	}
 }
 
+//画像の四則演算
+//全画素に対して四則演算が行われる
+//入力
+//src1
+//src2
+//dst
+//four_arithmetic
+//出力
+//なし
 function cvFourArithmeticOperations(src1, src2, dst, four_arithmetic){
 	try{
 		if(cvUndefinedOrNull(src1) || cvUndefinedOrNull(src2) || cvUndefinedOrNull(dst)) throw "src1 or src2 or dst" + ERROR.IS_UNDEFINED_OR_NULL;
@@ -1740,6 +1936,15 @@ function cvFourArithmeticOperations(src1, src2, dst, four_arithmetic){
 		throw ex;
 	}
 }
+
+//画像の加算
+//全画素に対して加算が行われる
+//入力
+//src1
+//src2
+//dst
+//出力
+//なし
 function cvAdd(src1, src2, dst){
 	try{
 		cvFourArithmeticOperations(src1, src2, dst, FOUR_ARITHMETIC.ADD);
@@ -1749,6 +1954,14 @@ function cvAdd(src1, src2, dst){
 	}
 }
 
+//画像の減算
+//全画素に対して減算が行われる
+//入力
+//src1
+//src2
+//dst
+//出力
+//なし
 function cvSub(src1, src2, dst){
 	try{
 		cvFourArithmeticOperations(src1, src2, dst, FOUR_ARITHMETIC.SUB);
@@ -1758,6 +1971,14 @@ function cvSub(src1, src2, dst){
 	}
 }
 
+//画像のかけ算
+//全画素に対してかけ算が行われる
+//入力
+//src1
+//src2
+//dst
+//出力
+//なし
 function cvMul(src1, src2, dst){
 	try{
 		cvFourArithmeticOperations(src1, src2, dst, FOUR_ARITHMETIC.MUL);
@@ -1767,6 +1988,14 @@ function cvMul(src1, src2, dst){
 	}
 }
 
+//画像の割り算
+//全画素に対して割り算が行われる
+//入力
+//src1
+//src2
+//dst
+//出力
+//なし
 function cvDiv(src1, src2, dst){
 	try{
 		cvFourArithmeticOperations(src1, src2, dst, FOUR_ARITHMETIC.DIV);
@@ -1776,6 +2005,12 @@ function cvDiv(src1, src2, dst){
 	}
 }
 
+//画素を絶対値にする
+//入力
+//src
+//dst
+//出力
+//なし
 function cvConvertScaleAbs(src, dst){
 	try{
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL;
@@ -1794,7 +2029,15 @@ function cvConvertScaleAbs(src, dst){
 	}
 }
 
-
+//膨張か縮小
+//入力
+//src
+//dst
+//element
+//iterations
+//isDilate
+//出力
+//なし
 function cvDilateOrErode(src, dst, element, iterations, isDilate){
 	try{
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst))
@@ -1850,6 +2093,15 @@ function cvDilateOrErode(src, dst, element, iterations, isDilate){
 	}
 } 
 
+//全座標に色を代入
+//入力
+//src
+//r
+//g
+//b
+//a
+//出力
+//なし
 function cvSetRGBA(src, r, g, b, a){
 	try{
 		if(cvUndefinedOrNull(r)) r = 255;
@@ -1869,14 +2121,21 @@ function cvSetRGBA(src, r, g, b, a){
 		alert("cvSetRGBA : " + ex);
 	}
 }
-function cvSet(src, value){
+
+//全座標に色を代入
+//入力
+//src
+//color
+//出力
+//なし
+function cvSet(src, color){
 	try{
 		for(i = 0 ; i < src.height ; i++){
 			for(j = 0 ; j < src.width ; j++){
- 				src.RGBA[(j + i * src.width) * CHANNELS] = value.val[0];
- 				src.RGBA[1 + (j + i * src.width) * CHANNELS] = value.val[1];
- 				src.RGBA[2 + (j + i * src.width) * CHANNELS] = value.val[2];
- 				src.RGBA[3 + (j + i * src.width) * CHANNELS] = value.val[3];
+ 				src.RGBA[(j + i * src.width) * CHANNELS] = color.val[0];
+ 				src.RGBA[1 + (j + i * src.width) * CHANNELS] = color.val[1];
+ 				src.RGBA[2 + (j + i * src.width) * CHANNELS] = color.val[2];
+ 				src.RGBA[3 + (j + i * src.width) * CHANNELS] = color.val[3];
 			}
 		}
 	}
@@ -1885,6 +2144,11 @@ function cvSet(src, value){
 	}
 }
 
+//全座標にゼロを代入
+//入力
+//src
+//出力
+//なし
 function cvZero(src){
 	try{
 		for(i = 0 ; i < src.height ; i++){
@@ -1899,15 +2163,35 @@ function cvZero(src){
 	}
 }
 
+//undefinedまたはnullチェック
+//入力
+//value
+//出力
+//true/false
 function cvUndefinedOrNull(value){
 	return (value === undefined || value === null) ? true : false;
 }
 
+//cvLoadImageを呼び出す前に必要な前処理
+//htmlのinputタグのonClickで呼び出すことを想定
+//入力
+//event
+//inputId
+//出力
+//なし
 function cvLoadImagePre(event, inputId){
 	var dialog = document.getElementById(inputId);
 	dialog.value = "";
 }
 
+//imgタグのsrcからiplImageに変換する
+//入力
+//src
+//imgId
+//iplImage
+//maxSize
+//出力
+//なし
 function cvLoadImageAtSrc(src, imgId, iplImage, maxSize){
 	try{
 		if(maxSize === undefined) maxSize = -1;
@@ -1938,7 +2222,15 @@ function cvLoadImageAtSrc(src, imgId, iplImage, maxSize){
 		alert("cvLoadImage : " + ex);
 	}
 }
-
+//imgタグからiplImageに変換する
+//htmlのinputタグのonchangeで呼び出すことを想定
+//入力
+//event
+//imgId
+//iplImage
+//maxSize
+//出力
+//なし
 function cvLoadImage(event, imgId, iplImage, maxSize){	
 	try{
 		var file = event.target.files[0];
@@ -1986,6 +2278,12 @@ function cvLoadImage(event, imgId, iplImage, maxSize){
 	}
 }
 
+//IplImage型を生成する
+//入力
+//width
+//height
+//出力
+//IplImage
 function cvCreateImage(width, height){
 	var dst = null;
 	try{
@@ -2013,6 +2311,12 @@ function cvCreateImage(width, height){
 	return dst;
 }
 
+//IplImage型をimgタグに出力する
+//入力
+//imgId
+//iplImage
+//出力
+//なし
 function cvShowImage(imgId, iplImage){
 	try{
 		cvRGBA2ImageData(iplImage);
@@ -2033,6 +2337,12 @@ function cvShowImage(imgId, iplImage){
 	}
 }
 
+//IplImage型のRGBAの値をimageDataへ転送
+//cvShowImageで呼び出されることを想定
+//入力
+//iplImage
+//出力
+//なし
 function cvRGBA2ImageData(iplImage){
 	try{
 		for(i = 0 ; i < iplImage.height ; i++){
@@ -2042,15 +2352,19 @@ function cvRGBA2ImageData(iplImage){
 						iplImage.RGBA[c + (j + i * iplImage.width) * CHANNELS];
 				}
 			}
-		}
-		
+		}	
 	}
 	catch(ex){
 		alert("RGBA2ImageData : " + ex);
 	}
 }
 
-
+//imgタグからcanvasへ転送
+//cvLoadImageで呼び出されることを想定
+//入力
+//image
+//出力
+//canvasタグ
 function cvGetCanvasAtImgElement(image){
 	var canvas;
 	try{
