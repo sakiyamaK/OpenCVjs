@@ -91,6 +91,15 @@ var CV_MOP = {
 	BLACKHAT : 4
 }
 
+//DFTの種類
+var CV_DXT = {
+	FORWARD: 0, //順変換 スケーリングなし
+	INVERSE: 1, //逆変換 スケーリングなし
+	FORWARD_SCALE: 2, //順変換 スケーリングあり
+	INVERSE_SCALE: 3, //逆変換 スケーリングあり
+}
+
+
 //四則演算の種類
 var FOUR_ARITHMETIC = {
 	ADD : 0,
@@ -114,6 +123,286 @@ var ERROR = {
 	NOT_GET_CONTEXT : "contextが読み込めません",
 	SWITCH_VALUE : "の値が正しくありません",
 	APERTURE_SIZE : "aperture_sizeは1, 3, 5または7 のいずれかにしてください",
+}
+
+//widthとheightを2のべき乗にする
+//入力
+//src IplImage型 原画像
+//出力
+//IplImage型 2のべき乗になった画像 値は鏡面置換
+function cvPowerOfTwo(src){
+	var dst = null;
+	try{
+		if(cvUndefinedOrNull(src)) throw "src" + ERROR.IS_UNDEFINED_OR_NULL;
+
+		var newW = src.width;
+		var newH = src.height;
+		//横方向
+		if ((src.width & (src.width - 1)) != 0){
+			var newW = 1;
+			while (newW < src.width) newW *= 2;
+		}
+		//縦方向
+		if ((src.height & (src.height - 1)) != 0){
+			newH = 1;
+			while (newH < src.height) newH *= 2;
+		}
+		
+		dst = cvCreateImage(newW, newH);
+
+		for(c = 0 ; c < CHANNELS; c++){
+			for(i = 0 ; i < dst.height ; i++){
+				var vi = i;
+				if(vi > src.height - 1) vi = src.height - 2 - i % src.height;
+				for(j = 0 ; j < dst.width ; j++){					
+					var vj = j;
+					if(vj > src.width - 1) vj = src.width - 2 - j % src.width;
+					dst.RGBA[c + (j + i * dst.width) * CHANNELS] = 
+						src.RGBA[c + (vj + vi * src.width) * CHANNELS];
+				}
+			}
+		}
+	}
+	catch(ex){
+		alert("cvPowerOfTwo : " + ex);
+	}
+	
+	return dst;
+}
+
+//画像をクロッピング
+//入力
+//src IplImage型 原画像
+//xs 整数 クロッピングする左上x座標
+//ys 整数 クロッピングする左上y座標
+//width 整数 クロッピングする画像の横幅
+//height 整数 クロッピングする画像の縦幅
+//出力
+//IplImage型 クロッピングされた画像
+function cvCloping(src, xs, ys, width, height){
+	var dst = null;
+	try{
+		if(cvUndefinedOrNull(src) || 
+			cvUndefinedOrNull(xs) || cvUndefinedOrNull(ys) ||
+			cvUndefinedOrNull(width) || cvUndefinedOrNull(height))
+				throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(xs + width > src.width || ys + height > src.height)
+			throw "xs + width < src.width and ys + height < src.heightにしてください";
+			
+		dst = cvCreateImage(width, height);
+		for(i = 0 ; i < dst.height ; i++){
+			for(j = 0 ; j < dst.width ; j++){
+				for(c = 0 ; c < CHANNELS ; c++){
+					dst.RGBA[c + (j + i * dst.width) * CHANNELS] = 
+							src.RGBA[c + (j + xs + (i + ys) * src.width) * CHANNELS];
+				}
+			}
+		}
+	}
+	catch(ex){
+		alert("cvCloping : " + ex);
+	}
+	
+	return dst;
+}
+
+//FFT or inverse FFT を行う
+//入力
+//src IplImage型 GRAY表色系を想定(RGB表色系ならRがFFTされる) ※解説参照
+//isForward true/false trueなら順変換 falseなら逆変換
+//出力
+//解説
+//srcのwidthとheight共に2のべき乗である必要がある
+//計算結果は実数値が最初のチャンネル、虚数値がふたつめのチャンネルに代入される 
+function cvFFT(src, isForward){
+	try{
+		if(cvUndefinedOrNull(src)) throw "src" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(cvUndefinedOrNull(isForward)) isForward = true;
+		if((src.width & (src.width - 1)) != 0 ||
+			(src.height & (src.height - 1)) != 0) throw "srcのwidthとheightは2のべき乗にしてください";
+
+		//1次元変換
+		function oneLineFFT(ar, ai, isForward){
+			var j, j1, j2;
+			var dr1, dr2, di1, di2, tr, ti;
+			
+			var iter = 0;
+			j = ar.length;
+			while((j /= 2) != 0) iter++;
+			
+			j = 1;
+			for(i = 0; i < iter; i++) j *= 2;
+
+			var w = (isForward ? Math.PI: -Math.PI) / ar.length;
+			var xp2 = ar.length;
+			for(it = 0; it < iter; it++)
+			{
+				xp = xp2;
+				xp2 = Math.floor(xp2/2);
+				w *= 2;
+				console.log(xp2);
+				for(k = 0, i = - xp; k < xp2; i++)
+				{
+					var arg = w * k;
+					k++;
+					var wr = Math.cos(arg);
+					var wi = Math.sin(arg);
+					for(j = xp; j <= ar.length; j += xp)
+					{
+						j1 = j + i;
+						j2 = j1 + xp2;
+						dr1 = ar[j1];
+						dr2 = ar[j2];
+						di1 = ai[j1];
+						di2 = ai[j2];
+						tr = dr1 - dr2;
+						ti = di1 - di2;
+						ar[j1] = dr1 + dr2;
+						ai[j1] = di1 + di2;
+						ar[j2] = tr * wr - ti * wi;
+						ai[j2] = ti * wr + tr * wi;
+					}
+				}
+			}
+			j = j1 = ar.length / 2;
+			j2 = ar.length - 1;
+			for(i = 1; i < j2; i++)
+			{
+				if(i < j)
+				{
+					w = ar[i];
+					ar[i] = ar[j];
+					ar[j] = w;
+					w = ai[i];
+					ai[i] = ai[j];
+					ai[j] = w; 
+				}
+				k = j1;
+				while(k <= j)
+				{
+					j -= k;
+					k /= 2;
+				}
+				j += k;
+			}
+			if(!isForward) return;
+			w = 1. / ar.length;
+			for(i = 0; i < ar.length; i++)
+			{
+				ar[i] *= w;
+				ai[i] *= w;
+			}
+			return;
+		}
+		
+		//横方向
+		var ar = new Array(src.width);
+		var ai = new Array(src.width);
+		for(i = 0 ; i < src.height ; i++){
+			for(j = 0 ; j < src.width ; j++){
+				ar[j] = src.RGBA[(j + i * src.width) * CHANNELS];
+				ai[j] = src.RGBA[1 + (j + i * src.width) * CHANNELS];
+			}
+			oneLineFFT(ar, ai, isForward);
+			for(j = 0 ; j < src.width ; j++){
+				src.RGBA[(j + i * src.width) * CHANNELS] = ar[j] ;
+				src.RGBA[1 + (j + i * src.width) * CHANNELS] = ai[j] ;
+			}
+		}
+		
+		//縦方向
+		ar = new Array(src.height);
+		ai = new Array(src.height);
+		for(j = 0 ; j < src.width ; j++){
+			for(i = 0 ; i < src.height ; i++){
+				ar[i] = src.RGBA[(j + i * src.width) * CHANNELS];
+				ai[i] = src.RGBA[1 + (j + i * src.width) * CHANNELS];
+			}
+			oneLineFFT(ar, ai, isForward);
+			for(i = 0 ; i < src.height ; i++){
+				src.RGBA[(j + i * src.width) * CHANNELS] = ar[j] ;
+				src.RGBA[1 + (j + i * src.width) * CHANNELS] = ai[j] ;
+			}
+		}
+	}
+	catch(ex){
+		alert("cvFFT : " + ex);
+	}
+}
+//DFT
+//入力
+//src IplImage型 dftする画像 GRAY表色系を想定（RGB表色系ならRの数値だけで処理する）
+//dst IplImage型 dftした結果が保存される RGB表色系ならRに実数 Gに虚数が代入される
+//flags
+//nonzero_rows
+function cvDFT(src, dst, flags, nonzero_rows){
+	try{
+		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst) || cvUndefinedOrNull(flags))
+			throw "sizes or dst or flags" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(cvUndefinedOrNull(nonzero_rows)) nonzero_rows = 0;
+		
+		var arg = (CV_DXT.FORWARD || CV_DXT.FORWARD_SCALE) ? 
+			-2 * Math.PI / src.width : 2 * Math.PI / src.width;
+		
+		cvZero(dst);
+		
+		//横方向
+		for(y = 0 ; y < dst.height ; y++){
+			console.log(y);
+			for(x = 0 ; x < dst.width ; x++){
+				for(i = 0; i < src.height ; i++){
+					for(j = 0 ; j < src.width ; j++){
+						var freq = arg * x * j ;
+						var cos = Math.cos(freq);
+						var sin = Math.sin(freq);
+						dst.RGBA[(x + y * dst.width) * CHANNELS] += 
+							src.RGBA[(j + i * src.width) * CHANNELS] *  cos +
+							src.RGBA[1 + (j + i * src.width) * CHANNELS] * sin;
+							
+						dst.RGBA[1 + (x + y * dst.width) * CHANNELS] += 
+							src.RGBA[1 + (j + i * src.width) * CHANNELS] * cos -
+							src.RGBA[(j + i * src.width) * CHANNELS] * sin;
+					}
+				}
+			}
+		}
+		
+		console.log("横終了");
+		
+		//縦方向
+		for(y = 0 ; y < dst.height ; y++){
+			for(x = 0 ; x < dst.width ; x++){
+				for(j = 0 ; j < src.width ; j++){
+					for(i = 0; i < src.height ; i++){				
+						var freq = arg * y * i ;
+						var cos = Math.cos(freq);
+						var sin = Math.sin(freq);
+						dst.RGBA[(x + y * dst.width) * CHANNELS] += 
+							src.RGBA[(j + i * src.width) * CHANNELS] *  cos +
+							src.RGBA[1 + (j + i * src.width) * CHANNELS] * sin;
+							
+						dst.RGBA[1 + (x + y * dst.width) * CHANNELS] += 
+							src.RGBA[1 + (j + i * src.width) * CHANNELS] * cos -
+							src.RGBA[(j + i * src.width) * CHANNELS] * sin;
+
+					}
+				}
+			}
+		}
+		
+		if(CV_DXT.FORWARD_SCALE || INVERSE_SCALE){
+			var scale = Math.sqrt(1.0 / (dst.width * dst.height));
+			for(i = 0 ; i < dst.height ; i++){
+				for(j = 0 ; j < dst.width ; j++){
+					dst.RGBA[(j + i * dst.width) * CHANNELS] /= scale;
+					dst.RGBA[1 + (j + i * dst.width) * CHANNELS] /= scale;
+				}
+			}
+		}
+	}
+	catch(ex){
+		alert("cvDFT : " + ex);
+	}
 }
 
 //CvHistogram型のインスタンスを返す
@@ -2361,10 +2650,14 @@ function cvShowImage(imgId, iplImage){
 			throw "imgId or iplImage" + ERROR.IS_UNDEFINED_OR_NULL;
 		cvRGBA2ImageData(iplImage);
 		if (iplImage.canvas.getContext) {
+
 			iplImage.canvas.getContext("2d").putImageData(iplImage.imageData, 0, 0);
 		    var imgElement = document.getElementById(imgId);
 		    if(imgElement == null) throw imgId + ERROR.IS_UNDEFINED_OR_NULL;
 		 
+		 	imgElement.width = iplImage.width;
+			imgElement.height = iplImage.height;
+		 	
 		    imgElement.src = DMY_IMG;
 		    imgElement.onload = function(event){
 			    imgElement.src = iplImage.canvas.toDataURL('image/jpeg');

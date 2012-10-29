@@ -1,11 +1,15 @@
 function Test(imgId, iplImage){
 	try{
-		var hist = cvCreateHist(1, [256], CV_HIST.ARRAY, [[0, 256]]);
-		cvCalcHist(iplImage, hist);
 		
-		for(j = 0 ; j < hist.bins[0].length ; j++){
-			console.log(j+ " : " + hist.bins[0][j]);
-		}
+		var newIplImage = cvCloneImage(iplImage);
+		var dft = cvCreateImage(newIplImage.width, newIplImage.height);
+		
+		cvCvtColor(newIplImage, newIplImage, CV_CODE.RGB2GRAY);
+		
+		cvDFT(newIplImage, dft, CV_DXT.FORWARD_SCALE);
+		cvDFT(dft, newIplImage, CV_DXT.INVERSE_SCALE);
+		
+		cvShowImage(imgId, newIplImage);
 	}
 	catch(ex){
 		alert("Test : " + ex);
