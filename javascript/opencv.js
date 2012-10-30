@@ -125,6 +125,95 @@ var ERROR = {
 	APERTURE_SIZE : "aperture_sizeは1, 3, 5または7 のいずれかにしてください",
 }
 
+//チャンネルを合成する
+//入力
+//src0 IplImage型 dstの0チャンネルに合成される
+//src1 IplImage型 dstの1チャンネルに合成される
+//src2 IplImage型 dstの2チャンネルに合成される
+//src3 IplImage型 dstの3チャンネルに合成される
+//dst IplImage型 合成した画像
+//出力
+//なし
+//解説
+//各srcの0チャンネルの値が合成される
+function cvMerge(src0, src1, src2, src3, dst){
+	try{
+		if(cvUndefinedOrNull(src0) || cvUndefinedOrNull(src1) ||
+			cvUndefinedOrNull(src2) ||	cvUndefinedOrNull(src3) || 	cvUndefinedOrNull(dst) ) 
+				throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(dst.width != src0.width || dst.width != src1.width || 
+			dst.width != src2.width || dst.width != src3.width ||
+			dst.height != src0.height || dst.height != src1.height ||
+			dst.height != src2.height || dst.height != src3.height)
+				throw "IplImageの大きさを統一してください";
+				
+		for(c = 0 ; c < CHANNELS ; c++){
+			var src;
+			switch(c){
+			case 0 : src = src0; break;
+			case 1 : src = src1; break;
+			case 2 : src = src2; break;
+			case 3 : src = src3; break;
+			}
+
+			for(i = 0 ; i < src.height ; i++){
+				for(j = 0 ; j < src.width ; j++){
+					dst.RGBA[c + (j + i * dst.width)*CHANNELS] = src.RGBA[(j + i * src.width) * CHANNELS];
+				}
+			}
+		}
+	}
+	catch(ex){
+		alert("cvMerge : " + ex);
+	}
+}
+
+//チャンネルを分割する
+//入力
+//src IplImage型 原画像
+//dst0 IplImage型 srcのチャンネル0が代入される
+//dst1 IplImage型 srcのチャンネル1が代入される
+//dst2 IplImage型 srcのチャンネル2が代入される
+//dst3 IplImage型 srcのチャンネル3が代入される
+//出力
+//なし
+//解説
+//分割されたチャンネルは各dstの0～3チャンネル全てに代入される
+function cvSplit(src, dst0, dst1, dst2, dst3){
+	try{
+		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst0) ||
+			cvUndefinedOrNull(dst1) ||	cvUndefinedOrNull(dst2) || 	cvUndefinedOrNull(dst3) ) 
+				throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(src.width != dst0.width || src.width != dst1.width || 
+			src.width != dst2.width || src.width != dst3.width ||
+			src.height != dst0.height || src.height != dst1.height ||
+			src.height != dst2.height || src.height != dst3.height)
+				throw "IplImageの大きさを統一してください";
+
+		for(c = 0 ; c < CHANNELS ; c++){
+			var dst;
+			switch(c){
+			case 0 : dst = dst0; break;
+			case 1 : dst = dst1; break;
+			case 2 : dst = dst2; break;
+			case 3 : dst = dst3; break;
+			}
+
+			for(i = 0 ; i < src.height ; i++){
+				for(j = 0 ; j < src.width ; j++){
+					dst.RGBA[(j + i * dst.width)*CHANNELS] = src.RGBA[c + (j + i * src.width) * CHANNELS];
+					dst.RGBA[1 + (j + i * dst.width)*CHANNELS] = src.RGBA[c + (j + i * src.width) * CHANNELS];
+					dst.RGBA[2 + (j + i * dst.width)*CHANNELS] = src.RGBA[c + (j + i * src.width) * CHANNELS];
+					dst.RGBA[3 + (j + i * dst.width)*CHANNELS] = 255;
+				}
+			}
+		}
+	}
+	catch(ex){
+		alert("cvSplit : " + ex);
+	}
+}
+
 //widthとheightを2のべき乗にする
 //入力
 //src IplImage型 原画像
