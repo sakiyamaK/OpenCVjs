@@ -108,6 +108,14 @@ var FOUR_ARITHMETIC = {
 	DIV : 3
 }
 
+//リサイズの種類
+var CV_INTER = {
+	NN : 0,
+	LINEAR : 1,
+	AREA : 2,
+	CUBIC : 3
+}
+
 //チャンネル数
 var CHANNELS = 4;
 
@@ -1435,26 +1443,50 @@ function cvThreshold(src, dst, threshold, max_value, threshold_type){
 	}
 }
 
-//画像サイズの変更 現在は縮小にしか対応していない
+//画像サイズの変更
 //入力
 //src IplImage型 原画像
 //dst IplImage型 サイズ変換後の画像 この画像サイズに変換される
+//interpolation CV_INTER構造体 補完の種類　省略可
 //出力
 //なし
-function cvResize(src, dst){
+function cvResize(src, dst, interpolation){
 	try{
-		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL; 
+		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(cvUndefinedOrNull(interpolation)) interpolation = CV_INTER.NN;
+		if(interpolation == CV_INTER.AREA || interpolation == CV_INTER.CUBIC)
+			throw "interpolation は現在CV_INTER.NN、CV_INTER.LINEARしかサポートされていません";
 		
 		var scaleWidth = src.width / dst.width;
 		var scaleHeight = src.height / dst.height;
-		var scale = scaleWidth > scaleHeight ? scaleHeight : scaleWidth;
 
 		for(i = 0 ; i < dst.height ; i++){
-			var h = scale * i ;
+			var h = scaleHeight * i ;	
 			for(j = 0 ; j < dst.width ; j++){
-				var w = scale * j;
+				var w = scaleWidth * j;
 				for( c = 0 ; c < CHANNELS ; c++){
-					var v = scale * src.RGBA[c + (w + h * src.width) * CHANNELS];
+					var v = 0;
+					switch(interpolation){
+					case CV_INTER.NN:
+						w = Math.floor(w + 0.5);
+						h = Math.floor(h + 0.5);
+						v = src.RGBA[c + (w + h * src.width) * CHANNELS];
+					break;
+					case CV_INTER.LINEAR:
+						var intW = Math.floor(w);
+						var intH = Math.floor(h);
+						v = (intW + 1 - w) * (intH + 1 - h) * src.RGBA[c + (intW + intH * src.width) * CHANNELS] +
+							(intW + 1 - w) * (h - intH) * src.RGBA[c + (intW + 1 + intH * src.width) * CHANNELS] +
+							(w - intW) * (intH + 1 - h) * src.RGBA[c + (intW + (intH + 1) * src.width) * CHANNELS] +
+							(w  - intW) * (h - intH) * src.RGBA[c + (intW + 1 + (intH + 1) * src.width) * CHANNELS] ;
+					break;
+					case CV_INTER.AREA: break;
+					case CV_INTER.CUBIC: break;
+					default :
+						throw "interpolation" + ERROR.SWITCH_VALUE;
+					break;
+					}
+					
 					dst.RGBA[c + (j + i * dst.width) * CHANNELS]  = v;
 				}
 			}
