@@ -1659,10 +1659,14 @@ function cvResize(src, dst, interpolation){
 						var intH = Math.floor(h);
 						var nextW = intW + 1; if(nextW > src.width - 1) nextW = src.width - 2;
 						var nextH = intH + 1; if(nextH > src.height - 1) nextH = src.height - 2;
-						v = (intW + 1 - w) * (intH + 1 - h) * src.RGBA[c + (intW + intH * src.width) * CHANNELS] +
-							(intW + 1 - w) * (h - intH) * src.RGBA[c + (nextW + intH * src.width) * CHANNELS] +
-							(w - intW) * (intH + 1 - h) * src.RGBA[c + (intW + nextH * src.width) * CHANNELS] +
-							(w  - intW) * (h - intH) * src.RGBA[c + (nextW + nextH * src.width) * CHANNELS] ;
+						var w1 = nextW - w;
+						var h1 = nextH - h;
+						var w2 = w - intW;
+						var h2 = h - intH;
+						v = w1 * h1 * src.RGBA[c + (intW + intH * src.width) * CHANNELS] +
+								w1 * h2 * src.RGBA[c + (nextW + intH * src.width) * CHANNELS] +
+								w2 * h1 * src.RGBA[c + (intW + nextH * src.width) * CHANNELS] +
+								w2 * h2 * src.RGBA[c + (nextW + nextH * src.width) * CHANNELS] ;
 					break;
 					case CV_INTER.AREA: break;
 					case CV_INTER.CUBIC:
