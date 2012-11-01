@@ -16,9 +16,31 @@ function Test(imgId, iplImage){
 	}
 }
 
-function Resize(imgId, iplImage){
+var r = 5;
+
+function Resize1(imgId, iplImage){
 	try{
-		var newIplImage = cvCreateImage(iplImage.width * 2, iplImage.height * 2);
+		var newIplImage = cvCreateImage(iplImage.width * r, iplImage.height * r);
+		cvResize(iplImage, newIplImage);
+		cvShowImage(imgId, newIplImage);
+	}
+	catch(ex){
+		alert("Reisze : " + ex);
+	}
+}
+function Resize2(imgId, iplImage){
+	try{
+		var newIplImage = cvCreateImage(iplImage.width * r, iplImage.height * r);
+		cvResize(iplImage, newIplImage, CV_INTER.LINEAR);
+		cvShowImage(imgId, newIplImage);
+	}
+	catch(ex){
+		alert("Reisze : " + ex);
+	}
+}
+function Resize3(imgId, iplImage){
+	try{
+		var newIplImage = cvCreateImage(iplImage.width * r, iplImage.height * r);
 		cvResize(iplImage, newIplImage, CV_INTER.CUBIC);
 		cvShowImage(imgId, newIplImage);
 	}
@@ -26,6 +48,7 @@ function Resize(imgId, iplImage){
 		alert("Reisze : " + ex);
 	}
 }
+
 
 function Xpro(imgId, iplImage){
 	try{
