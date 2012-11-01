@@ -7,6 +7,11 @@ var IplImage = function(){
 	RGBA: null;
 }
 
+var CvMat = function(){
+	rows: 0;
+	cols: 0;
+	vals: null;
+}
 var CvHistogram = function(){
 	type: 0;
 	bins: null;
@@ -123,6 +128,7 @@ var CHANNELS = 4;
 var ERROR = {
 	IS_UNDEFINED_OR_NULL : "がundefinedかnullです",
 	DIFFERENT_SIZE : "IplImageサイズは全て同じにして下さい",
+	DIFFERENT_ROWS_OR_COLS: "行と列が正しくありません",
 	DIFFERENT_LENGTH: "の長さは全て同じにして下さい",
 	ONLY_ADD_NUMBER : "は奇数にして下さい",
 	ONLY_INTERGER_NUMBER : "は整数にして下さい",
@@ -131,6 +137,182 @@ var ERROR = {
 	NOT_GET_CONTEXT : "contextが読み込めません",
 	SWITCH_VALUE : "の値が正しくありません",
 	APERTURE_SIZE : "aperture_sizeは1, 3, 5または7 のいずれかにしてください",
+}
+
+//rows行cols列の行列を作る
+//入力
+//rows 整数
+//cols 整数
+//出力
+//CvMat型
+function cvCreateMat(rows, cols){
+	var rtn = null;
+	try{
+		if(cvUndefinedOrNull(rows) || cvUndefinedOrNull(cols))
+			throw "rows or cols" + ERROR.IS_UNDEFINED_OR_NULL;
+//		if(!cvIsInt(rows) || !cvIsInt(cols) || rows < 1 || cols < 1)
+//			throw "rows or cols" + ERROR.ONLY_NORMAL_NUMBER;
+		
+		rtn = new CvMat();
+		rtn.rows = rows;
+		rtn.cols = cols;
+		rtn.vals = new Array(rows*cols);
+	}
+	catch(ex){
+		alert("cvCreateMat : " + ex);
+	}
+	
+	return rtn;
+}
+
+//行列に値を代入
+//入力
+//mat CvMat型 代入される行列
+//row 整数 代入する行番号
+//col 整数 代入する列番号
+//val 数値 代入される値
+//出力
+//なし
+function cvmSet(mat, row, col, value){
+	try{
+		if(cvUndefinedOrNull(mat) || cvUndefinedOrNull(value)|| 
+			cvUndefinedOrNull(rows) || cvUndefinedOrNull(cols))
+				throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
+//		if(!cvIsInt(rows) || !cvIsInt(cols))
+//				throw "rows or cols" + ERROR.ONLY_INTERGER_NUMBER;
+		
+		mat.vals[row + col * mat.rows] = value;
+	}
+	catch(ex){
+		alert("cvmSet : " + ex);
+	}
+}
+
+//行列から値を取得
+//入力
+//mat CvMat型 取得される行列
+//row 整数 取得する行番号
+//col 整数 取得する列番号
+//出力
+//数値
+function cvmGet(mat, row, col){
+	var rtn = null;
+	try{
+		if(cvUndefinedOrNull(mat) || cvUndefinedOrNull(value)|| 
+			cvUndefinedOrNull(rows) || cvUndefinedOrNull(cols))
+				throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
+//		if(!cvIsInt(rows) || !cvIsInt(cols))
+//				throw "rows or cols" + ERROR.ONLY_INTERGER_NUMBER;
+		
+		rtn = mat.vals[row + col * mat.rows];
+	}
+	catch(ex){
+		alert("cvmGet : " + ex);
+	}
+	return rtn;
+}
+
+//行列の足し算
+//入力
+//matA CvMat型 足す行列
+//matB CvMat型 足される行列
+//matX CvMat型 結果が代入される行列
+//出力
+//なし
+function cvmAdd(matA, matB, matX){
+	try{
+		if(cvUndefinedOrNull(matA) || cvUndefinedOrNull(matB)|| cvUndefinedOrNull(matX))
+				throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(matA.rows != matB.rows || matA.cols != matB.cols ||
+			matB.rows != matX.rows || matB.cols != matX.cols)
+				throw "引数の" + ERROR.DIFFERENT_SIZE;
+		
+		for(var i = 0 ; i < matX.rows ; i++){
+			for(var j = 0 ; j < matX.cols ; j++){
+				matX.vals[j + i * matX.cols] = matA.vals[j + i * matA.cols] + matB.vals[j + i * matB.cols];
+			}
+		}
+	}
+	catch(ex){
+		alert("cvmAdd : " + ex);
+	}
+}
+
+//行列の引き算
+//入力
+//matA CvMat型 引く行列
+//matB CvMat型 引かれる行列
+//matX CvMat型 結果が代入される行列
+//出力
+//なし
+function cvmSub(matA, matB, matX){
+	try{
+		if(cvUndefinedOrNull(matA) || cvUndefinedOrNull(matB)|| cvUndefinedOrNull(matX))
+				throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(matA.rows != matB.rows || matA.cols != matB.cols ||
+			matB.rows != matX.rows || matB.cols != matX.cols)
+				throw "引数の" + ERROR.DIFFERENT_SIZE;
+		
+		for(var i = 0 ; i < matX.rows ; i++){
+			for(var j = 0 ; j < matX.cols ; j++){
+				matX.vals[j + i * matX.cols] = matA.vals[j + i * matA.cols] - matB.vals[j + i * matB.cols];
+			}
+		}
+	}
+	catch(ex){
+		alert("cvmSub : " + ex);
+	}
+}
+
+//行列の掛け算
+//入力
+//matA CvMat型 掛ける行列
+//matB CvMat型 掛けられる行列
+//matX CvMat型 結果が代入される行列
+//出力
+//なし
+function cvmMul(matA, matB, matX){
+	try{
+		if(cvUndefinedOrNull(matA) || cvUndefinedOrNull(matB)|| cvUndefinedOrNull(matX))
+				throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(matA.cols != matB.rows || matB.cols != matX.cols || matA.rows != matX.rows)
+				throw "引数" + ERROR.DIFFERENT_ROWS_OR_COLS;
+		
+		for(var i = 0 ; i < matX.rows ; i++){
+			for(var j = 0 ; j < matX.cols ; j++){
+				var v = 0;
+				for(var l = 0 ; l < matA.cols ; l++) v += matA.vals[l + i * matB.cols] * matB.vals[j + l * matB.cols];
+				matX.vals[j + i * matX.cols] = v;
+			}
+		}
+	}
+	catch(ex){
+		alert("cvmMul : " + ex);
+	}
+}
+
+//行列の転置
+//入力
+//matA CvMat型 転置される行列
+//matX CvMat型 結果が代入される行列
+//出力
+//なし
+function cvmTranspose(matA, matX){
+	try{
+		if(cvUndefinedOrNull(matA) || cvUndefinedOrNull(matX))
+				throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(matA.rows != matX.cols || matA.cols != matX.rows)
+				throw "引数の" + ERROR.DIFFERENT_ROWS_OR_COLS;
+		
+		for(var i = 0 ; i < matX.rows ; i++){
+			for(var j = 0 ; j < matX.cols ; j++){
+				matX.vals[j + i * matX.cols] = matA.vals[i + j * matA.cols];
+			}
+		}
+	}
+	catch(ex){
+		alert("cvmTranspose : " + ex);
+	}
 }
 
 //チャンネルを合成する
@@ -155,7 +337,7 @@ function cvMerge(src0, src1, src2, src3, dst){
 			dst.height != src2.height || dst.height != src3.height)
 				throw "IplImageの大きさを統一してください";
 				
-		for(c = 0 ; c < CHANNELS ; c++){
+		for(var c = 0 ; c < CHANNELS ; c++){
 			var src;
 			switch(c){
 			case 0 : src = src0; break;
@@ -164,8 +346,8 @@ function cvMerge(src0, src1, src2, src3, dst){
 			case 3 : src = src3; break;
 			}
 
-			for(i = 0 ; i < src.height ; i++){
-				for(j = 0 ; j < src.width ; j++){
+			for(var i = 0 ; i < src.height ; i++){
+				for(var j = 0 ; j < src.width ; j++){
 					dst.RGBA[c + (j + i * dst.width)*CHANNELS] = src.RGBA[(j + i * src.width) * CHANNELS];
 				}
 			}
@@ -198,7 +380,7 @@ function cvSplit(src, dst0, dst1, dst2, dst3){
 			src.height != dst2.height || src.height != dst3.height)
 				throw "IplImageの大きさを統一してください";
 
-		for(c = 0 ; c < CHANNELS ; c++){
+		for(var c = 0 ; c < CHANNELS ; c++){
 			var dst;
 			switch(c){
 			case 0 : dst = dst0; break;
@@ -207,8 +389,8 @@ function cvSplit(src, dst0, dst1, dst2, dst3){
 			case 3 : dst = dst3; break;
 			}
 
-			for(i = 0 ; i < src.height ; i++){
-				for(j = 0 ; j < src.width ; j++){
+			for(var i = 0 ; i < src.height ; i++){
+				for(var j = 0 ; j < src.width ; j++){
 					dst.RGBA[(j + i * dst.width)*CHANNELS] = src.RGBA[c + (j + i * src.width) * CHANNELS];
 					dst.RGBA[1 + (j + i * dst.width)*CHANNELS] = src.RGBA[c + (j + i * src.width) * CHANNELS];
 					dst.RGBA[2 + (j + i * dst.width)*CHANNELS] = src.RGBA[c + (j + i * src.width) * CHANNELS];
@@ -247,11 +429,11 @@ function cvPowerOfTwo(src){
 		
 		dst = cvCreateImage(newW, newH);
 
-		for(c = 0 ; c < CHANNELS; c++){
-			for(i = 0 ; i < dst.height ; i++){
+		for(var c = 0 ; c < CHANNELS; c++){
+			for(var i = 0 ; i < dst.height ; i++){
 				var vi = i;
 				if(vi > src.height - 1) vi = src.height - 2 - i % src.height;
-				for(j = 0 ; j < dst.width ; j++){					
+				for(var j = 0 ; j < dst.width ; j++){					
 					var vj = j;
 					if(vj > src.width - 1) vj = src.width - 2 - j % src.width;
 					dst.RGBA[c + (j + i * dst.width) * CHANNELS] = 
@@ -287,9 +469,9 @@ function cvCloping(src, xs, ys, width, height){
 			throw "xs + width < src.width and ys + height < src.heightにしてください";
 			
 		dst = cvCreateImage(width, height);
-		for(i = 0 ; i < dst.height ; i++){
-			for(j = 0 ; j < dst.width ; j++){
-				for(c = 0 ; c < CHANNELS ; c++){
+		for(var i = 0 ; i < dst.height ; i++){
+			for(var j = 0 ; j < dst.width ; j++){
+				for(var c = 0 ; c < CHANNELS ; c++){
 					dst.RGBA[c + (j + i * dst.width) * CHANNELS] = 
 							src.RGBA[c + (j + xs + (i + ys) * src.width) * CHANNELS];
 				}
@@ -328,23 +510,23 @@ function cvFFT(src, isForward){
 			while((j /= 2) != 0) iter++;
 			
 			j = 1;
-			for(i = 0; i < iter; i++) j *= 2;
+			for(var i = 0; i < iter; i++) j *= 2;
 
 			var w = (isForward ? Math.PI: -Math.PI) / ar.length;
 			var xp2 = ar.length;
-			for(it = 0; it < iter; it++)
+			for(var it = 0; it < iter; it++)
 			{
 				xp = xp2;
 				xp2 = Math.floor(xp2/2);
 				w *= 2;
 				console.log(xp2);
-				for(k = 0, i = - xp; k < xp2; i++)
+				for(var k = 0, i = - xp; k < xp2; i++)
 				{
 					var arg = w * k;
 					k++;
 					var wr = Math.cos(arg);
 					var wi = Math.sin(arg);
-					for(j = xp; j <= ar.length; j += xp)
+					for(var j = xp; j <= ar.length; j += xp)
 					{
 						j1 = j + i;
 						j2 = j1 + xp2;
@@ -363,7 +545,7 @@ function cvFFT(src, isForward){
 			}
 			j = j1 = ar.length / 2;
 			j2 = ar.length - 1;
-			for(i = 1; i < j2; i++)
+			for(var i = 1; i < j2; i++)
 			{
 				if(i < j)
 				{
@@ -384,7 +566,7 @@ function cvFFT(src, isForward){
 			}
 			if(!isForward) return;
 			w = 1. / ar.length;
-			for(i = 0; i < ar.length; i++)
+			for(var i = 0; i < ar.length; i++)
 			{
 				ar[i] *= w;
 				ai[i] *= w;
@@ -395,13 +577,13 @@ function cvFFT(src, isForward){
 		//横方向
 		var ar = new Array(src.width);
 		var ai = new Array(src.width);
-		for(i = 0 ; i < src.height ; i++){
-			for(j = 0 ; j < src.width ; j++){
+		for(var i = 0 ; i < src.height ; i++){
+			for(var j = 0 ; j < src.width ; j++){
 				ar[j] = src.RGBA[(j + i * src.width) * CHANNELS];
 				ai[j] = src.RGBA[1 + (j + i * src.width) * CHANNELS];
 			}
 			oneLineFFT(ar, ai, isForward);
-			for(j = 0 ; j < src.width ; j++){
+			for(var j = 0 ; j < src.width ; j++){
 				src.RGBA[(j + i * src.width) * CHANNELS] = ar[j] ;
 				src.RGBA[1 + (j + i * src.width) * CHANNELS] = ai[j] ;
 			}
@@ -410,13 +592,13 @@ function cvFFT(src, isForward){
 		//縦方向
 		ar = new Array(src.height);
 		ai = new Array(src.height);
-		for(j = 0 ; j < src.width ; j++){
-			for(i = 0 ; i < src.height ; i++){
+		for(var j = 0 ; j < src.width ; j++){
+			for(var i = 0 ; i < src.height ; i++){
 				ar[i] = src.RGBA[(j + i * src.width) * CHANNELS];
 				ai[i] = src.RGBA[1 + (j + i * src.width) * CHANNELS];
 			}
 			oneLineFFT(ar, ai, isForward);
-			for(i = 0 ; i < src.height ; i++){
+			for(var i = 0 ; i < src.height ; i++){
 				src.RGBA[(j + i * src.width) * CHANNELS] = ar[j] ;
 				src.RGBA[1 + (j + i * src.width) * CHANNELS] = ai[j] ;
 			}
@@ -444,11 +626,11 @@ function cvDFT(src, dst, flags, nonzero_rows){
 		cvZero(dst);
 		
 		//横方向
-		for(y = 0 ; y < dst.height ; y++){
+		for(var y = 0 ; y < dst.height ; y++){
 			console.log(y);
-			for(x = 0 ; x < dst.width ; x++){
-				for(i = 0; i < src.height ; i++){
-					for(j = 0 ; j < src.width ; j++){
+			for(var x = 0 ; x < dst.width ; x++){
+				for(var i = 0; i < src.height ; i++){
+					for(var j = 0 ; j < src.width ; j++){
 						var freq = arg * x * j ;
 						var cos = Math.cos(freq);
 						var sin = Math.sin(freq);
@@ -467,10 +649,10 @@ function cvDFT(src, dst, flags, nonzero_rows){
 		console.log("横終了");
 		
 		//縦方向
-		for(y = 0 ; y < dst.height ; y++){
-			for(x = 0 ; x < dst.width ; x++){
-				for(j = 0 ; j < src.width ; j++){
-					for(i = 0; i < src.height ; i++){				
+		for(var y = 0 ; y < dst.height ; y++){
+			for(var x = 0 ; x < dst.width ; x++){
+				for(var j = 0 ; j < src.width ; j++){
+					for(var i = 0; i < src.height ; i++){				
 						var freq = arg * y * i ;
 						var cos = Math.cos(freq);
 						var sin = Math.sin(freq);
@@ -489,8 +671,8 @@ function cvDFT(src, dst, flags, nonzero_rows){
 		
 		if(CV_DXT.FORWARD_SCALE || INVERSE_SCALE){
 			var scale = Math.sqrt(1.0 / (dst.width * dst.height));
-			for(i = 0 ; i < dst.height ; i++){
-				for(j = 0 ; j < dst.width ; j++){
+			for(var i = 0 ; i < dst.height ; i++){
+				for(var j = 0 ; j < dst.width ; j++){
 					dst.RGBA[(j + i * dst.width) * CHANNELS] /= scale;
 					dst.RGBA[1 + (j + i * dst.width) * CHANNELS] /= scale;
 				}
@@ -530,7 +712,7 @@ function cvCreateHist(dims, sizes, type, ranges, uniform){
 			hist.ranges = ranges;
 			hist.type = type;
 			hist.bins = new Array(new Array(sizes[0]));
-			for(i = 0 ; i < hist.bins[0].length ; hist.bins[0][i++] = 0);
+			for(var i = 0 ; i < hist.bins[0].length ; hist.bins[0][i++] = 0);
 			hist.thres = null;
 			hist.thres2 = null;
 			hist.mat = null;
@@ -565,14 +747,14 @@ function cvCalcHist(src, hist, accumulate, mask){
 		if(cvUndefinedOrNull(mask)) mask = 0;
 		if(mask != 0) throw "mask は現在サポートされていません";
 
-		for(k = 0 ; k < hist.ranges.length ; k++){
+		for(var k = 0 ; k < hist.ranges.length ; k++){
 			if(accumulate == 0){
-				for(i = 0; i < hist.bins[k].length; i++) hist.bins[k][i] = 0;
+				for(var i = 0; i < hist.bins[k].length; i++) hist.bins[k][i] = 0;
 			}
 			
 			var binWidth = (hist.ranges[k][1] - hist.ranges[k][0])/hist.bins[k].length;
-			for(i = 0 ; i < src.height ; i++){
-				for(j = 0 ; j < src.width ; j++){
+			for(var i = 0 ; i < src.height ; i++){
+				for(var j = 0 ; j < src.width ; j++){
 					var v = src.RGBA[(j + i * src.width) * CHANNELS + k] ;
 					if(hist.ranges[k][0] <= v && hist.ranges[k][1] > v){
 						v = Math.floor((v - hist.ranges[k][0])/binWidth);
@@ -604,23 +786,23 @@ function cvMinMaxLoc(src, min_val, max_val, min_locs, max_locs, mask){
 			cvUndefinedOrNull(min_val) || cvUndefinedOrNull(max_val) ||
 			cvUndefinedOrNull(min_locs) || cvUndefinedOrNull(max_locs))
 				throw "src or min_val or max_val or min_locs or max_locs " + ERROR.IS_UNDEFINED_OR_NULL;
-		for(i = 0 ; i < min_locs.length ; i++)
+		for(var i = 0 ; i < min_locs.length ; i++)
 			if(cvUndefinedOrNull(min_locs[i])) throw "min_locs[" + i + "]" + ERROR.IS_UNDEFINED_OR_NULL;
-		for(i = 0 ; i < max_locs.length ; i++)
+		for(var i = 0 ; i < max_locs.length ; i++)
 			if(cvUndefinedOrNull(max_locs[i])) throw "max_locs[" + i + "]" + ERROR.IS_UNDEFINED_OR_NULL;
 			
 		if(cvUndefinedOrNull(mask)) mask = 0;
 		if(mask != 0) throw "mask は現在サポートされていません";
 		
-		for(c = 0 ; c < CHANNELS ; c++){
+		for(var c = 0 ; c < CHANNELS ; c++){
 			min_val[c] = src.RGBA[c];
 			max_val[c] = src.RGBA[c];
 			min_locs[c].x = 0 ;
 			min_locs[c].y = 0;
 			max_locs[c].x = 0 ;
 			max_locs[c].y = 0;
-			for(i = 0 ; i < src.height ; i++){
-				for(j = 0 ; j < src.width ; j++){
+			for(var i = 0 ; i < src.height ; i++){
+				for(var j = 0 ; j < src.width ; j++){
 					if(src.RGBA[c + (j + i * src.width) * CHANNELS] < min_val[c]){
 						min_val[c] = src.RGBA[c + (j + i * src.width) * CHANNELS];
 						min_locs[c].x = j;
@@ -651,11 +833,11 @@ function cvCountNonZero(src){
 		if(cvUndefinedOrNull(src)) throw "src" + ERROR.IS_UNDEFINED_OR_NULL;
 		
 		rtn = new Scalar();
-		for(k = 0 ; k < rtn.length ; rtn.val[k++] = 0);
+		for(var k = 0 ; k < rtn.length ; rtn.val[k++] = 0);
 		
-		for(i = 0 ; i < src.height ; i++){
-			for(j = 0 ; j < src.width ; j++){
-				for(c = 0 ; c < CHANNELS ; c++){
+		for(var i = 0 ; i < src.height ; i++){
+			for(var j = 0 ; j < src.width ; j++){
+				for(var c = 0 ; c < CHANNELS ; c++){
 					if(src.RGBA[c + (j + i * src.width) * CHANNELS] != 0)
 						rtn.val[c]++;
 				}
@@ -681,11 +863,11 @@ function cvSum(src){
 		
 		rtn = new Scalar();
 		
-		for(k = 0 ; k < rtn.length ; rtn[k++] = 0);
+		for(var k = 0 ; k < rtn.length ; rtn[k++] = 0);
 		
-		for(i = 0 ; i < src.height ; i++){
-			for(j = 0 ; j < src.width ; j++){
-				for(c = 0 ; c < CHANNELS ; c++)
+		for(var i = 0 ; i < src.height ; i++){
+			for(var j = 0 ; j < src.width ; j++){
+				for(var c = 0 ; c < CHANNELS ; c++)
 					rtn[c] = src.RGBA[c + (j + i * src.width) * CHANNELS];
 			}
 		}
@@ -713,7 +895,7 @@ function cvAvg(src, mask){
 		rtn = cvSum(src);
 		var len = src.width * src.height;
 		
-		for(k = 0 ; k < rtn.length ; rtn[k++] /= len);
+		for(var k = 0 ; k < rtn.length ; rtn[k++] /= len);
 		
 	}
 	catch(ex){
@@ -739,12 +921,12 @@ function cvAvgVrn(src, mean, vrn, mask){
 		if(mask != 0) throw "mask は現在サポートされていません";
 		
 		var avg = cvAvg(src);
-		for(c = 0 ; c < CHANNELS ; c++){
+		for(var c = 0 ; c < CHANNELS ; c++){
 			mean[c] = avg[c];
 			vrn[c] = 0;
 			var len = src.width * src.height;
-			for(i = 0 ; i < src.height ; i++){
-				for(j = 0 ; j < src.width ; j++){				
+			for(var i = 0 ; i < src.height ; i++){
+				for(var j = 0 ; j < src.width ; j++){				
 					var a = src.RGBA[c + (j + i * src.width) * CHANNELS] - mean[c];
 					vrn[c] += a * a;
 				}
@@ -767,7 +949,7 @@ function cvAvgVrn(src, mean, vrn, mask){
 //なし
 function cvAvgSdv(src, mean, std, mask){
 	cvAvgVrn(src, mean, std, mask);
-	for(k = 0 ; k < std.length ; k++)
+	for(var k = 0 ; k < std.length ; k++)
 		std[k] = Math.sqrt(std[k]);
 }
 
@@ -784,21 +966,21 @@ function cvLabeling(src){
 		var dmy = cvCloneImage(src);
 		dst = cvCreateImage(src.width, src.height);
 				
-		for(i = 0 ; i < dst.height ; i++){
-			for(j = 0 ; j < dst.width ; j++){
+		for(var i = 0 ; i < dst.height ; i++){
+			for(var j = 0 ; j < dst.width ; j++){
 				dst.RGBA[(j + i * dst.width) * CHANNELS] = 0;
 			}
 		}
 		
 		var lut = new Array(dmy.width * dmy.height);
-		for(i = 0 ; i < lut.length ; i++) lut[i] = i;
+		for(var i = 0 ; i < lut.length ; i++) lut[i] = i;
 		
 		var newNumber = 1;
 		var MAX = dmy.width * dmy.height;
 		var check = new Array(4);
 		
-		for(i = 0 ; i < dmy.height ; i++){
-			for(j = 0 ; j < dmy.width ; j++){
+		for(var i = 0 ; i < dmy.height ; i++){
+			for(var j = 0 ; j < dmy.width ; j++){
 				if(dmy.RGBA[(j + i * dmy.width) * CHANNELS] == 255){
 					if(i == 0 && j == 0){
 						dst.RGBA[(j + i * dst.width) * CHANNELS] = newNumber;
@@ -812,7 +994,7 @@ function cvLabeling(src){
 						check.sort( function(a,b) {return a-b;} );
 						
 						var m = check.length;
-						for(n = 3 ; n >= 0 ; n--){
+						for(var n = 3 ; n >= 0 ; n--){
 							if(check[n] != 0 && check[n] != MAX) m = n;
 						}
 						
@@ -824,7 +1006,7 @@ function cvLabeling(src){
 							
 							dst.RGBA[(j + i * dst.width) * CHANNELS] = check[m];
 							c = m + 1;
-							for(n = c ; n < check.length ; n++){
+							for(var n = c ; n < check.length ; n++){
 								if(check[n] != MAX && lut[check[n]] > check[m])	lut[check[n]] = check[m];
 							}
 						}
@@ -833,14 +1015,14 @@ function cvLabeling(src){
 			}
 		}
 		
-		for(i = 0 ; i < lut.length ; i++){
+		for(var i = 0 ; i < lut.length ; i++){
 			if(i != lut[i]){
 				console.log(i + ", " + lut[i]);
 			}
 		}
 		
-		for(i = 0 ; i < dmy.height ; i++){
-			for(j = 0 ; j < dmy.width ; j++){
+		for(var i = 0 ; i < dmy.height ; i++){
+			for(var j = 0 ; j < dmy.width ; j++){
 				while(true){
 					var v = dst.RGBA[(j + i * dst.width) * CHANNELS];
 					var n = lut[v];
@@ -892,8 +1074,8 @@ function cvCircle(img, center, radius, color, thickness){
 			if(yE < 0) yE = 0 ;
 			else if(yE > img.height - 1) yE = img.height - 1;
 
-			for(x = xS ; x <= xE ; x++){
-				for(y = yS ; y <= yE ; y++){
+			for(var x = xS ; x <= xE ; x++){
+				for(var y = yS ; y <= yE ; y++){
 					var r = (x - center.x) * (x - center.x) + (y - center.y) * (y - center.y);
 					if(r >= radiusMin*radiusMin && r <= radiusMax*radiusMax){
 						img.RGBA[(x + y * img.width) * CHANNELS] = color.val[0];
@@ -918,8 +1100,8 @@ function cvCircle(img, center, radius, color, thickness){
 			if(yE < 0) yE = 0 ;
 			else if(yE > img.height - 1) yE = img.height - 1;
 
-			for(x = xS ; x <= xE ; x++){
-				for(y = yS ; y <= yE ; y++){
+			for(var x = xS ; x <= xE ; x++){
+				for(var y = yS ; y <= yE ; y++){
 					var r = (x - center.x) * (x - center.x) + (y - center.y) * (y - center.y);
 					if(r <= radius*radius){
 						img.RGBA[(x + y * img.width) * CHANNELS] = color.val[0];
@@ -967,8 +1149,8 @@ function cvRectangle(img, pt1, pt2, color, thickness){
 		else if(yE > img.height - 1) yE = img.height - 1;
 
 		if(thickness <= 0){
-			for(y = yS ; y <= yE ; y++){
-				for(x = xS ; x <= xE ; x++){
+			for(var y = yS ; y <= yE ; y++){
+				for(var x = xS ; x <= xE ; x++){
 					img.RGBA[(x + y * img.width) * CHANNELS] = color.val[0];
  					img.RGBA[1 + (x + y * img.width) * CHANNELS] = color.val[1];
  					img.RGBA[2 + (x + y * img.width) * CHANNELS] = color.val[2];
@@ -1031,9 +1213,9 @@ function cvLine(img, pt1, pt2, color, thickness, isSegment){
 			}
 			
 			
-			for(y = yS ; y <= yE ; y++){
-				for(tx = tS ; tx <= tE ; tx++){
-					for(ty = tS ; ty <= tE ; ty++){
+			for(var y = yS ; y <= yE ; y++){
+				for(var tx = tS ; tx <= tE ; tx++){
+					for(var ty = tS ; ty <= tE ; ty++){
 						var xx = x + tx;
 						var yy = y + ty;
 						if(xx >= 0 && xx <= img.width - 1 && yy >= 0 && yy <= img.height - 1 &&
@@ -1064,10 +1246,10 @@ function cvLine(img, pt1, pt2, color, thickness, isSegment){
 					yS = 0; yE = img.height - 1;
 				}
 				
-				for(y = yS ; y <= yE ; y++){
+				for(var y = yS ; y <= yE ; y++){
 					var x = Math.floor((y - pt1.y) / katamuki) + pt1.x ;
-					for(tx = tS ; tx <= tE ; tx++){
-						for(ty = tS ; ty <= tE ; ty++){
+					for(var tx = tS ; tx <= tE ; tx++){
+						for(var ty = tS ; ty <= tE ; ty++){
 							var xx = x + tx;
 							var yy = y + ty;
 							if(xx >= 0 && xx <= img.width - 1 && yy >= 0 && yy <= img.height - 1 &&
@@ -1094,11 +1276,11 @@ function cvLine(img, pt1, pt2, color, thickness, isSegment){
 					xS = 0; xE = img.width - 1;
 				}
 				
-				for(x = xS ; x <= xE ; x++){
+				for(var x = xS ; x <= xE ; x++){
 					var y = Math.floor(katamuki * (x - pt1.x)) + pt1.y;
 					
-					for(tx = tS ; tx <= tE ; tx++){
-						for(ty = tS ; ty <= tE ; ty++){
+					for(var tx = tS ; tx <= tE ; tx++){
+						for(var ty = tS ; ty <= tE ; ty++){
 							var xx = x + tx;
 							var yy = y + ty;
 							if(xx >= 0 && xx <= img.width - 1 && yy >= 0 && yy <= img.height - 1 &&
@@ -1226,9 +1408,9 @@ function cvIntegral(src, dst, sqsum, tilted_sum){
 			cvZero(tilted_sum);
 		}
 		
-		for(i = 0 ; i < dst.height ; i++){
-			for(j = 0 ; j < dst.width ; j++){
-				for(c = 0 ; c < CHANNELS - 1; c++){
+		for(var i = 0 ; i < dst.height ; i++){
+			for(var j = 0 ; j < dst.width ; j++){
+				for(var c = 0 ; c < CHANNELS - 1; c++){
 					dst.RGBA[c + (j + i * dst.width) * CHANNELS] = 
 						src.RGBA[c + (j + i * src.width) * CHANNELS] + ((j == 0) ? 0 : dst.RGBA[c + (j-1 + i * dst.width) * CHANNELS]);
 					if(!cvUndefinedOrNull(sqsum))
@@ -1241,16 +1423,16 @@ function cvIntegral(src, dst, sqsum, tilted_sum){
 				}
 			}
 		}
-		for(j = 0 ; j < dst.width ; j++){
-			for(i = 0 ; i < dst.height ; i++){
-				for(c = 0 ; c < CHANNELS - 1; c++){
+		for(var j = 0 ; j < dst.width ; j++){
+			for(var i = 0 ; i < dst.height ; i++){
+				for(var c = 0 ; c < CHANNELS - 1; c++){
 					dst.RGBA[c + (j + i * dst.width) * CHANNELS] += ((i == 0) ? 0 : dst.RGBA[c + (j + (i-1) * dst.width) * CHANNELS]);
 					if(!cvUndefinedOrNull(sqsum))
 						sqsum.RGBA[c + (j + i * sqsum.width) * CHANNELS] += ((i == 0) ? 0 : sqsum.RGBA[c + (j + (i-1) * sqsum.width) * CHANNELS]);
 
 					if(!cvUndefinedOrNull(tilted_sum)){
 						tilted_sum.RGBA[c + (j + i * tilted_sum.width) * CHANNELS]  = src.RGBA[c + (j + i * src.width) * CHANNELS];
-						for(y = 1 ; y <= i ; y++){
+						for(var y = 1 ; y <= i ; y++){
 							var ii = i - y;
 							var jl = j - y;
 							var jr = j + y;
@@ -1304,9 +1486,9 @@ function cvCopy(src, dst){
 	try{
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL;
 		
-		for(i = 0 ; i < src.height ; i++){
-			for(j = 0 ; j < src.width ; j++){
-				for(c = 0 ; c < CHANNELS ; c++){
+		for(var i = 0 ; i < src.height ; i++){
+			for(var j = 0 ; j < src.width ; j++){
+				for(var c = 0 ; c < CHANNELS ; c++){
 					dst.RGBA[c + (j + i * src.width) * CHANNELS] = 
 						src.RGBA[c + (j + i * src.width) * CHANNELS];
 				}
@@ -1341,8 +1523,8 @@ function cvThreshold(src, dst, threshold, max_value, threshold_type){
 		
 		switch(threshold_type){
 		case CV_THRESHOLD_TYPE.THRESH_BINARY:
-			for(i = 0 ; i < src.height ; i++){
-				for(j = 0 ; j < src.width ; j++){
+			for(var i = 0 ; i < src.height ; i++){
+				for(var j = 0 ; j < src.width ; j++){
 					dst.RGBA[(j + i * dst.width) * CHANNELS] = 
 					(src.RGBA[(j + i * dst.width) * CHANNELS] > threshold) ? max_value : 0;
 					dst.RGBA[(j + i * dst.width) * CHANNELS] = dst.RGBA[(j + i * dst.width) * CHANNELS];
@@ -1352,8 +1534,8 @@ function cvThreshold(src, dst, threshold, max_value, threshold_type){
 			}
 			break;
 		case CV_THRESHOLD_TYPE.THRESH_BINARY_INV:
-			for(i = 0 ; i < src.height ; i++){
-				for(j = 0 ; j < src.width ; j++){
+			for(var i = 0 ; i < src.height ; i++){
+				for(var j = 0 ; j < src.width ; j++){
 					dst.RGBA[(j + i * dst.width) * CHANNELS] = 
 					(src.RGBA[(j + i * dst.width) * CHANNELS] > threshold) ? 0 : max_value;
 					dst.RGBA[(j + i * dst.width) * CHANNELS] = dst.RGBA[(j + i * dst.width) * CHANNELS];
@@ -1363,8 +1545,8 @@ function cvThreshold(src, dst, threshold, max_value, threshold_type){
 			}
 			break;
 		case CV_THRESHOLD_TYPE.THRESH_TRUNC:
-			for(i = 0 ; i < src.height ; i++){
-				for(j = 0 ; j < src.width ; j++){
+			for(var i = 0 ; i < src.height ; i++){
+				for(var j = 0 ; j < src.width ; j++){
 					dst.RGBA[(j + i * dst.width) * CHANNELS] = 
 					(src.RGBA[(j + i * dst.width) * CHANNELS] > threshold) ? threshold : src.RGBA[(j + i * dst.width) * CHANNELS];
 					dst.RGBA[(j + i * dst.width) * CHANNELS] = dst.RGBA[(j + i * dst.width) * CHANNELS];
@@ -1374,8 +1556,8 @@ function cvThreshold(src, dst, threshold, max_value, threshold_type){
 			}
 			break;
 		case CV_THRESHOLD_TYPE.THRESH_TRUNC_TOZERO:
-			for(i = 0 ; i < src.height ; i++){
-				for(j = 0 ; j < src.width ; j++){
+			for(var i = 0 ; i < src.height ; i++){
+				for(var j = 0 ; j < src.width ; j++){
 					dst.RGBA[(j + i * dst.width) * CHANNELS] = 
 					(src.RGBA[(j + i * dst.width) * CHANNELS] > threshold) ? threshold : 0;
 					dst.RGBA[(j + i * dst.width) * CHANNELS] = dst.RGBA[(j + i * dst.width) * CHANNELS];
@@ -1385,8 +1567,8 @@ function cvThreshold(src, dst, threshold, max_value, threshold_type){
 			}
 			break;
 		case CV_THRESHOLD_TYPE.THRESH_TRUNC_TOZERO_INV:
-			for(i = 0 ; i < src.height ; i++){
-				for(j = 0 ; j < src.width ; j++){
+			for(var i = 0 ; i < src.height ; i++){
+				for(var j = 0 ; j < src.width ; j++){
 					dst.RGBA[(j + i * dst.width) * CHANNELS] = 
 					(src.RGBA[(j + i * dst.width) * CHANNELS] > threshold) ? 0 : threshold;
 					dst.RGBA[(j + i * dst.width) * CHANNELS] = dst.RGBA[(j + i * dst.width) * CHANNELS];
@@ -1404,24 +1586,24 @@ function cvThreshold(src, dst, threshold, max_value, threshold_type){
  
  			function Sum(values){
  				var rtn = 0;
- 				for(i = 0 ; i < values.length ; rtn += values[i++]);
+ 				for(var i = 0 ; i < values.length ; rtn += values[i++]);
  				return rtn;
  			}
 
 			var varDst = 0;
 			var sTh = 1;
-			for(th = 1 ; th < 254 ; th++){
+			for(var th = 1 ; th < 254 ; th++){
 				bClass = new Array();
 				wClass = new Array();
-				for(i = 0; i < th ; i++) bClass[i] = hist[i];
+				for(var i = 0; i < th ; i++) bClass[i] = hist[i];
 				var k = 0;
-				for(i = th; i < 255 ; i++) wClass[k++] = hist[i];
+				for(var i = th; i < 255 ; i++) wClass[k++] = hist[i];
 				var w1 = 0; var m1 = 0;
 				var w2 = 0; var m2 = 0;
 				w1 = Sum(bClass);
 				w2 = Sum(wClass);
-				for(i = 0; i < bClass.length ; i++) m1 += i * bClass[i];
-				for(i = 0; i < wClass.length ; i++) m2 += (th + i) * wClass[i];
+				for(var i = 0; i < bClass.length ; i++) m1 += i * bClass[i];
+				for(var i = 0; i < wClass.length ; i++) m2 += (th + i) * wClass[i];
 				m1 /= w1;
 				m2 /= w2;
 				
@@ -1454,17 +1636,17 @@ function cvResize(src, dst, interpolation){
 	try{
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL;
 		if(cvUndefinedOrNull(interpolation)) interpolation = CV_INTER.NN;
-		if(interpolation == CV_INTER.AREA || interpolation == CV_INTER.CUBIC)
-			throw "interpolation は現在CV_INTER.NN、CV_INTER.LINEARしかサポートされていません";
+		if(interpolation == CV_INTER.AREA)
+			throw "interpolation は現在CV_INTER.AREAをサポートしていません";
 		
 		var scaleWidth = src.width / dst.width;
 		var scaleHeight = src.height / dst.height;
 
-		for(i = 0 ; i < dst.height ; i++){
+		for(var i = 0 ; i < dst.height ; i++){
 			var h = scaleHeight * i ;	
-			for(j = 0 ; j < dst.width ; j++){
+			for(var j = 0 ; j < dst.width ; j++){
 				var w = scaleWidth * j;
-				for( c = 0 ; c < CHANNELS ; c++){
+				for(var  c = 0 ; c < CHANNELS ; c++){
 					var v = 0;
 					switch(interpolation){
 					case CV_INTER.NN:
@@ -1475,13 +1657,104 @@ function cvResize(src, dst, interpolation){
 					case CV_INTER.LINEAR:
 						var intW = Math.floor(w);
 						var intH = Math.floor(h);
+						var nextW = intW + 1; if(nextW > src.width - 1) nextW = src.width - 2;
+						var nextH = intH + 1; if(nextH > src.height - 1) nextH = src.height - 2;
 						v = (intW + 1 - w) * (intH + 1 - h) * src.RGBA[c + (intW + intH * src.width) * CHANNELS] +
-							(intW + 1 - w) * (h - intH) * src.RGBA[c + (intW + 1 + intH * src.width) * CHANNELS] +
-							(w - intW) * (intH + 1 - h) * src.RGBA[c + (intW + (intH + 1) * src.width) * CHANNELS] +
-							(w  - intW) * (h - intH) * src.RGBA[c + (intW + 1 + (intH + 1) * src.width) * CHANNELS] ;
+							(intW + 1 - w) * (h - intH) * src.RGBA[c + (nextW + intH * src.width) * CHANNELS] +
+							(w - intW) * (intH + 1 - h) * src.RGBA[c + (intW + nextH * src.width) * CHANNELS] +
+							(w  - intW) * (h - intH) * src.RGBA[c + (nextW + nextH * src.width) * CHANNELS] ;
 					break;
 					case CV_INTER.AREA: break;
-					case CV_INTER.CUBIC: break;
+					case CV_INTER.CUBIC:
+						var ha = -2;
+						var hym = cvCreateMat(1, 4);
+						var hxm = cvCreateMat(4, 1);
+						var srcm = cvCreateMat(4, 4);
+						var dstm1 = cvCreateMat(1, 4);
+						var dstm2 = cvCreateMat(1, 1);
+						var intW = Math.floor(w);
+						var intH = Math.floor(h);
+						var x2 = w - intW
+						var x1 = x2 + 1;
+						var x3 = intW + 1 - w;
+						var x4 = x3 + 1;
+						var y2 = h - intH;
+						var y1 = y2 + 1;
+						var y3 = intH + 1 - h;
+						var y4 = y3 + 1;
+						
+						function sinc(t, a){
+							var absT = Math.abs(t);
+							var absT2 = absT * absT;
+							var absT3 = absT2 * absT;
+							return (absT > 2) ? 0 :
+									(absT <= 1) ? 
+										(a + 2) * absT3  - (a + 3) * absT2 + 1 :
+										a * absT3 - 5 * a * absT2 + 8 * a * absT - 4 * a;
+						}
+						
+						hym.vals[0] = sinc(y1, ha);
+						hym.vals[1] = sinc(y2, ha);
+						hym.vals[2] = sinc(y3, ha);
+						hym.vals[3] = sinc(y4, ha);
+						
+						hxm.vals[0] = sinc(x1, ha);
+						hxm.vals[1] = sinc(x2, ha);
+						hxm.vals[2] = sinc(x3, ha);
+						hxm.vals[3] = sinc(x4, ha);
+						
+						var ip = intH - 1;
+						var in1 = intH + 1;
+						var in2 = intH + 2;
+
+						if(intH == 0) ip = 1;
+						else if(intH == src.height - 2){
+							in2 = src.height - 2;
+						}
+						else if(intH == src.height - 1){
+							in1 = src.height - 2;
+							in2 = src.height - 3;
+						}
+						
+						var jp = intW - 1;
+						var jn1 = intW + 1;
+						var jn2 = intW + 2;
+						
+						if(intW == 0) jp = 1;
+						else if(intW == src.width - 2){
+							 jn2 = src.width - 2;
+						}
+						else if(intW == src.width - 1){
+							jn1 = src.width - 2;
+							jn2 = src.width - 3;
+						}
+						
+						srcm.vals[0] = src.RGBA[c + (jp + ip * src.width) * CHANNELS];
+						srcm.vals[1] = src.RGBA[c + (intW + ip * src.width) * CHANNELS];
+						srcm.vals[2] = src.RGBA[c + (jn1 + ip * src.width) * CHANNELS];
+						srcm.vals[3] = src.RGBA[c + (jn2 + ip * src.width) * CHANNELS];
+						var len = srcm.cols;
+						srcm.vals[len] = src.RGBA[c + (jp + intH * src.width) * CHANNELS];
+						srcm.vals[1 + len] = src.RGBA[c + (intW + intH * src.width) * CHANNELS];
+						srcm.vals[2 + len] = src.RGBA[c + (jn1 + intH * src.width) * CHANNELS];
+						srcm.vals[3 + len] = src.RGBA[c + (jn2 + intH * src.width) * CHANNELS];
+						len = 2 * srcm.cols;
+						srcm.vals[len] = src.RGBA[c + (jp + in1 * src.width) * CHANNELS];
+						srcm.vals[1 + len] = src.RGBA[c + (intW + in1 * src.width) * CHANNELS];
+						srcm.vals[2 + len] = src.RGBA[c + (jn1 + in1 * src.width) * CHANNELS];
+						srcm.vals[3 + len] = src.RGBA[c + (jn2 + in1 * src.width) * CHANNELS];
+						len = 3 * srcm.cols;
+						srcm.vals[len] = src.RGBA[c + (jp + in2 * src.width) * CHANNELS];
+						srcm.vals[1 + len] = src.RGBA[c + (intW + in2 * src.width) * CHANNELS];
+						srcm.vals[2 + len] = src.RGBA[c + (jn1 + in2 * src.width) * CHANNELS];
+						srcm.vals[3 + len] = src.RGBA[c + (jn2 + in2 * src.width) * CHANNELS];
+						
+						cvmMul(hym, srcm, dstm1);
+						cvmMul(dstm1, hxm, dstm2);
+						
+						v = dstm2.vals[0];
+					
+					break;
 					default :
 						throw "interpolation" + ERROR.SWITCH_VALUE;
 					break;
@@ -1510,8 +1783,8 @@ function cvLUT(src, dst, lut, color){
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst) || cvUndefinedOrNull(color))
 			throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL; 
 		
-		for(i = 0 ; i < src.height ; i++){
-			for(j = 0 ; j < src.width ; j++){
+		for(var i = 0 ; i < src.height ; i++){
+			for(var j = 0 ; j < src.width ; j++){
 				var v = src.RGBA[color + (j + i * src.width) * CHANNELS];
 				dst.RGBA[color + (j + i * src.width) * CHANNELS]  = lut[v];
 			}
@@ -1545,8 +1818,8 @@ function cvToneCurve(src, dst, underX, underY, overX, overY, color){
 			var katamuki = (overY - underY) / (overX - underX) ;
 			var yseppen = underY - katamuki * underX;
 
-			for(i = 0 ; i < src.height ; i++){
-				for(j = 0 ; j < src.width ; j++){
+			for(var i = 0 ; i < src.height ; i++){
+				for(var j = 0 ; j < src.width ; j++){
 					var v = (katamuki * src.RGBA[color + (j + i * src.width) * CHANNELS] + yseppen);
 					dst.RGBA[color + (j + i * src.width) * CHANNELS]  = v;
 				}
@@ -1579,7 +1852,7 @@ function cvBlendImage(bg, fg, dst, blend_mode){
 		for (i = 0; i < bg.height; i++) {
 			for (j = 0; j < bg.width; j++) {
 				var ch = CHANNELS - 1 ;
-				for( c = 0 ; c < ch ; c++){
+				for(var  c = 0 ; c < ch ; c++){
 					
 					var bgV = bg.RGBA[c + (j + i * bg.width) * CHANNELS] / 255;
 					var fgV = fg.RGBA[c + (j + i * bg.width) * CHANNELS] / 255;
@@ -1713,15 +1986,15 @@ function cvSmooth(src, dst, smooth_type, param1, param2, param3, param4){
 			
 			var startX = -1 * Math.floor(param1/2);
 			var startY = -1 * Math.floor(param2/2);
-			for(i = 0 ; i < src.height ; i++){
-				for(j = 0 ; j < src.width ; j++){
-					for(c = 0 ; c < CHANNELS - 1 ; c++){
+			for(var i = 0 ; i < src.height ; i++){
+				for(var j = 0 ; j < src.width ; j++){
+					for(var c = 0 ; c < CHANNELS - 1 ; c++){
 						var newValue = 0;
-						for(y = 0 ; y < param2 ; y++){
+						for(var y = 0 ; y < param2 ; y++){
 							var yy = i + y + startY;
 							if(yy < 0) yy *= -1;
 							yy %= src.height;
-							for(x = 0 ; x < param1 ; x++){
+							for(var x = 0 ; x < param1 ; x++){
 								var xx = j + x + startX;
 								if(xx < 0) xx *= -1;
 								xx %= src.width;
@@ -1746,15 +2019,15 @@ function cvSmooth(src, dst, smooth_type, param1, param2, param3, param4){
 			
 			var startX = -1 * Math.floor(param1/2);
 			var startY = -1 * Math.floor(param2/2);
-			for(i = 0 ; i < src.height ; i++){
-				for(j = 0 ; j < src.width ; j++){
-					for(c = 0 ; c < CHANNELS - 1 ; c++){
+			for(var i = 0 ; i < src.height ; i++){
+				for(var j = 0 ; j < src.width ; j++){
+					for(var c = 0 ; c < CHANNELS - 1 ; c++){
 						var newValue = 0;
-						for(y = 0 ; y < param2 ; y++){
+						for(var y = 0 ; y < param2 ; y++){
 							var yy = i + y + startY;
 							if(yy < 0) yy *= -1;
 							yy %= src.height;
-							for(x = 0 ; x < param1 ; x++){
+							for(var x = 0 ; x < param1 ; x++){
 								var xx = j + x + startX;
 								if(xx < 0) xx *= -1;
 								xx %= src.width;
@@ -1791,30 +2064,30 @@ function cvSmooth(src, dst, smooth_type, param1, param2, param3, param4){
 			var startX = -1 * Math.floor(param1/2);
 			var startY = -1 * Math.floor(param2/2);
 			
-			for(y = 0 ; y < param2 ; y++){
+			for(var y = 0 ; y < param2 ; y++){
 				var yy = y + startY;
-				for(x = 0 ; x < param1 ; x++){
+				for(var x = 0 ; x < param1 ; x++){
 					var xx = x + startX;
 					array[x + y * param1] = Math.exp(-1 * (xx * xx + yy * yy) / alpha);
 				}
 			}
 			
 			var sum = 0;
-			for(i = 0 ; i < array.length ; i++) sum += array[i];
-			for(i = 0 ; i < array.length ; i++) array[i] /= sum;
+			for(var i = 0 ; i < array.length ; i++) sum += array[i];
+			for(var i = 0 ; i < array.length ; i++) array[i] /= sum;
 
 			sum = 0;
-			for(i = 0 ; i < array.length ; i++) sum += array[i];
+			for(var i = 0 ; i < array.length ; i++) sum += array[i];
 			
-			for(i = 0 ; i < src.height ; i++){
-				for(j = 0 ; j < src.width ; j++){
-					for(c = 0 ; c < CHANNELS - 1 ; c++){
+			for(var i = 0 ; i < src.height ; i++){
+				for(var j = 0 ; j < src.width ; j++){
+					for(var c = 0 ; c < CHANNELS - 1 ; c++){
 						var newValue = 0;
-						for(y = 0 ; y < param2 ; y++){
+						for(var y = 0 ; y < param2 ; y++){
 							var yy = i + y + startY;
 							if(yy < 0) yy *= -1;
 							yy %= src.height;
-							for(x = 0 ; x < param1 ; x++){
+							for(var x = 0 ; x < param1 ; x++){
 								var xx = j + x + startX;
 								if(xx < 0) xx *= -1;
 								xx %= src.width;
@@ -1838,14 +2111,14 @@ function cvSmooth(src, dst, smooth_type, param1, param2, param3, param4){
 			var array = new Array(param1 * param1);
 			
 			var start = -1 * Math.floor(param1/2);
-			for(i = 0 ; i < src.height ; i++){
-				for(j = 0 ; j < src.width ; j++){
-					for(c = 0 ; c < CHANNELS - 1 ; c++){
-						for(y = 0 ; y < param1 ; y++){
+			for(var i = 0 ; i < src.height ; i++){
+				for(var j = 0 ; j < src.width ; j++){
+					for(var c = 0 ; c < CHANNELS - 1 ; c++){
+						for(var y = 0 ; y < param1 ; y++){
 							var yy = i + y + start;
 							if(yy < 0) yy *= -1;
 							yy %= src.height;
-							for(x = 0 ; x < param1 ; x++){
+							for(var x = 0 ; x < param1 ; x++){
 								var xx = j + x + start;
 								if(xx < 0) xx *= -1;
 								xx %= src.width;
@@ -1873,24 +2146,24 @@ function cvSmooth(src, dst, smooth_type, param1, param2, param3, param4){
 			var param12 = 2*param1*param1;
 			var param22 = 2*param2*param2;
 
-			for(y = 0 ; y < 3 ; y++){
+			for(var y = 0 ; y < 3 ; y++){
 				var yy = y - 1;
-				for(x = 0 ; x < 3 ; x++){
+				for(var x = 0 ; x < 3 ; x++){
 					var xx = x - 1;
 					array[x + y * 3] = Math.exp(-1 * (xx * xx + yy * yy) / param12);
 				}
 			}
 			
-			for(i = 0 ; i < src.height ; i++){
-				for(j = 0 ; j < src.width ; j++){
-					for(c = 0 ; c < CHANNELS - 1 ; c++){
+			for(var i = 0 ; i < src.height ; i++){
+				for(var j = 0 ; j < src.width ; j++){
+					for(var c = 0 ; c < CHANNELS - 1 ; c++){
 						var overValue = 0;
 						var underValue = 0;
-						for(y = 0 ; y < 3 ; y++){
+						for(var y = 0 ; y < 3 ; y++){
 							var yy = i + y - 1;
 							if(yy < 0) yy *= -1;
 							yy %= src.height;
-							for(x = 0 ; x < 3 ; x++){
+							for(var x = 0 ; x < 3 ; x++){
 								var xx = j + x - 1;
 								if(xx < 0) xx *= -1;
 								xx %= src.width;
@@ -1956,17 +2229,17 @@ function cvSobel(src, dst, xorder, yorder, aperture_size){
 			
 			cvCopy(src, dst);
 			var dmy = cvCreateImage(src.width, src.height);
-			for(time = 0 ; time < times ; time++){
+			for(var time = 0 ; time < times ; time++){
 				cvCopy(dst, dmy);
-				for(i = 0; i < dmy.height ; i++){
-					for(j =0; j < dmy.width ; j++){
+				for(var i = 0; i < dmy.height ; i++){
+					for(var j =0; j < dmy.width ; j++){
 						var newValue = 0;
-						for(y = 0 ; y < aperture_size ; y++){
+						for(var y = 0 ; y < aperture_size ; y++){
 							var yy = i + y -1;
 							if(yy < 0) yy *= -1;
 							yy %= dmy.height;
 							
-							for(x = 0 ; x < aperture_size ; x++){
+							for(var x = 0 ; x < aperture_size ; x++){
 								var xx = j + x -1;
 								if(xx < 0) xx *= -1;
 								xx %= src.width;
@@ -2033,8 +2306,8 @@ function cvCanny(src, dst, threshold1, threshold2, aperture_size){
 		var kyodo = cvCreateImage(dst.width, dst.height);
 		
 		//強度と勾配
-		for(i = 0 ; i < kyodo.height ; i++){
-			for(j = 0 ; j < kyodo.width ; j++){
+		for(var i = 0 ; i < kyodo.height ; i++){
+			for(var j = 0 ; j < kyodo.width ; j++){
 				
 				kyodo.RGBA[(j + i * kyodo.width) * CHANNELS] = 
 					Math.sqrt(fxImage.RGBA[(j + i * fxImage.width) * CHANNELS] * fxImage.RGBA[(j + i * fxImage.width) * CHANNELS] +
@@ -2053,8 +2326,8 @@ function cvCanny(src, dst, threshold1, threshold2, aperture_size){
 		//細線化
 		var th = kobai.height - 1;
 		var tw = kobai.width - 1;
-		for(i = 1 ; i < th; i++){
-			for(j = 1 ; j < tw; j++){
+		for(var i = 1 ; i < th; i++){
+			for(var j = 1 ; j < tw; j++){
 				var left = j - 1;
 				var right = j + 1;
 				var top = i - 1;
@@ -2090,10 +2363,10 @@ function cvCanny(src, dst, threshold1, threshold2, aperture_size){
 		}
 
 		//閾値処理
-		for(i = 0 ; i < dst.height ; i++){
+		for(var i = 0 ; i < dst.height ; i++){
 			top = i - 1; if(top < 0) top *= -1;
 			down = i + 1; if(top > dst.height - 1) top = dst.height - 2;
-			for(j = 0 ; j < dst.width ; j++){
+			for(var j = 0 ; j < dst.width ; j++){
 				if(dst.RGBA[(j + i * dst.width) * CHANNELS] > threshold1) dst.RGBA[(j + i * dst.width) * CHANNELS] = 255;
 				else if(dst.RGBA[(j + i * dst.width) * CHANNELS] < threshold2) dst.RGBA[(j + i * dst.width) * CHANNELS] = 0;
 				else{
@@ -2114,8 +2387,8 @@ function cvCanny(src, dst, threshold1, threshold2, aperture_size){
 			}
 		}
 				
-		for(i = 0 ; i < dst.height ; i++){
-			for(j = 0 ; j < dst.width ; j++){
+		for(var i = 0 ; i < dst.height ; i++){
+			for(var j = 0 ; j < dst.width ; j++){
 				dst.RGBA[1 + (j + i * dst.width) * CHANNELS] = dst.RGBA[(j + i * dst.width) * CHANNELS];
 				dst.RGBA[2 + (j + i * dst.width) * CHANNELS] = dst.RGBA[(j + i * dst.width) * CHANNELS];
 				dst.RGBA[3 + (j + i * dst.width) * CHANNELS] = 255;
@@ -2332,9 +2605,9 @@ function cvFourArithmeticOperations(src1, src2, dst, four_arithmetic){
 		if(src1.width != src2.width || src1.height != src2.height ||
 			src1.width != dst.width || src1.height != dst.height) throw ERROR.DIFFERENT_SIZE;
 		
-		for(i = 0 ; i < dst.height ; i++){
-			for(j = 0; j < dst.width ; j++){
-				for(c = 0 ; c < CHANNELS ; c++){
+		for(var i = 0 ; i < dst.height ; i++){
+			for(var j = 0; j < dst.width ; j++){
+				for(var c = 0 ; c < CHANNELS ; c++){
 					var newValue;
 					switch(four_arithmetic){
 					case FOUR_ARITHMETIC.ADD:
@@ -2444,9 +2717,9 @@ function cvConvertScaleAbs(src, dst){
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL;
 		if(src.width != dst.width || src.height != dst.height) throw ERROR.DIFFERENT_SIZE;
 		
-		for(i = 0 ; i < dst.height ; i++){
-			for(j = 0; j < dst.width ; j++){
-				for(c = 0 ; c < CHANNELS ; c++){
+		for(var i = 0 ; i < dst.height ; i++){
+			for(var j = 0; j < dst.width ; j++){
+				for(var c = 0 ; c < CHANNELS ; c++){
 					dst.RGBA[c + (j + i * dst.width) * CHANNELS] = Math.abs(src.RGBA[c + (j + i * dst.width) * CHANNELS]);
 				}
 			}
@@ -2491,15 +2764,15 @@ function cvDilateOrErode(src, dst, isDilate, iterations, element){
 		
 		var dmy = cvCreateImage(src.width, src.height);
 		
-		for(ite = 0 ; ite < iterations ; ite++){
+		for(var ite = 0 ; ite < iterations ; ite++){
 			cvCopy(dst, dmy);
-			for(ih = 0 ; ih < dst.height ; ih++){
-				for(iw = 0 ; iw < dst.width ; iw++){
+			for(var ih = 0 ; ih < dst.height ; ih++){
+				for(var iw = 0 ; iw < dst.width ; iw++){
 					var value = isDilate ? 0 : 255;
-					for(eh = ehS ; eh < ehE ; eh++){
+					for(var eh = ehS ; eh < ehE ; eh++){
 						var h = ih + eh;
 						if(h >= 0 && h < src.height){
-							for(ew = ewS ; ew < ewE ; ew++){
+							for(var ew = ewS ; ew < ewE ; ew++){
 								var w = iw + ew;
 								if(w >= 0 && w < src.width){
 									if((isDilate && value < dmy.RGBA[(w + h * dst.width) * CHANNELS]) ||
@@ -2561,8 +2834,8 @@ function cvSet(src, color){
 	try{
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(color))
 			throw "src or color" + ERROR.IS_UNDEFINED_OR_NULL;
-		for(i = 0 ; i < src.height ; i++){
-			for(j = 0 ; j < src.width ; j++){
+		for(var i = 0 ; i < src.height ; i++){
+			for(var j = 0 ; j < src.width ; j++){
  				src.RGBA[(j + i * src.width) * CHANNELS] = color.val[0];
  				src.RGBA[1 + (j + i * src.width) * CHANNELS] = color.val[1];
  				src.RGBA[2 + (j + i * src.width) * CHANNELS] = color.val[2];
@@ -2583,9 +2856,9 @@ function cvSet(src, color){
 function cvZero(src){
 	try{
 		if(cvUndefinedOrNull(src)) throw "src" + ERROR.IS_UNDEFINED_OR_NULL;
-		for(i = 0 ; i < src.height ; i++){
-			for(j = 0 ; j < src.width ; j++){
-				for(c = 0 ; c < CHANNELS - 1 ; src.RGBA[c++ + (j + i * src.width) * CHANNELS] = 0);
+		for(var i = 0 ; i < src.height ; i++){
+			for(var j = 0 ; j < src.width ; j++){
+				for(var c = 0 ; c < CHANNELS - 1 ; src.RGBA[c++ + (j + i * src.width) * CHANNELS] = 0);
 				src.RGBA[3 + (j + i * src.width) * CHANNELS] = 255;
 			}
 		}
@@ -2650,9 +2923,9 @@ function cvLoadImageAtSrc(src, imgId, iplImage, maxSize){
 		    iplImage.width = iplImage.canvas.width;
 		    iplImage.height = iplImage.canvas.height;
 		    iplImage.imageData = iplImage.canvas.getContext("2d").getImageData(0, 0, iplImage.canvas.width, iplImage.canvas.height);
-		    for(i = 0 ; i < iplImage.height ; i++){
-		    	for(j = 0 ; j < iplImage.width ; j++){
-		    		for(c = 0 ; c < CHANNELS ; c++){
+		    for(var i = 0 ; i < iplImage.height ; i++){
+		    	for(var j = 0 ; j < iplImage.width ; j++){
+		    		for(var c = 0 ; c < CHANNELS ; c++){
 			    		iplImage.RGBA[c + (j + i * iplImage.width) * CHANNELS] = iplImage.imageData.data[c + (j + i * iplImage.width) * CHANNELS];
 			    	}
 		    	}
@@ -2697,9 +2970,9 @@ function cvLoadImage(event, imgId, iplImage, maxSize){
 				    iplImage.height = iplImage.canvas.height;
 				    iplImage.RGBA = new Array(iplImage.width * iplImage.width * CHANNELS);
 				    iplImage.imageData = iplImage.canvas.getContext("2d").getImageData(0, 0, iplImage.canvas.width, iplImage.canvas.height);
-				    for(i = 0 ; i < iplImage.height ; i++){
-				    	for(j = 0 ; j < iplImage.width ; j++){
-				    		for(c = 0 ; c < CHANNELS ; c++){
+				    for(var i = 0 ; i < iplImage.height ; i++){
+				    	for(var j = 0 ; j < iplImage.width ; j++){
+				    		for(var c = 0 ; c < CHANNELS ; c++){
 					    		iplImage.RGBA[c + (j + i * iplImage.width) * CHANNELS] = 
 					    			iplImage.imageData.data[c + (j + i * iplImage.width) * CHANNELS];
 					    	}
@@ -2745,9 +3018,9 @@ function cvCreateImage(width, height){
 		dst.width = dst.canvas.width;
 		dst.imageData = dst.canvas.getContext("2d").getImageData(0, 0, dst.canvas.width, dst.canvas.height);
 		dst.RGBA = new Array(dst.width * dst.width * CHANNELS);
-	    for(i = 0 ; i < dst.height ; i++){
-	    	for(j = 0 ; j < dst.width ; j++){
-	    		for(c = 0 ; c < CHANNELS - 1; dst.RGBA[c++ + (j + i * dst.width) * CHANNELS] = 0);
+	    for(var i = 0 ; i < dst.height ; i++){
+	    	for(var j = 0 ; j < dst.width ; j++){
+	    		for(var c = 0 ; c < CHANNELS - 1; dst.RGBA[c++ + (j + i * dst.width) * CHANNELS] = 0);
 		    	dst.RGBA[3 + (j + i * dst.width) * CHANNELS] = 255;
 	    	}
 	    }
@@ -2800,9 +3073,9 @@ function cvShowImage(imgId, iplImage){
 function cvRGBA2ImageData(iplImage){
 	try{
 		if(cvUndefinedOrNull(iplImage)) throw "iplImage" + ERROR.IS_UNDEFINED_OR_NULL;
-		for(i = 0 ; i < iplImage.height ; i++){
-			for(j = 0 ; j < iplImage.width ; j++){
-				for(c = 0 ; c < CHANNELS; c++){
+		for(var i = 0 ; i < iplImage.height ; i++){
+			for(var j = 0 ; j < iplImage.width ; j++){
+				for(var c = 0 ; c < CHANNELS; c++){
 					iplImage.imageData.data[c + (j + i * iplImage.width) * CHANNELS] = 
 						iplImage.RGBA[c + (j + i * iplImage.width) * CHANNELS];
 				}

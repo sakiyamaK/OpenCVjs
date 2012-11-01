@@ -16,6 +16,17 @@ function Test(imgId, iplImage){
 	}
 }
 
+function Resize(imgId, iplImage){
+	try{
+		var newIplImage = cvCreateImage(iplImage.width * 2, iplImage.height * 2);
+		cvResize(iplImage, newIplImage, CV_INTER.CUBIC);
+		cvShowImage(imgId, newIplImage);
+	}
+	catch(ex){
+		alert("Reisze : " + ex);
+	}
+}
+
 function Xpro(imgId, iplImage){
 	try{
 		var newIplImage = cvCloneImage(iplImage);
