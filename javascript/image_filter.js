@@ -1,15 +1,22 @@
 function Test(imgId, iplImage){
 	try{
+		//画像サイズを指定して画像領域を確保
+		var width = 256;
+		var height = 256;
+		var iplImage = cvCreateImage(width, height);
+
+		//全画素に真っ赤(255, 0, 0)を代入
+		for(var i = 0 ; i < height ; i++){
+			for(var j = 0 ; j < width ; j++){
+				iplImage.RGBA[(j + i * iplImage.width) * CHANNELS] = 255; //R
+				iplImage.RGBA[1 + (j + i * iplImage.width) * CHANNELS] = 0; //G
+				iplImage.RGBA[2 + (j + i * iplImage.width) * CHANNELS] = 0; //B
+				iplImage.RGBA[3 + (j + i * iplImage.width) * CHANNELS] = 255; //alpha
+			}
+		}
 		
-		var newIplImage = cvCloneImage(iplImage);
-		var dft = cvCreateImage(newIplImage.width, newIplImage.height);
-		
-		cvCvtColor(newIplImage, newIplImage, CV_CODE.RGB2GRAY);
-		
-		cvDFT(newIplImage, dft, CV_DXT.FORWARD_SCALE);
-		cvDFT(dft, newIplImage, CV_DXT.INVERSE_SCALE);
-		
-		cvShowImage(imgId, newIplImage);
+		//imgIdで指定したimgタグに画像を転送
+		cvShowImage(imgId, iplImage);
 	}
 	catch(ex){
 		alert("Test : " + ex);

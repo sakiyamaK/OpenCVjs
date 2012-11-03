@@ -139,6 +139,11 @@ var ERROR = {
 	APERTURE_SIZE : "aperture_sizeは1, 3, 5または7 のいずれかにしてください",
 }
 
+//画像読み込み時に利用される変数
+//任意のダミー画像のパスを指定
+//1*1の画像を推奨
+var DMY_IMG;
+
 //rows行cols列の行列を作る
 //入力
 //rows 整数
