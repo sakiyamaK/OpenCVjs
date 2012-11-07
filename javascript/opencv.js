@@ -1019,13 +1019,7 @@ function cvLabeling(src){
 				}
 			}
 		}
-		
-		for(var i = 0 ; i < lut.length ; i++){
-			if(i != lut[i]){
-				console.log(i + ", " + lut[i]);
-			}
-		}
-		
+
 		for(var i = 0 ; i < dmy.height ; i++){
 			for(var j = 0 ; j < dmy.width ; j++){
 				while(true){
@@ -1518,6 +1512,7 @@ function cvCopy(src, dst){
 //CV_THRESHOLD_TYPE.THRESH_TRUNCなら srcの画素 > thresholdでthresholdをdstの画素に代入
 //CV_THRESHOLD_TYPE.THRESH_TRUNC_TOZEROなら srcの画素 > thresholdでthreshold、違えば0をdstの画素に代入
 //CV_THRESHOLD_TYPE.THRESH_TRUNC_TOZERO_INVなら srcの画素 > thresholdで0、違えばthresholdをdstの画素に代入
+//CV_THRESHOLD_TYPE.THRESH_OTSUなら srcの画素 > thresholdでthreshold、違えば0をdstの画素に代入
 //出力
 //なし
 function cvThreshold(src, dst, threshold, max_value, threshold_type){

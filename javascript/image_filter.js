@@ -1,25 +1,134 @@
 function Test(imgId, iplImage){
 	try{
-		//画像サイズを指定して画像領域を確保
-		var width = 256;
-		var height = 256;
-		var iplImage = cvCreateImage(width, height);
-
-		//全画素に真っ赤(255, 0, 0)を代入
-		for(var i = 0 ; i < height ; i++){
-			for(var j = 0 ; j < width ; j++){
-				iplImage.RGBA[(j + i * iplImage.width) * CHANNELS] = 255; //R
-				iplImage.RGBA[1 + (j + i * iplImage.width) * CHANNELS] = 0; //G
-				iplImage.RGBA[2 + (j + i * iplImage.width) * CHANNELS] = 0; //B
-				iplImage.RGBA[3 + (j + i * iplImage.width) * CHANNELS] = 255; //alpha
+		var newIplImage = cvCreateImage(iplImage.width, iplImage.height * 1.3);
+		var s = newIplImage.height - iplImage.height;
+		var ys = 0.5;
+		var a = -ys/s;
+		
+		for(var i = 0 ; i < newIplImage.height ; i++){
+			for(var j = 0 ; j < newIplImage.width ; j++){
+				for(c = 0 ; c < 3 ; c++){
+					if(i < iplImage.height & j < iplImage.width){
+						newIplImage.RGBA[c + (j + i * newIplImage.width) * CHANNELS] =
+							iplImage.RGBA[c + (j + i * newIplImage.width) * CHANNELS];
+					}
+					else{
+						var y = (i - iplImage.height); 
+						var nv = (a * y + ys) * iplImage.RGBA[c + (j + (iplImage.height - 1 - y) * newIplImage.width) * CHANNELS];
+						newIplImage.RGBA[c + (j + i * newIplImage.width) * CHANNELS] = nv;
+							
+					}
+				}
+				newIplImage.RGBA[c + (j + i * newIplImage.width) * CHANNELS]  = 255;
 			}
 		}
-		
+
 		//imgIdで指定したimgタグに画像を転送
-		cvShowImage(imgId, iplImage);
+		cvShowImage(imgId, newIplImage);
 	}
 	catch(ex){
 		alert("Test : " + ex);
+	}
+}
+
+
+function HDR(imgId, iplImage){
+
+	var gray = cvCloneImage(iplImage);
+	cvCvtColor(gray, gray, CV_CODE.RGB2GRAY);
+
+	var miniGray = cvCreateImage(gray.width/2, gray.height/2);	
+	cvResize(gray, miniGray, CV_INTER.CUBIC);
+	
+	var img1 = cvCreateImage(miniGray.width, miniGray.height);
+	cvCopy(miniGray, img1);
+	
+	for(var i = 0 ; i < img1.height ; i++){
+		for(var j = 0 ; j < img1.width ; j++){
+			var v = 255 - img1.RGBA[(j + i * img1.width) * CHANNELS];
+			img1.RGBA[(j + i * img1.width) * CHANNELS] = v;
+			img1.RGBA[1 + (j + i * img1.width) * CHANNELS] = v;
+			img1.RGBA[2 + (j + i * img1.width) * CHANNELS] = v;
+		}
+	}
+	for(var i = 0 ; i < 3; i++)
+		cvSmooth(img1, img1, CV_SMOOTH_TYPE.GAUSSIAN, 7);
+		
+	var img2 = cvCreateImage(gray.width, gray.height);
+	
+	cvResize(img1, img2, CV_INTER.CUBIC);
+
+	var newIplImage = cvCloneImage(iplImage);
+	var blendMode = CV_BLEND_MODE.OVER_LAY;
+	cvBlendImage(newIplImage, img2, newIplImage, blendMode);
+	cvBlendImage(newIplImage, img2, newIplImage, blendMode);
+	cvBlendImage(newIplImage, img2, newIplImage, blendMode);
+
+	var sobelXImage = cvCreateImage(miniGray.width, miniGray.height);
+	var sobelYImage = cvCreateImage(miniGray.width, miniGray.height);
+	
+	cvSobel(miniGray, sobelXImage, 1, 0);
+	cvSobel(miniGray, sobelYImage, 0, 1);
+	
+	cvAdd(sobelXImage, sobelYImage, sobelXImage);
+	
+	cvConvertScaleAbs(sobelXImage, sobelXImage);
+	
+	for(var i = 0 ; i < sobelXImage.height ; i++){
+		for(var j = 0 ; j < sobelXImage.width ; j++){
+			var v = 255 - sobelXImage.RGBA[(j + i * sobelXImage.width) * CHANNELS] ;
+			sobelXImage.RGBA[(j + i * sobelXImage.width) * CHANNELS] = v;
+			sobelXImage.RGBA[1 + (j + i * sobelXImage.width) * CHANNELS] = v;
+			sobelXImage.RGBA[2 + (j + i * sobelXImage.width) * CHANNELS] = v;
+		}
+	}
+	
+	cvSmooth(sobelXImage, sobelXImage, CV_SMOOTH_TYPE.GAUSSIAN, 7);
+	
+	cvResize(sobelXImage, img2);
+	
+//	cvBlendImage(newIplImage, img2, newIplImage, CV_BLEND_MODE.MUL);
+
+	cvShowImage(imgId, newIplImage);	
+}
+
+function Labeling(imgId, iplImage){
+	try{
+		var iplImage1 = cvCloneImage(iplImage);
+		cvCvtColor(iplImage1, iplImage1, CV_CODE.RGB2GRAY);
+		
+		cvThreshold(iplImage1, iplImage1, 100, 255, CV_THRESHOLD_TYPE.THRESH_BINARY_INV);
+
+		var iplImage2 = cvLabeling(iplImage1);
+		
+		min_val = new Array(4);
+		max_val = new Array(4);
+		min_locs = new Array(4);
+		max_locs = new Array(4);
+		for(var i = 0 ; i < 4 ; i++){
+			min_locs[i] = new Point();
+			max_locs[i] = new Point();
+		}
+
+		cvMinMaxLoc(iplImage2, min_val, max_val, min_locs, max_locs);
+		var maxV = max_val[0];
+		
+		for(i = 0 ; i < iplImage2.height ; i++){
+			for(j = 0 ; j < iplImage2.width ; j++){
+				var v = iplImage2.RGBA[(j + i * iplImage1.width) * CHANNELS] ;
+				iplImage1.RGBA[(j + i * iplImage2.width) * CHANNELS] = 255 * v / maxV;
+				iplImage1.RGBA[1 + (j + i * iplImage2.width) * CHANNELS] = 255;
+				iplImage1.RGBA[2 + (j + i * iplImage2.width) * CHANNELS] = (v == 0) ? 0 : 255;
+				iplImage1.RGBA[3 + (j + i * iplImage2.width) * CHANNELS] = 255;
+			}
+		}
+		
+		cvCvtColor(iplImage1, iplImage1, CV_CODE.HSV2RGB);
+
+		cvShowImage(imgId, iplImage1);
+	}
+	catch(ex){
+		alert("Labeling : " + ex);
 	}
 }
 
