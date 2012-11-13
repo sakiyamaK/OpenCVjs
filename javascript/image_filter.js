@@ -1,17 +1,28 @@
 function Test(imgId, iplImage){
 	try{
+	}
+	catch(ex)
+	{
+	}
+}
+
+function Reflection(imgId, iplImage){
+	try{
+		//新しい画像領域 縦幅を読み込んだ画像の1.3倍にする
 		var newIplImage = cvCreateImage(iplImage.width, iplImage.height * 1.3);
-		var s = newIplImage.height - iplImage.height;
-		var ys = 0.5;
-		var a = -ys/s;
+		var s = newIplImage.height - iplImage.height; //差分
+		var ys = 0.5; //y切片
+		var a = -ys/s; //傾き
 		
 		for(var i = 0 ; i < newIplImage.height ; i++){
 			for(var j = 0 ; j < newIplImage.width ; j++){
-				for(c = 0 ; c < 3 ; c++){
-					if(i < iplImage.height & j < iplImage.width){
+				for(var c = 0 ; c < 3 ; c++){
+					//そのままの座標の画素を取得
+					if(i < iplImage.height ){
 						newIplImage.RGBA[c + (j + i * newIplImage.width) * CHANNELS] =
 							iplImage.RGBA[c + (j + i * newIplImage.width) * CHANNELS];
 					}
+					//反転した座標の画素を取得
 					else{
 						var y = (i - iplImage.height); 
 						var nv = (a * y + ys) * iplImage.RGBA[c + (j + (iplImage.height - 1 - y) * newIplImage.width) * CHANNELS];
@@ -19,7 +30,6 @@ function Test(imgId, iplImage){
 							
 					}
 				}
-				newIplImage.RGBA[c + (j + i * newIplImage.width) * CHANNELS]  = 255;
 			}
 		}
 
@@ -30,7 +40,6 @@ function Test(imgId, iplImage){
 		alert("Test : " + ex);
 	}
 }
-
 
 function HDR(imgId, iplImage){
 
