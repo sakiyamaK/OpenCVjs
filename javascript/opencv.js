@@ -2594,7 +2594,7 @@ function cvCvtColor(src, dst, code){
 }
 
 //画像の四則演算
-//全画素に対して四則演算が行われる cvAdd cvSub cvMul cvDivで呼び出されることを想定
+//全画素に対して四則演算が行われる for(var  cvSub cvMul cvDivで呼び出されることを想定
 //入力
 //src1 IplImage型 ひとつめの画像
 //src2 IplImage型 ひとつめの画像

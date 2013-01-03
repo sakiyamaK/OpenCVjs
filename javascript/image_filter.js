@@ -1,8 +1,43 @@
 function Test(imgId, iplImage){
 	try{
+		var maxLength = 32;
+		
+		var grayImage = cvCreateImage(iplImage.width, iplImage.height);
+		cvCopy(iplImage, grayImage);
+		
+		var sobelX = cvCloneImage(grayImage);
+		var sobelY = cvCloneImage(grayImage);
+		
+		cvSobel(grayImage, sobelX, 1, 0);
+		cvSobel(grayImage, sobelY, 0, 1);
+		
+		cvAdd(sobelX, sobelY, grayImage);
+
+	/*	
+		var ratio = 0;
+		var newIplImage = null;
+		if(iplImage.width > iplImage.height)		
+		{
+			ratio = maxLength / iplImage.width ;
+		}
+		else
+		{
+			ratio = maxLength / iplImage.height;
+		}
+		var w = Math.floor(iplImage.width * ratio);
+		var h = Math.floor(iplImage.height * ratio);	
+		
+		console.log(w + ", " + h);
+			
+		newIplImage = cvCreateImage(w, h);
+
+		cvResize(grayImage, newIplImage);
+*/
+		//imgIdで指定したimgタグに画像を転送
+		cvShowImage(imgId, grayImage);
 	}
-	catch(ex)
-	{
+	catch(ex){
+		alert("Test : " + ex);
 	}
 }
 
@@ -592,15 +627,32 @@ function WhiteBlack(imgId, iplImage){
 	}	
 }
 
-function Light(imgId, iplImage){
+function LightFall(imgId, iplImage){
 	try{
-		var lightImage = MakeLightImage(iplImage.width, iplImage.height, 255, 1, 2, iplImage.width/2, iplImage.height/2);
+		//光源の中心の強さ
+		var power = 255;
+		//減光率の分子
+		var bunshi = 80;
+		//減光率の分母
+		var bunbo = 100;
+		//光源の大きさを決める倍率
+		var bairitsu = 0.4;
+		
+		//光源の大きさを求める
+		var lightWidth = iplImage.width * bairitsu;
+		var lightHeight = iplImage.height * bairitsu;
+		
+		//光源画像の生成
+		var lightImage = MakeLightImage(iplImage.width, iplImage.height, power, bunshi, bunbo, lightWidth, lightHeight);
+		//画像の複製
 		var newIplImage = cvCloneImage(iplImage);
-		cvBlendImage(iplImage, lightImage, newIplImage, CV_BLEND_MODE.OVER_LAY);
+		//画素同士を掛けて合成
+		cvBlendImage(iplImage, lightImage, newIplImage, CV_BLEND_MODE.MUL);
+		//画像を表示
 		cvShowImage(imgId, newIplImage);
 	}
 	catch(ex){
-		alert("Light : " + ex);
+		alert("LightFall : " + ex);
 	}
 }
 
@@ -608,21 +660,23 @@ function Light(imgId, iplImage){
 function MakeLightImage(width, height, power, bunbo, bunshi, radiusX, radiusY){
 	var iplImage = cvCreateImage(width, height);
 	try{			
-		for(i = 0 ; i < height ; i++){
-			
+		for(var i = 0 ; i < height ; i++){
+			//画像の中心を原点とする処理
 			var y = i - height / 2;
-
-			for(j = 0 ; j < width ; j++){
-			
+			for(var j = 0 ; j < width ; j++){
+				//画像の中心を原点とする処理
 				var x = j - width / 2;
-				
+				//基本の光の強さ
 				var v = power;
+				//画像の中心からの距離
 				var dis2 = (y * y) / (radiusY * radiusY) + (x * x) / (radiusX * radiusX);
+				//距離が1より大きければ光の強さと距離の関係から明るさを求める(1以下は光の強さがそのまま明るさとなる)
 				if(dis2 > 1) v /= Math.pow(dis2, bunshi / bunbo) ;
-
-				for( c = 0 ; c < CHANNELS ; c++){
-					iplImage.RGBA[c + (j + i * width) * CHANNELS] = v;
-				}
+				//RGBに代入する
+				iplImage.RGBA[(j + i * width) * CHANNELS] = v;
+				iplImage.RGBA[1 + (j + i * width) * CHANNELS] = v;
+				iplImage.RGBA[2+ (j + i * width) * CHANNELS] = v;
+				iplImage.RGBA[3 + (j + i * width) * CHANNELS] = 255;
 			}
 		}
 	}
