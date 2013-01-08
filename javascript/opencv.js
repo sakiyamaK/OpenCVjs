@@ -36,6 +36,13 @@ var Size = function(){
 }
 
 //定数
+//逆行列の演算の種類
+var CV_INV = {
+	LU: 0,
+	SVD: 1,
+	SVD_SYM: 2
+}
+
 //ヒストグラムの種類
 var CV_HIST = {
 	ARRAY: 0,
@@ -135,19 +142,23 @@ var ERROR = {
 	ONLY_POSITIVE_NUMBER : "は正の値にして下さい",
 	NOT_READ_FILE : "ファイルが読み込めません",
 	NOT_GET_CONTEXT : "contextが読み込めません",
+	PLEASE_SQUARE_MAT : "は正方行列にしてください",
 	SWITCH_VALUE : "の値が正しくありません",
 	APERTURE_SIZE : "aperture_sizeは1, 3, 5または7 のいずれかにしてください",
 }
+
 
 //画像読み込み時に利用される変数
 //任意のダミー画像のパスを指定
 //1*1の画像を推奨
 var DMY_IMG;
 
+
 //rows行cols列の行列を作る
+//C言語でいう a[rows][cols]
 //入力
-//rows 整数
-//cols 整数
+//rows 整数 (y座標)
+//cols 整数 (x座標)
 //出力
 //CvMat型
 function cvCreateMat(rows, cols){
@@ -161,7 +172,7 @@ function cvCreateMat(rows, cols){
 		rtn = new CvMat();
 		rtn.rows = rows;
 		rtn.cols = cols;
-		rtn.vals = new Array(rows*cols);
+		rtn.vals = new Array(rows * cols);
 	}
 	catch(ex){
 		alert("cvCreateMat : " + ex);
@@ -173,20 +184,20 @@ function cvCreateMat(rows, cols){
 //行列に値を代入
 //入力
 //mat CvMat型 代入される行列
-//row 整数 代入する行番号
-//col 整数 代入する列番号
+//row 整数 代入する行番号(y座標)
+//col 整数 代入する列番号(x座標)
 //val 数値 代入される値
 //出力
 //なし
 function cvmSet(mat, row, col, value){
 	try{
 		if(cvUndefinedOrNull(mat) || cvUndefinedOrNull(value)|| 
-			cvUndefinedOrNull(rows) || cvUndefinedOrNull(cols))
+			cvUndefinedOrNull(row) || cvUndefinedOrNull(col))
 				throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
 //		if(!cvIsInt(rows) || !cvIsInt(cols))
 //				throw "rows or cols" + ERROR.ONLY_INTERGER_NUMBER;
 		
-		mat.vals[row + col * mat.rows] = value;
+		mat.vals[col + row * mat.cols] = value;
 	}
 	catch(ex){
 		alert("cvmSet : " + ex);
@@ -196,20 +207,19 @@ function cvmSet(mat, row, col, value){
 //行列から値を取得
 //入力
 //mat CvMat型 取得される行列
-//row 整数 取得する行番号
-//col 整数 取得する列番号
+//row 整数 取得する行番号(y座標)
+//col 整数 取得する列番号(x座標)
 //出力
 //数値
 function cvmGet(mat, row, col){
 	var rtn = null;
 	try{
-		if(cvUndefinedOrNull(mat) || cvUndefinedOrNull(value)|| 
-			cvUndefinedOrNull(rows) || cvUndefinedOrNull(cols))
+		if(cvUndefinedOrNull(mat) || cvUndefinedOrNull(row) || cvUndefinedOrNull(col))
 				throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
 //		if(!cvIsInt(rows) || !cvIsInt(cols))
 //				throw "rows or cols" + ERROR.ONLY_INTERGER_NUMBER;
 		
-		rtn = mat.vals[row + col * mat.rows];
+		rtn = mat.vals[col + row * mat.cols];
 	}
 	catch(ex){
 		alert("cvmGet : " + ex);
@@ -318,6 +328,90 @@ function cvmTranspose(matA, matX){
 	catch(ex){
 		alert("cvmTranspose : " + ex);
 	}
+}
+
+//逆行列の演算
+function cvInverse(src, dst, method){
+	try{
+		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) 
+				throw "src または dst" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(cvUndefinedOrNull(method)) method = CV_INV.SVD;
+		if(method != CV_INV.SVD_SYM)
+			throw "CV_INV.SVD_SYM は現在サポートされていません";
+		
+		switch(method){
+		case CV_INV.LU:
+			if(src.cols != src.rows)
+				throw "CV_INV.LUの場合、src" + PLEASE_SQUARE_MAT;
+			
+			
+		break;
+		case CV_INV.SVD:
+			
+		break;
+		case CV_INV.SVD_SYM: break;
+		}
+	}
+	catch(ex){
+		alert("cvInverse : " + ex);
+	}
+}
+
+//特異値分解の演算
+function cvSVD(A, W, U, V, flags){
+	try{
+	}
+	catch(ex){
+		alert("cvSVD : " + ex);
+	}
+}
+
+//行列式の演算
+function cvDet(mat){
+	var rtn = null;
+	try{
+		if(cvUndefinedOrNull(mat)) 
+			throw "mat" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(mat.rows != mat.cols || mat.rows == 0 || mat.cols == 0)
+			throw "mat" + ERROR.PLEASE_SQUARE_MAT;
+		
+		if(mat.cols == 1) rtn = cvmGet(mat, 0, 0);
+		if(mat.cols == 2){
+			rtn = mat.vals[0] * mat.vals[1 + 1 * mat.cols];
+			rtn -= mat.vals[1] * mat.vals[1 * mat.cols];
+		}
+		else if(mat.cols == 3){
+			rtn = mat.vals[0] * mat.vals[1 + 1 * mat.cols] * mat.vals[2 + 2 * mat.cols];
+			rtn += mat.vals[1 * mat.cols] * mat.vals[1 + 2 * mat.cols] * mat.vals[2];
+			rtn += mat.vals[2 * mat.cols] * mat.vals[1] * mat.vals[2 + 1 * mat.cols];
+			rtn -= mat.vals[2 * mat.cols] * mat.vals[1 + 1 * mat.cols] * mat.vals[2];
+			rtn -= mat.vals[1 * mat.cols] * mat.vals[1] * mat.vals[2 + 2 * mat.cols];
+			rtn -= mat.vals[0] * mat.vals[1 + 2 * mat.cols] * mat.vals[2 + 1 * mat.cols];
+		}
+		else{
+			rtn = 1;
+			var buf;
+			//三角行列作成
+			for(var i = 0 ; i < mat.rows ; i++){
+				for(var j = 0; j < mat.cols ; j++){
+					if(i < j){
+						buf = mat.vals[ i + j * mat.cols ] / mat.vals[ i + i * mat.cols ];
+						for(var k = 0 ; k < mat.cols ; k++)
+							mat.vals[k + j * mat.cols] -= mat.vals[k + i * mat.cols] * buf;
+					}
+				}
+			}
+			//対角部分の積
+			for(var i = 0 ; i < mat.rows ; i++){
+				rtn *= mat.vals[i + i * mat.cols];
+			}
+		}		
+	}
+	catch(ex){
+		alert("Det : " + ex);
+	}
+	
+	return rtn;
 }
 
 //チャンネルを合成する
@@ -771,6 +865,18 @@ function cvCalcHist(src, hist, accumulate, mask){
 	}
 	catch(ex){
 		alert("cvCalcHist : " + ex);
+	}
+}
+
+function cvEqualizeHist(src, dst){
+	try{
+		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(hist))
+			throw "src or hist" + ERROR.IS_UNDEFINED_OR_NULL;
+		
+		
+	}
+	catch(ex){
+		alert("cvEqualizeHist : " + ex);
 	}
 }
 

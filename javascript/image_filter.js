@@ -1,40 +1,20 @@
 function Test(imgId, iplImage){
 	try{
-		var maxLength = 32;
+		var rows = 2;
+		var cols = 2;
 		
-		var grayImage = cvCreateImage(iplImage.width, iplImage.height);
-		cvCopy(iplImage, grayImage);
+		var mat = cvCreateMat(rows, cols);
+		mat.vals[0 + 0 * mat.cols] = 1; mat.vals[1 + 0 * mat.cols] = 1; 
+		mat.vals[0 + 1 * mat.cols] = 2; mat.vals[1 + 1 * mat.cols] = 3;
+	
+		var matT = cvCreateMat(rows, cols);
+		cvmTranspose(mat, matT);
 		
-		var sobelX = cvCloneImage(grayImage);
-		var sobelY = cvCloneImage(grayImage);
+		var mulm = cvCreateMat(rows, cols);
 		
-		cvSobel(grayImage, sobelX, 1, 0);
-		cvSobel(grayImage, sobelY, 0, 1);
-		
-		cvAdd(sobelX, sobelY, grayImage);
+		cvmAdd(mat, matT, mulm);
 
-	/*	
-		var ratio = 0;
-		var newIplImage = null;
-		if(iplImage.width > iplImage.height)		
-		{
-			ratio = maxLength / iplImage.width ;
-		}
-		else
-		{
-			ratio = maxLength / iplImage.height;
-		}
-		var w = Math.floor(iplImage.width * ratio);
-		var h = Math.floor(iplImage.height * ratio);	
-		
-		console.log(w + ", " + h);
-			
-		newIplImage = cvCreateImage(w, h);
-
-		cvResize(grayImage, newIplImage);
-*/
-		//imgIdで指定したimgタグに画像を転送
-		cvShowImage(imgId, grayImage);
+		alert(mat);
 	}
 	catch(ex){
 		alert("Test : " + ex);
