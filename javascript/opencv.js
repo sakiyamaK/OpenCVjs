@@ -153,7 +153,6 @@ var ERROR = {
 //1*1の画像を推奨
 var DMY_IMG;
 
-
 //rows行cols列の行列を作る
 //C言語でいう a[rows][cols]
 //入力
@@ -363,6 +362,59 @@ function cvSVD(A, W, U, V, flags){
 	}
 	catch(ex){
 		alert("cvSVD : " + ex);
+	}
+}
+
+//LU分解の演算
+//入力
+//mat CvMat型 LU分解される行列
+//L CvMat型 Lの結果が代入される行列
+//U CvMat型 Uの結果が代入される行列
+//出力
+//なし
+function cvLU(mat, L, U){
+	try{
+		if(cvUndefinedOrNull(mat) || cvUndefinedOrNull(L)  || cvUndefinedOrNull(U) ) 
+			throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(mat.rows != mat.cols || mat.rows == 0 || mat.cols == 0 ||
+			L.rows != L.cols || L.rows == 0 || L.cols == 0 ||
+			U.rows != U.cols || U.rows == 0 || U.cols == 0 ||
+			mat.rows != L.rows || mat.rows != U.rows ||
+			mat.cols != L.cols || mat.cols != U.cols)
+			throw "全ての引数" + ERROR.PLEASE_SQUARE_MAT + " かつ 行列数は同じにして下さい";
+		
+		//初期化
+		for(var i=0; i < mat.rows; i++){
+			for(var j=0; j < mat.cols; j++){
+				L.vals[j + i * L.cols] = 0;
+				U.vals[j + i * U.cols] = 0;
+				if(i==j) L.vals[j + i * L.cols]=1.0;
+			}
+		}
+		
+		var sum;
+		for(var i=0; i < mat.rows; i++){
+			for(var j=0; j < mat.cols; j++){
+				if( i > j ){
+					//-- L成分を求める --
+					sum=0.0;
+					for(var k=0; k < j; k++){
+						sum+=L.vals[k + i * L.cols] * U.vals[j + k * U.cols];
+					}
+					L.vals[j + i * L.cols] = (mat.vals[j + i * mat.cols] - sum) / U.vals[j + j * U.cols];
+				}else{
+					// --U成分を求める--
+					sum=0.0;
+					for(var k=0;k<i;k++){
+						sum+=L.vals[k + i * L.cols] * U.vals[j + k * U.cols];
+					}
+					U.vals[j + i * U.cols]=mat.vals[j + i * mat.cols] - sum;
+				}
+			}
+		}
+	}
+	catch(ex){
+		alert("cvLU : " + ex);
 	}
 }
 

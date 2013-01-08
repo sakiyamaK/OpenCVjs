@@ -1,19 +1,21 @@
 function Test(imgId, iplImage){
 	try{
-		var rows = 2;
-		var cols = 2;
+		var rows = 3;
+		var cols = 3;
 		
 		var mat = cvCreateMat(rows, cols);
-		mat.vals[0 + 0 * mat.cols] = 1; mat.vals[1 + 0 * mat.cols] = 1; 
-		mat.vals[0 + 1 * mat.cols] = 2; mat.vals[1 + 1 * mat.cols] = 3;
+		var L = cvCreateMat(rows, cols);
+		var U = cvCreateMat(rows, cols);
+		var LU = cvCreateMat(rows, cols);
+		
+		mat.vals[0 + 0 * mat.cols] = 1; mat.vals[1 + 0 * mat.cols] = 10;  mat.vals[2 + 0 * mat.cols] = 22; 
+		mat.vals[0 + 1 * mat.cols] = 0; mat.vals[1 + 1 * mat.cols] = 9;  mat.vals[2 + 1 * mat.cols] = -1; 
+		mat.vals[0 + 2 * mat.cols] = -1; mat.vals[1 + 2 * mat.cols] = -20;  mat.vals[2 + 2 * mat.cols] = -55; 
+		
+		cvLU(mat, L, U);
+		
+		cvmMul(L, U, LU);
 	
-		var matT = cvCreateMat(rows, cols);
-		cvmTranspose(mat, matT);
-		
-		var mulm = cvCreateMat(rows, cols);
-		
-		cvmAdd(mat, matT, mulm);
-
 		alert(mat);
 	}
 	catch(ex){
