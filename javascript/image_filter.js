@@ -1,22 +1,23 @@
 function Test(imgId, iplImage){
 	try{
-		var rows = 3;
-		var cols = 3;
+		var rows = 4;
+		var cols = 4;
 		
 		var mat = cvCreateMat(rows, cols);
-		var L = cvCreateMat(rows, cols);
-		var U = cvCreateMat(rows, cols);
-		var LU = cvCreateMat(rows, cols);
+		var inv = cvCreateMat(rows, cols);
+		var kenzan = cvCreateMat(rows, cols);
 		
-		mat.vals[0 + 0 * mat.cols] = 1; mat.vals[1 + 0 * mat.cols] = 10;  mat.vals[2 + 0 * mat.cols] = 22; 
-		mat.vals[0 + 1 * mat.cols] = 0; mat.vals[1 + 1 * mat.cols] = 9;  mat.vals[2 + 1 * mat.cols] = -1; 
-		mat.vals[0 + 2 * mat.cols] = -1; mat.vals[1 + 2 * mat.cols] = -20;  mat.vals[2 + 2 * mat.cols] = -55; 
 		
-		cvLU(mat, L, U);
+		mat.vals[0 + 0 * mat.cols] = 3; mat.vals[1 + 0 * mat.cols] = 1;  mat.vals[2 + 0 * mat.cols] = 1;  mat.vals[3 + 0 * mat.cols] = 4; 
+		mat.vals[0 + 1 * mat.cols] = 5; mat.vals[1 + 1 * mat.cols] = 1;  mat.vals[2 + 1 * mat.cols] = 3;  mat.vals[3 + 1 * mat.cols] = 4; 
+		mat.vals[0 + 2 * mat.cols] = 2; mat.vals[1 + 2 * mat.cols] = 0;  mat.vals[2 + 2 * mat.cols] = 1;  mat.vals[3 + 2 * mat.cols] = 0;
+		mat.vals[0 + 3 * mat.cols] = 1; mat.vals[1 + 3 * mat.cols] = 3;  mat.vals[2 + 3 * mat.cols] = 2;  mat.vals[3 + 3 * mat.cols] = 1;
 		
-		cvmMul(L, U, LU);
-	
-		alert(mat);
+		cvInverse(mat, inv);
+		cvmMul(mat, inv, kenzan);
+
+		cvAlertMat(inv);
+		cvAlertMat(kenzan);
 	}
 	catch(ex){
 		alert("Test : " + ex);

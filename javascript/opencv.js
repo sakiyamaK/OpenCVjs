@@ -332,17 +332,64 @@ function cvmTranspose(matA, matX){
 //逆行列の演算
 function cvInverse(src, dst, method){
 	try{
-		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) 
+		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst) ||
+		src.rows != dst.rows || src.cols != dst.cols) 
 				throw "src または dst" + ERROR.IS_UNDEFINED_OR_NULL;
-		if(cvUndefinedOrNull(method)) method = CV_INV.SVD;
-		if(method != CV_INV.SVD_SYM)
+		if(cvUndefinedOrNull(method)) method = CV_INV.LU;
+		if(method == CV_INV.SVD_SYM)
 			throw "CV_INV.SVD_SYM は現在サポートされていません";
 		
 		switch(method){
 		case CV_INV.LU:
 			if(src.cols != src.rows)
 				throw "CV_INV.LUの場合、src" + PLEASE_SQUARE_MAT;
+
+			//前進代入			
+			function Lforwardsubs(L, b, y){
+				for(var i = 0 ; i < L.rows ; i++)
+					y.vals[i * y.cols] = b.vals[i * b.cols];
+					
+				for(var i = 0 ; i < L.rows ; i++){
+					y.vals[i * y.cols] /= L.vals[i + i * L.cols];
+					for(var j = i + 1 ; j < L.cols ; j++){
+						y.vals[j * y.cols] -= y.vals[i * y.cols] * L.vals[ i + j * L.cols];
+					}
+				}
+			}
+			//後退代入
+			function Ubackwardsubs(U, y, x){
+				for(var i = 0 ; i < U.rows; i++)
+					x.vals[i * x.cols] = y.vals[i * y.cols];
+				
+				for(var i = U.rows-1 ; i >= 0; i--){
+					x.vals[i * x.cols] /= U.vals[i + i * U.cols];
+					for(var j = i-1 ; j >= 0 ; j--){
+						x.vals[j * x.cols] -= x.vals[i * x.cols] * U.vals[i + j * U.cols];
+					}
+				}
+			}
+
+			//-- srcのLU分解 --
+			var L = cvCreateMat(src.rows, src.cols);
+			var U = cvCreateMat(src.rows, src.cols);	
+			cvLU(src, L, U);
 			
+			for(var i = 0 ; i < src.cols ; i++)
+			{
+				var initVec = cvCreateMat(src.rows, 1);
+				for(var v = 0 ;  v < src.rows ; v++)
+					initVec.vals[v] = (v == i) ? 1 : 0 ;
+				
+				var dmyVec = cvCreateMat(src.rows, 1);
+				var inverseVec = cvCreateMat(src.rows, 1);
+				
+				Lforwardsubs(L, initVec, dmyVec);
+				Ubackwardsubs(U, dmyVec, inverseVec);
+				
+				for(var v = 0 ; v < src.rows ; v++){
+					dst.vals[i + v * dst.cols] = inverseVec.vals[v * inverseVec.cols];
+				}
+			}
 			
 		break;
 		case CV_INV.SVD:
@@ -3273,6 +3320,23 @@ function cvGetCanvasAtImgElement(image){
 		alert("cvGetCanvasAtImgElement : " + ex);
 	}
 	return canvas;
+}
+
+//CvMatの内容をalertで表示
+function cvAlertMat(src){
+	try{
+		var str = "";
+		for(var i = 0 ; i < src.rows ; i++){
+			for(var j = 0 ; j < src.cols; j++){
+				str += src.vals[j + i * src.cols] + ", ";
+			}
+			str +=　"\n";
+		}
+		alert(str);
+	}
+	catch(ex){
+		alert("cvAlertMat : " + ex);
+	}
 }
 
 // get Image true size
