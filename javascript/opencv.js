@@ -330,19 +330,25 @@ function cvmTranspose(matA, matX){
 }
 
 //逆行列の演算
-function cvInverse(src, dst, method){
+//入力
+//mat CvMat型 逆行列を求める行列
+//invMat CvMat型　求まった行列が代入される行列
+//method CV_INV配列 アルゴリズムの種類
+//出力
+//なし
+function cvInverse(mat, invMat, method){
 	try{
-		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst) ||
-		src.rows != dst.rows || src.cols != dst.cols) 
-				throw "src または dst" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(cvUndefinedOrNull(mat) || cvUndefinedOrNull(invMat) ||
+		mat.rows != invMat.rows || mat.cols != invMat.cols) 
+				throw "mat または invMat" + ERROR.IS_UNDEFINED_OR_NULL;
 		if(cvUndefinedOrNull(method)) method = CV_INV.LU;
 		if(method == CV_INV.SVD_SYM)
 			throw "CV_INV.SVD_SYM は現在サポートされていません";
 		
 		switch(method){
 		case CV_INV.LU:
-			if(src.cols != src.rows)
-				throw "CV_INV.LUの場合、src" + PLEASE_SQUARE_MAT;
+			if(mat.cols != mat.rows)
+				throw "CV_INV.LUの場合、mat" + PLEASE_SQUARE_MAT;
 
 			//前進代入			
 			function Lforwardsubs(L, b, y){
@@ -369,25 +375,25 @@ function cvInverse(src, dst, method){
 				}
 			}
 
-			//-- srcのLU分解 --
-			var L = cvCreateMat(src.rows, src.cols);
-			var U = cvCreateMat(src.rows, src.cols);	
-			cvLU(src, L, U);
+			// -- matのLU分解 --
+			var L = cvCreateMat(mat.rows, mat.cols);
+			var U = cvCreateMat(mat.rows, mat.cols);	
+			cvLU(mat, L, U);
 			
-			for(var i = 0 ; i < src.cols ; i++)
+			for(var i = 0 ; i < mat.cols ; i++)
 			{
-				var initVec = cvCreateMat(src.rows, 1);
-				for(var v = 0 ;  v < src.rows ; v++)
+				var initVec = cvCreateMat(mat.rows, 1);
+				for(var v = 0 ;  v < mat.rows ; v++)
 					initVec.vals[v] = (v == i) ? 1 : 0 ;
 				
-				var dmyVec = cvCreateMat(src.rows, 1);
-				var inverseVec = cvCreateMat(src.rows, 1);
+				var dmyVec = cvCreateMat(mat.rows, 1);
+				var inverseVec = cvCreateMat(mat.rows, 1);
 				
 				Lforwardsubs(L, initVec, dmyVec);
 				Ubackwardsubs(U, dmyVec, inverseVec);
 				
-				for(var v = 0 ; v < src.rows ; v++){
-					dst.vals[i + v * dst.cols] = inverseVec.vals[v * inverseVec.cols];
+				for(var v = 0 ; v < mat.rows ; v++){
+					invMat.vals[i + v * invMat.cols] = inverseVec.vals[v * inverseVec.cols];
 				}
 			}
 			
@@ -466,6 +472,10 @@ function cvLU(mat, L, U){
 }
 
 //行列式の演算
+//入力
+//mat CvMat型　行列式を求める行列
+//出力
+//演算結果
 function cvDet(mat){
 	var rtn = null;
 	try{
