@@ -159,33 +159,14 @@ function Labeling(imgId, iplImage){
 	}
 }
 
-var r = 5;
-
-function Resize1(imgId, iplImage){
+function Resizes(imgIds, iplImages, ratio){
 	try{
-		var newIplImage = cvCreateImage(iplImage.width * r, iplImage.height * r);
-		cvResize(iplImage, newIplImage);
-		cvShowImage(imgId, newIplImage);
-	}
-	catch(ex){
-		alert("Reisze : " + ex);
-	}
-}
-function Resize2(imgId, iplImage){
-	try{
-		var newIplImage = cvCreateImage(iplImage.width * r, iplImage.height * r);
-		cvResize(iplImage, newIplImage, CV_INTER.LINEAR);
-		cvShowImage(imgId, newIplImage);
-	}
-	catch(ex){
-		alert("Reisze : " + ex);
-	}
-}
-function Resize3(imgId, iplImage){
-	try{
-		var newIplImage = cvCreateImage(iplImage.width * r, iplImage.height * r);
-		cvResize(iplImage, newIplImage, CV_INTER.CUBIC);
-		cvShowImage(imgId, newIplImage);
+		for(var i = 0 ; i < imgIds.length ; i++){
+			var imgId = imgIds[i];
+			var newIplImage = cvCreateImage(iplImages[i].width * ratio, iplImages[i].height * ratio);
+			cvResize(iplImages[i], newIplImage, CV_INTER.CUBIC);
+			cvShowImage(imgId, newIplImage);
+		}
 	}
 	catch(ex){
 		alert("Reisze : " + ex);

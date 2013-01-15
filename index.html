@@ -9,13 +9,18 @@
         <script type="text/javascript" charset="UTF-8">
         	DMY_IMG = "javascript/dmy.jpg";
         	var iplImage = new IplImage();
+        	var iplImages = [new IplImage(), new IplImage(), new IplImage()];
+        	var dispImages = ["dispImage1", "dispImage2", "dispImage3"];
 		</script>
     </head>
     
     <body>
     	<h1>OpenCVjs</h1>
     	<hr />
-    	<input type="file" id="file1" onClick="cvLoadImagePre(event, 'file1')" onchange="cvLoadImage(event, 'dispImage', iplImage, 800)">
+    	<input type="file" id="file1" onClick="cvLoadImagePre(event, 'file1')" onchange="cvLoadImage(event, 'dispImage1', iplImage, 800)">
+    	<br />
+    	    	<input type="file" id="file1" onClick="cvLoadImagePre(event, 'file1')" onchange="cvLoadImages(event, dispImages, iplImages, 800)" multiple>
+    	    	複数画像の読み込み
     	<br />		
 		<input type="button" value="xpro" onClick="Xpro('dispImage', iplImage)" />		
 		<input type="button" value="rainbow" onClick="Rainbow('dispImage', iplImage)">
@@ -30,15 +35,17 @@
 		<input type="button" value="original" onClick="Original('dispImage', iplImage)" />
 		<br />
 		<input type="button" value="test" onClick="Test('dispImage', iplImage)">
-		<input type="button" value="resize" onClick="Resize3('dispImage', iplImage)">
 		<input type="button" value="labeling" onClick="Labeling('dispImage', iplImage)">
 		<input type="button" value="sobel" onClick="Sobel('dispImage', iplImage)">
 		<input type="button" value="canny" onClick="Canny('dispImage', iplImage)">
 		<input type="button" value="threshold" onClick="Threshold('dispImage', iplImage)">
 		<input type="button" value="bilateral" onClick="Bilateral('dispImage', iplImage)">
+		<br />
+		<input type="button" value="resize" onClick="Resizes(dispImages, iplImages, 0.5)">
+		複数画像の読み込み用
 		<hr />
-		<img id="dispImage" src="">
+		<img id="dispImage1" src="">
+		<img id="dispImage2" src="">
+		<img id="dispImage3" src="">
 	</body>
 </html>
-
-	
