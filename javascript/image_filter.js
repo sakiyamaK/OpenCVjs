@@ -24,6 +24,101 @@ function Test(imgId, iplImage){
 	}
 }
 
+function Comic(imgId, iplImage){
+	try{
+		var newIplImage = cvCreateImage(iplImage.width, iplImage.height);
+		cvCvtColor(iplImage, newIplImage, CV_CODE.RGB2GRAY);
+		
+		var cannyImage = cvCreateImage(newIplImage.width, newIplImage.height);
+		cvCanny(newIplImage, cannyImage, 20, 100);
+		
+		var UNDER = 20;
+		var OVER = 200;
+		
+		for(var i = 0 ; i < newIplImage.height; i++){
+			for(var j = 0 ; j < newIplImage.width; j++){
+				var ji = (j + i * newIplImage.width) * CHANNELS;
+				if(newIplImage.RGBA[ji] < UNDER){
+					newIplImage.RGBA[ji] = 0;
+					newIplImage.RGBA[1 + ji] = 0;
+					newIplImage.RGBA[2 + ji] = 0;
+				}
+				else if(newIplImage.RGBA[ji] > OVER){
+					newIplImage.RGBA[ji] = 255;
+					newIplImage.RGBA[1 + ji] = 255;
+					newIplImage.RGBA[2 + ji] = 255;
+				}
+				else{
+					newIplImage.RGBA[ji] = cannyImage.RGBA[ji];
+					newIplImage.RGBA[1 + ji] = cannyImage.RGBA[ji];
+					newIplImage.RGBA[2 + ji] = cannyImage.RGBA[ji];
+				}
+			}
+		}
+		
+		cvShowImage(imgId, newIplImage);
+	}
+	catch(ex){
+		alert("Comic : " + ex);
+	}
+}
+
+function HDR_Xpro(imgId, iplImage){
+	try{
+		var gray = cvCloneImage(iplImage);
+		cvCvtColor(gray, gray, CV_CODE.RGB2GRAY);
+	
+		var miniGray = cvCreateImage(gray.width/2, gray.height/2);	
+		cvResize(gray, miniGray, CV_INTER.CUBIC);
+		
+		var img1 = cvCreateImage(miniGray.width, miniGray.height);
+		cvCopy(miniGray, img1);
+		
+		for(var i = 0 ; i < img1.height ; i++){
+			for(var j = 0 ; j < img1.width ; j++){
+				var v = 255 - img1.RGBA[(j + i * img1.width) * CHANNELS];
+				img1.RGBA[(j + i * img1.width) * CHANNELS] = v;
+				img1.RGBA[1 + (j + i * img1.width) * CHANNELS] = v;
+				img1.RGBA[2 + (j + i * img1.width) * CHANNELS] = v;
+			}
+		}
+		for(var i = 0 ; i < 3; i++)
+			cvSmooth(img1, img1, CV_SMOOTH_TYPE.GAUSSIAN, 7);
+			
+		var img2 = cvCreateImage(gray.width, gray.height);
+		
+		cvResize(img1, img2, CV_INTER.CUBIC);
+	
+		var newIplImage = cvCloneImage(iplImage);
+		var blendMode = CV_BLEND_MODE.OVER_LAY;
+		cvBlendImage(newIplImage, img2, newIplImage, blendMode);
+		cvBlendImage(newIplImage, img2, newIplImage, blendMode);
+		cvBlendImage(newIplImage, img2, newIplImage, blendMode);
+		
+		var X_PRO_GREEN_TONE_CURVE_UNDER_X = 50;
+		var X_PRO_GREEN_TONE_CURVE_UNDER_Y = 0;
+		var X_PRO_GREEN_TONE_CURVE_OVER_X = 200;
+		var X_PRO_GREEN_TONE_CURVE_OVER_Y = 255;
+		var X_PRO_RED_TONE_CURVE_UNDER_X = 50;
+		var X_PRO_RED_TONE_CURVE_UNDER_Y = 0;
+		var X_PRO_RED_TONE_CURVE_OVER_X = 200;
+		var X_PRO_RED_TONE_CURVE_OVER_Y = 255;
+
+		cvToneCurve(newIplImage, newIplImage,
+			X_PRO_RED_TONE_CURVE_UNDER_X, X_PRO_RED_TONE_CURVE_UNDER_Y,
+			X_PRO_RED_TONE_CURVE_OVER_X, X_PRO_RED_TONE_CURVE_OVER_Y, 0);
+
+		cvToneCurve(newIplImage, newIplImage,
+			X_PRO_GREEN_TONE_CURVE_UNDER_X, X_PRO_GREEN_TONE_CURVE_UNDER_Y,
+			X_PRO_GREEN_TONE_CURVE_OVER_X, X_PRO_GREEN_TONE_CURVE_OVER_Y, 1);
+		
+		cvShowImage(imgId, newIplImage);
+	}
+	catch(ex){
+		alert("HDR_Xpro : " + ex);
+	}
+}
+
 function Reflection(imgId, iplImage){
 	try{
 		//新しい画像領域 縦幅を読み込んだ画像の1.3倍にする
@@ -90,7 +185,7 @@ function HDR(imgId, iplImage){
 	cvBlendImage(newIplImage, img2, newIplImage, blendMode);
 	cvBlendImage(newIplImage, img2, newIplImage, blendMode);
 	cvBlendImage(newIplImage, img2, newIplImage, blendMode);
-
+/*
 	var sobelXImage = cvCreateImage(miniGray.width, miniGray.height);
 	var sobelYImage = cvCreateImage(miniGray.width, miniGray.height);
 	
@@ -113,7 +208,7 @@ function HDR(imgId, iplImage){
 	cvSmooth(sobelXImage, sobelXImage, CV_SMOOTH_TYPE.GAUSSIAN, 7);
 	
 	cvResize(sobelXImage, img2);
-	
+*/	
 //	cvBlendImage(newIplImage, img2, newIplImage, CV_BLEND_MODE.MUL);
 
 	cvShowImage(imgId, newIplImage);	
@@ -481,7 +576,7 @@ function Canny(imgId, iplImage){
 	try{
 		var cannyImage = cvCreateImage(iplImage.width, iplImage.height);
 		cvCvtColor(iplImage, cannyImage, CV_CODE.RGB2GRAY);
-		cvCanny(cannyImage, cannyImage, 50, 200);
+		cvCanny(cannyImage, cannyImage, 10, 100);
 		cvShowImage(imgId, cannyImage);
 	}
 	catch(ex){

@@ -2581,28 +2581,50 @@ function cvCanny(src, dst, threshold1, threshold2, aperture_size){
 			}
 		}
 
-		//閾値処理
+		//◆◆閾値処理◆◆
+		var bigT = threshold1;
+		var smallT = threshold2;
+		if(threshold1 < threshold2){
+			bigT = threshold2;
+			smallT = threshold1;
+		}
+		
+		var m = aperture_size/2;
+		
 		for(var i = 0 ; i < dst.height ; i++){
-			top = i - 1; if(top < 0) top *= -1;
-			down = i + 1; if(top > dst.height - 1) top = dst.height - 2;
 			for(var j = 0 ; j < dst.width ; j++){
-				if(dst.RGBA[(j + i * dst.width) * CHANNELS] > threshold1) dst.RGBA[(j + i * dst.width) * CHANNELS] = 255;
-				else if(dst.RGBA[(j + i * dst.width) * CHANNELS] < threshold2) dst.RGBA[(j + i * dst.width) * CHANNELS] = 0;
-				else{
-					left = j - 1; if(left < 0) left *= -1;
-					right = j + 1; if(right > dst.width - 1) right = dst.width - 2;
+				if(dst.RGBA[(j + i * dst.width) * CHANNELS] > bigT) dst.RGBA[(j + i * dst.width) * CHANNELS] = 255;
+				else if(dst.RGBA[(j + i * dst.width) * CHANNELS] <= bigT && 
+					dst.RGBA[(j + i * dst.width) * CHANNELS] > smallT)
+				{
+					var isEdge = false;
 					
-					if(dst.RGBA[(left + top * dst.width) * CHANNELS] == 255 ||
-						dst.RGBA[(j + top * dst.width) * CHANNELS] == 255 ||
-						dst.RGBA[(right + top * dst.width) * CHANNELS] == 255 ||
-						dst.RGBA[(left + i * dst.width) * CHANNELS] == 255 ||
-						dst.RGBA[(right + i * dst.width) * CHANNELS] == 255 ||
-						dst.RGBA[(left + down * dst.width) * CHANNELS] == 255 ||
-						dst.RGBA[(j + down * dst.width) * CHANNELS] == 255 ||
-						dst.RGBA[(right + down * dst.width) * CHANNELS] == 255)
-							dst.RGBA[(j + i * dst.width) * CHANNELS] = 255;
-					else dst.RGBA[(j + i * dst.width) * CHANNELS] = 0;
+					for(var y = -m ; y <= m ; y++){
+						top = i - y; if(top < 0) top *= -1;
+						down = i + y; if(top > dst.height - 1) top = dst.height - 2;
+						for(var x = -m ; x <= m ; x++){
+							left = j - x; if(left < 0) left *= -1;
+							right = j + x; if(right > dst.width - 1) right = dst.width - 2;
+							
+							
+							if( (x != 0 || y != 0) && dst.RGBA[(left + top * dst.width) * CHANNELS] == 255 ||
+								dst.RGBA[(j + top * dst.width) * CHANNELS] == 255 ||
+								dst.RGBA[(right + top * dst.width) * CHANNELS] == 255 ||
+								dst.RGBA[(left + i * dst.width) * CHANNELS] == 255 ||
+								dst.RGBA[(right + i * dst.width) * CHANNELS] == 255 ||
+								dst.RGBA[(left + down * dst.width) * CHANNELS] == 255 ||
+								dst.RGBA[(j + down * dst.width) * CHANNELS] == 255 ||
+								dst.RGBA[(right + down * dst.width) * CHANNELS] == 255){
+							
+								isEdge = true;
+								break;	
+							}
+						}
+						if(isEdge) break;
+					}					
+					dst.RGBA[(j + i * dst.width) * CHANNELS] = (isEdge) ? 255 : 0;
 				}
+				else dst.RGBA[(j + i * dst.width) * CHANNELS] = 0;
 			}
 		}
 				
