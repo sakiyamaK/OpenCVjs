@@ -26,9 +26,9 @@ function Test(imgId, iplImage){
 
 function EqualizeHist(imgId, iplImage){
 	try{
-		cvCvtColor(iplImage, iplImage, CV_CODE.RGB2HSV);
 		var newIplImage = cvCloneImage(iplImage);
-		cvEqualizeHist(iplImage, newIplImage, 2);
+		cvCvtColor(iplImage, newIplImage, CV_CODE.RGB2HSV);
+		cvEqualizeHist(newIplImage, newIplImage, 2);
 		cvCvtColor(newIplImage, newIplImage, CV_CODE.HSV2RGB);
 		cvShowImage(imgId, newIplImage);
 	}
