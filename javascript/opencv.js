@@ -145,6 +145,7 @@ var ERROR = {
 	PLEASE_SQUARE_MAT : "は正方行列にしてください",
 	SWITCH_VALUE : "の値が正しくありません",
 	APERTURE_SIZE : "aperture_sizeは1, 3, 5または7 のいずれかにしてください",
+	ONLY_NUMBER : "は0〜3にして下さい"
 }
 
 
@@ -977,17 +978,93 @@ function cvCalcHist(src, hist, accumulate, mask){
 	}
 }
 
-function cvEqualizeHist(src, dst){
+//ヒストグラムを均一化する
+//入力
+//src IplImage型 ヒストグラムを均一化する画像
+//dst IplImage型 ヒストグラムが均一化された画像画像
+//color int型 0〜3のみ どの色情報を均一化するか
+function cvEqualizeHist(src, dst, color){
 	try{
-		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(hist))
-			throw "src or hist" + ERROR.IS_UNDEFINED_OR_NULL;
-		
-		
+		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst))
+			throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL;
+		else if(src.width != dst.width || src.height != dst.height)
+			throw ERROR.DIFFERENT_SIZE;
+		if(cvUndefinedOrNull(color) || color < 0 || color > 2)
+			throw "color" + ERROR.ONLY_NUMBER;
+
+			function getMinMax(histBins, mins, maxs, pix_mins, pix_maxs, ave){
+				var rest = 0;
+				var now = 0;
+				var pixels;
+				var a, b;
+				for(var i = 0 ; i < 256 ; i++){
+					pixels = rest + histBins[i];
+					mins[i] = now;
+					if(rest > 0) pix_mins[i] = ave -rest;
+					else pix_mins[i] = ave + 100;
+					a = pixels / ave;
+					rest = pixels % ave;
+					maxs[i] = now + a;
+					if(rest > 0) pix_maxs[i] = rest;
+					else pix_maxs[i] = ave + 100;
+					now += a; 
+				}
+				for(var i = 0 ; i < 255 ; i++){
+					if(mins[i] > 255) mins[i] = 255;
+					if(maxs[i] > 255) maxs[i] = 255;
+				}
+			}
+			
+			function getHistEqu(x, nows, mins, maxs, pixs_min, pixs_max){
+				var res;
+				if(nows[x] == maxs[x]){
+					if(pixs_max[x] <= 0) nows[x] = mins[x];
+					else pixs_max[x]--;
+				}
+				if(nows[x] == mins[x]){
+					if(pixs_min[x] <= 0) nows[x] = mins[x]+1;
+					else pixs_min[x]--;
+				}
+				if(nows[x] > maxs[x]) nows[x] = mins[x];
+				res = nows[x];
+				nows[x]++;
+				return res;
+			}
+			
+			//--ヒストグラム作成--
+			var hist = new Array(256);
+			for(var i = 0 ; i < 256; i++) hist[i] = 0;
+			for(var i =0 ; i < src.height ; i++){
+				for(var j = 0 ; j < src.width ; j++){
+					var v = src.RGBA[color + (j + i * src.width) * CHANNELS];
+					hist[v]++;
+				}
+			}
+			
+			var omax = new Array(256);
+			var omin = new Array(256);
+			var pix_max = new Array(256);
+			var pix_min = new Array(256);
+			var onow = new Array(256);
+			
+			var ave = Math.floor(src.width * src.height / 256);
+			
+			getMinMax(hist, omin, omax, pix_min, pix_max, ave);
+			for(var i = 0 ; i < 256; i++) onow[i] = omin[i];
+			//--ヒストグラムの均等化--
+			for(var i = 0 ; i < src.height ; i++){
+				for(var j = 0 ; j < src.width ; j++){
+					var v = src.RGBA[color + (j + i * src.width) * CHANNELS];			
+					var vv = getHistEqu(v, onow, omin, omax, pix_min, pix_max);
+					dst.RGBA[color + (j + i * dst.width) * CHANNELS] = Math.floor(vv);
+				}
+			}
 	}
 	catch(ex){
 		alert("cvEqualizeHist : " + ex);
 	}
 }
+
 
 //最大値と最小値とその座標を求める
 //入力

@@ -24,6 +24,19 @@ function Test(imgId, iplImage){
 	}
 }
 
+function EqualizeHist(imgId, iplImage){
+	try{
+		cvCvtColor(iplImage, iplImage, CV_CODE.RGB2HSV);
+		var newIplImage = cvCloneImage(iplImage);
+		cvEqualizeHist(iplImage, newIplImage, 2);
+		cvCvtColor(newIplImage, newIplImage, CV_CODE.HSV2RGB);
+		cvShowImage(imgId, newIplImage);
+	}
+	catch(ex){
+		alert("EqualizeHist : " + ex);
+	}
+}
+
 function Comic(imgId, iplImage){
 	try{
 		var newIplImage = cvCreateImage(iplImage.width, iplImage.height);
