@@ -78,36 +78,42 @@ function Comic(imgId, iplImage){
 
 function HDR_Xpro(imgId, iplImage){
 	try{
+		//--------------------HDR処理-------------------------
+		//白黒濃淡画像にする
 		var gray = cvCloneImage(iplImage);
 		cvCvtColor(gray, gray, CV_CODE.RGB2GRAY);
 	
+		//大きさを半分にする
 		var miniGray = cvCreateImage(gray.width/2, gray.height/2);	
 		cvResize(gray, miniGray, CV_INTER.CUBIC);
-		
-		var img1 = cvCreateImage(miniGray.width, miniGray.height);
-		cvCopy(miniGray, img1);
-		
-		for(var i = 0 ; i < img1.height ; i++){
-			for(var j = 0 ; j < img1.width ; j++){
-				var v = 255 - img1.RGBA[(j + i * img1.width) * CHANNELS];
-				img1.RGBA[(j + i * img1.width) * CHANNELS] = v;
-				img1.RGBA[1 + (j + i * img1.width) * CHANNELS] = v;
-				img1.RGBA[2 + (j + i * img1.width) * CHANNELS] = v;
+				
+		//反転させる 
+		for(var i = 0 ; i < miniGray.height ; i++){
+			for(var j = 0 ; j < miniGray.width ; j++){
+				var v = 255 - miniGray.RGBA[(j + i * miniGray.width) * CHANNELS];
+				miniGray.RGBA[(j + i * miniGray.width) * CHANNELS] = v;
+				miniGray.RGBA[1 + (j + i * miniGray.width) * CHANNELS] = v;
+				miniGray.RGBA[2 + (j + i * miniGray.width) * CHANNELS] = v;
 			}
 		}
+		
+		//スムージング
 		for(var i = 0 ; i < 3; i++)
-			cvSmooth(img1, img1, CV_SMOOTH_TYPE.GAUSSIAN, 7);
-			
-		var img2 = cvCreateImage(gray.width, gray.height);
+			cvSmooth(miniGray, miniGray, CV_SMOOTH_TYPE.GAUSSIAN, 7);
 		
-		cvResize(img1, img2, CV_INTER.CUBIC);
-	
+		//大きさを元に戻す
+		cvResize(miniGray, gray, CV_INTER.CUBIC);
+		
+		//原画像をコピー
 		var newIplImage = cvCloneImage(iplImage);
+
+		//オーバレイを３回かける
 		var blendMode = CV_BLEND_MODE.OVER_LAY;
-		cvBlendImage(newIplImage, img2, newIplImage, blendMode);
-		cvBlendImage(newIplImage, img2, newIplImage, blendMode);
-		cvBlendImage(newIplImage, img2, newIplImage, blendMode);
+		for(var i = 0 ; i < 3 ; i++)
+			cvBlendImage(newIplImage, gray, newIplImage, blendMode);
+		//-----------------------------------------------------------
 		
+		//-----------------------クロスプロセス---------------------------
 		var X_PRO_GREEN_TONE_CURVE_UNDER_X = 50;
 		var X_PRO_GREEN_TONE_CURVE_UNDER_Y = 0;
 		var X_PRO_GREEN_TONE_CURVE_OVER_X = 200;
@@ -124,7 +130,9 @@ function HDR_Xpro(imgId, iplImage){
 		cvToneCurve(newIplImage, newIplImage,
 			X_PRO_GREEN_TONE_CURVE_UNDER_X, X_PRO_GREEN_TONE_CURVE_UNDER_Y,
 			X_PRO_GREEN_TONE_CURVE_OVER_X, X_PRO_GREEN_TONE_CURVE_OVER_Y, 1);
+		//---------------------------------------------------------------
 		
+		//表示
 		cvShowImage(imgId, newIplImage);
 	}
 	catch(ex){
@@ -169,35 +177,36 @@ function Reflection(imgId, iplImage){
 
 function HDR(imgId, iplImage){
 
-	var gray = cvCloneImage(iplImage);
-	cvCvtColor(gray, gray, CV_CODE.RGB2GRAY);
-
-	var miniGray = cvCreateImage(gray.width/2, gray.height/2);	
-	cvResize(gray, miniGray, CV_INTER.CUBIC);
+	//白黒濃淡画像にする
+		var gray = cvCloneImage(iplImage);
+		cvCvtColor(gray, gray, CV_CODE.RGB2GRAY);
 	
-	var img1 = cvCreateImage(miniGray.width, miniGray.height);
-	cvCopy(miniGray, img1);
-	
-	for(var i = 0 ; i < img1.height ; i++){
-		for(var j = 0 ; j < img1.width ; j++){
-			var v = 255 - img1.RGBA[(j + i * img1.width) * CHANNELS];
-			img1.RGBA[(j + i * img1.width) * CHANNELS] = v;
-			img1.RGBA[1 + (j + i * img1.width) * CHANNELS] = v;
-			img1.RGBA[2 + (j + i * img1.width) * CHANNELS] = v;
+		//大きさを半分にする
+		var miniGray = cvCreateImage(gray.width/2, gray.height/2);	
+		cvResize(gray, miniGray, CV_INTER.CUBIC);
+				
+		//反転させる 
+		for(var i = 0 ; i < miniGray.height ; i++){
+			for(var j = 0 ; j < miniGray.width ; j++){
+				var v = 255 - miniGray.RGBA[(j + i * miniGray.width) * CHANNELS];
+				miniGray.RGBA[(j + i * miniGray.width) * CHANNELS] = v;
+				miniGray.RGBA[1 + (j + i * miniGray.width) * CHANNELS] = v;
+				miniGray.RGBA[2 + (j + i * miniGray.width) * CHANNELS] = v;
+			}
 		}
-	}
-	for(var i = 0 ; i < 3; i++)
-		cvSmooth(img1, img1, CV_SMOOTH_TYPE.GAUSSIAN, 7);
 		
-	var img2 = cvCreateImage(gray.width, gray.height);
+		//スムージング
+		for(var i = 0 ; i < 3; i++)
+			cvSmooth(miniGray, miniGray, CV_SMOOTH_TYPE.GAUSSIAN, 7);
+		
+		//大きさを元に戻す
+		cvResize(miniGray, gray, CV_INTER.CUBIC);
 	
-	cvResize(img1, img2, CV_INTER.CUBIC);
-
-	var newIplImage = cvCloneImage(iplImage);
-	var blendMode = CV_BLEND_MODE.OVER_LAY;
-	cvBlendImage(newIplImage, img2, newIplImage, blendMode);
-	cvBlendImage(newIplImage, img2, newIplImage, blendMode);
-	cvBlendImage(newIplImage, img2, newIplImage, blendMode);
+		var newIplImage = cvCloneImage(iplImage);
+		//オーバレイを３回かける
+		var blendMode = CV_BLEND_MODE.OVER_LAY;
+		for(var i = 0 ; i < 3 ; i++)
+			cvBlendImage(newIplImage, gray, newIplImage, blendMode);
 /*
 	var sobelXImage = cvCreateImage(miniGray.width, miniGray.height);
 	var sobelYImage = cvCreateImage(miniGray.width, miniGray.height);
