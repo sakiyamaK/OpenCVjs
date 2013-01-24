@@ -3484,7 +3484,7 @@ function cvAlertMat(src){
 			for(var j = 0 ; j < src.cols; j++){
 				str += src.vals[j + i * src.cols] + ", ";
 			}
-			str +=　"\n";
+			str += "\n";
 		}
 		alert(str);
 	}
