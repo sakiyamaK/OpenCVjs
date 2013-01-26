@@ -3592,9 +3592,10 @@ function cvShowImageToCanvas(canvasId, iplImage){
 		if(cvUndefinedOrNull(canvasId) || cvUndefinedOrNull(iplImage))
 			throw "canvasId or iplImage" + ERROR.IS_UNDEFINED_OR_NULL;
 		var canvasElement = document.getElementById(canvasId);
-		if(canvasElement)
+		if(canvasElement){
 			cvRGBA2ImageData(iplImage);
 		 	canvasElement.getContext("2d").putImageData(iplImage.imageData, 0, 0);
+		 }
 		else throw canvasElement + ERROR.IS_UNDEFINED_OR_NULL;
 	}
 	catch(ex){
