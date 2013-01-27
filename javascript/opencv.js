@@ -1,4 +1,5 @@
-//データ型
+//------------------データ型------------------------
+//canvasのRGBA値は0〜255の値しかもてないため専用の画像データ型を用意
 var IplImage = function(){
 	width: 0;
 	height: 0;
@@ -35,7 +36,7 @@ var Size = function(){
 	height: 0;
 }
 
-//定数
+//------------------定数------------------------
 //逆行列の演算の種類
 var CV_INV = {
 	LU: 0,
@@ -154,6 +155,8 @@ var ERROR = {
 //1*1の画像を推奨
 var DMY_IMG;
 
+
+//------------------メソッド------------------------
 //rows行cols列の行列を作る
 //C言語でいう a[rows][cols]
 //入力
@@ -3214,46 +3217,6 @@ function cvLoadImagePre(event, inputId){
 	}
 }
 
-//imgタグのsrcからiplImageに変換する
-//入力
-//src src型 imgタグのsrc画像
-//imgId  Id型 イベントの発生元のId
-//iplImage IplImage型 srcの値が代入される
-//maxSize 整数 srcの縦or横幅がこの値以上なら、この値となるように大きさを変換して代入される -1なら処理されない 省略可
-//出力
-//なし
-function cvLoadImageAtSrc(src, imgId, iplImage, maxSize){
-	try{
-		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(imgId) || cvUndefinedOrNull(iplImage))
-				throw "src or imgId or iplImage" + ERROR.IS_UNDEFINED_OR_NULL;
-		if(cvUndefinedOrNull(maxSize)) maxSize = -1;
-		var imgElement = document.getElementById(imgId);
-		imgElement.src = src;
-	    imgElement.onload = function(){
-	    	var originalSize = cvGetOriginalSizeAtImgElement(imgElement);
-	    	var scale = 1;
-	    	if(maxSize != -1 && (originalSize.width > maxSize || originalSize.height > maxSize))
-	    		scale = (originalSize.width > originalSize.height) ? 
-		    		maxSize / originalSize.width : maxSize / originalSize.height;
-	    	imgElement.width = scale * originalSize.width;
-	    	imgElement.height = scale * originalSize.height;
-		    iplImage.canvas = cvGetCanvasAtImgElement(imgElement);
-		    iplImage.width = iplImage.canvas.width;
-		    iplImage.height = iplImage.canvas.height;
-		    iplImage.imageData = iplImage.canvas.getContext("2d").getImageData(0, 0, iplImage.canvas.width, iplImage.canvas.height);
-		    for(var i = 0 ; i < iplImage.height ; i++){
-		    	for(var j = 0 ; j < iplImage.width ; j++){
-		    		for(var c = 0 ; c < CHANNELS ; c++){
-			    		iplImage.RGBA[c + (j + i * iplImage.width) * CHANNELS] = iplImage.imageData.data[c + (j + i * iplImage.width) * CHANNELS];
-			    	}
-		    	}
-		    }
-		}
-	}
-	catch(ex){
-		alert("cvLoadImage : " + ex);
-	}
-}
 
 //inputタグからiplImageに変換し、imgタグに出力する
 //htmlのinputタグのonchangeで呼び出すことを想定
@@ -3350,182 +3313,6 @@ function cvLoadImageAtEventFile(file, imgId, iplImage, maxSize)
 }
 
 
-//IplImage型を生成する
-//入力
-//width 整数 生成するIplImageのwidth
-//height 整数 生成するIplImageのheight
-//出力
-//IplImage
-function cvCreateImage(width, height){
-	var dst = null;
-	try{
-		if(cvUndefinedOrNull(width) || cvUndefinedOrNull(height))
-			throw "width or height" + ERROR.IS_UNDEFINED_OR_NULL;
-		else if(width <= 0 || height <= 0)
-			throw "width or height" + ERROR.ONLY_POSITIVE_NUMBER;
-
-		dst = new IplImage();
-		dst.canvas = document.createElement('canvas');
-		dst.canvas.width = width;
-		dst.canvas.height = height;
-		if (cvUndefinedOrNull(dst.canvas)) throw 'canvas' + ERROR.IS_UNDEFINED_OR_NULL;
-		if (! dst.canvas.getContext) throw ERROR.NOT_GET_CONTEXT;
-		dst.height = dst.canvas.height;
-		dst.width = dst.canvas.width;
-		dst.imageData = dst.canvas.getContext("2d").getImageData(0, 0, dst.canvas.width, dst.canvas.height);
-		dst.RGBA = new Array(dst.width * dst.width * CHANNELS);
-	    for(var i = 0 ; i < dst.height ; i++){
-	    	for(var j = 0 ; j < dst.width ; j++){
-	    		for(var c = 0 ; c < CHANNELS - 1; dst.RGBA[c++ + (j + i * dst.width) * CHANNELS] = 0);
-		    	dst.RGBA[3 + (j + i * dst.width) * CHANNELS] = 255;
-	    	}
-	    }
-	}
-	catch(ex){
-		alert("cvCreateImage : " + ex);
-	}
-	
-	return dst;
-}
-
-//IplImage型をimgタグに出力する
-//入力
-//imgId Id型 imgタグのId
-//iplImage IplImage型 imgに転送する画像
-//出力
-//なし
-function cvShowImage(imgId, iplImage){
-	try{
-		if(cvUndefinedOrNull(imgId) || cvUndefinedOrNull(iplImage))
-			throw "imgId or iplImage" + ERROR.IS_UNDEFINED_OR_NULL;
-		cvRGBA2ImageData(iplImage);
-		if (iplImage.canvas.getContext) {
-
-			iplImage.canvas.getContext("2d").putImageData(iplImage.imageData, 0, 0);
-		    var imgElement = document.getElementById(imgId);
-		    if(imgElement == null) throw imgId + ERROR.IS_UNDEFINED_OR_NULL;
-		 
-		 	imgElement.width = iplImage.width;
-			imgElement.height = iplImage.height;
-		 	
-		    imgElement.src = DMY_IMG;
-		    imgElement.onload = function(event){
-			    imgElement.src = iplImage.canvas.toDataURL('image/jpeg');
-			};
-		}
-		else throw ERROR.NOT_GET_CONTEXT;
-	}
-	catch(ex){
-		alert("cvShowImage : " + ex);
-	}
-}
-
-//IplImage型のRGBAの値をimageDataへ転送
-//cvShowImageで呼び出されることを想定
-//入力
-//iplImage IplImage型 自身のimageDataへ自身のRGBAの値がコピーされる画像
-//出力
-//なし
-function cvRGBA2ImageData(iplImage){
-	try{
-		if(cvUndefinedOrNull(iplImage)) throw "iplImage" + ERROR.IS_UNDEFINED_OR_NULL;
-		for(var i = 0 ; i < iplImage.height ; i++){
-			for(var j = 0 ; j < iplImage.width ; j++){
-				for(var c = 0 ; c < CHANNELS; c++){
-					iplImage.imageData.data[c + (j + i * iplImage.width) * CHANNELS] = 
-						iplImage.RGBA[c + (j + i * iplImage.width) * CHANNELS];
-				}
-			}
-		}	
-	}
-	catch(ex){
-		alert("RGBA2ImageData : " + ex);
-	}
-}
-//IplImage型のimageDataの値をRGBAへ転送
-//cvLoad**で呼び出されることを想定
-//入力
-//iplImage IplImage型 自身のRGBAへ自身のimageDataの値がコピーされる画像
-//出力
-//なし
-function cvImageData2RGBA(iplImage){
-	try{
-		if(cvUndefinedOrNull(iplImage)) throw "iplImage" + ERROR.IS_UNDEFINED_OR_NULL;
-		for(var i = 0 ; i < iplImage.height ; i++){
-			for(var j = 0 ; j < iplImage.width ; j++){
-				for(var c = 0 ; c < CHANNELS; c++){
-					iplImage.RGBA[c + (j + i * iplImage.width) * CHANNELS] =
-					 iplImage.imageData.data[c + (j + i * iplImage.width) * CHANNELS] ; 
-				}
-			}
-		}	
-	}
-	catch(ex){
-		alert("RGBA2ImageData : " + ex);
-	}
-}
-
-
-//imgタグからcanvasへ転送
-//cvLoadImageで呼び出されることを想定
-//入力
-//image imgタグ imgタグのオブジェクト
-//出力
-//canvasタグ
-function cvGetCanvasAtImgElement(image){
-	var canvas = null;
-	try{
-		if(cvUndefinedOrNull(image)) throw "image" + ERROR.IS_UNDEFINED_OR_NULL;
-		
-		canvas = document.createElement('canvas');	
-		
-		if(cvUndefinedOrNull(canvas)) throw "canvas" + ERROR.IS_UNDEFINED_OR_NULL;
-	    
-    	canvas.width = image.width;
-    	canvas.height = image.height;
-    	
-    	canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
-	}
-	catch(ex){
-		alert("cvGetCanvasAtImgElement : " + ex);
-	}
-	return canvas;
-}
-
-//canvasタグからIplImageへ転送
-//入力
-//canvasId canvasタグ canvasタグのオブジェクト
-//出力
-//IplImage型
-function cvGetIplImageAtCanvas(canvasId){
-	var iplImage = null;
-	try{
-		var canvasElement = document.getElementById(canvasId);
-		iplImage = cvGetIplImageAtCanvasElement(canvasElement);
-	}
-	catch(ex){
-		alert("cvGetIplImageAtCanvas : " + ex);
-	}
-	return iplImage;
-}
-
-function cvGetIplImageAtCanvasElement(canvasElement){
-	var iplImage = null;
-	try{
-		if(cvUndefinedOrNull(canvasElement))
-			throw "canvas" + ERROR.IS_UNDEFINED_OR_NULL;
-
-		iplImage = cvCreateImage(canvasElement.width, canvasElement.height);
-		iplImage.imageData = 
-			canvasElement.getContext("2d").getImageData(0, 0, canvasElement.width, canvasElement.height);
-		cvImageData2RGBA(iplImage);
-	}
-	catch(ex){
-		alert("cvGetIplImageAtCanvasElement : " + ex);
-	}
-	return iplImage;
-}
-
 //inputタグからIplImage型に変換し、canvasタグに出力する
 //htmlのinputタグのonchangeで呼び出すことを想定
 //入力
@@ -3596,6 +3383,76 @@ function cvLoadImageToCanvasAtEventFile(file, canvasId, iplImage, maxSize)
 	}
 }
 
+//IplImage型を生成する
+//入力
+//width 整数 生成するIplImageのwidth
+//height 整数 生成するIplImageのheight
+//出力
+//IplImage
+function cvCreateImage(width, height){
+	var dst = null;
+	try{
+		if(cvUndefinedOrNull(width) || cvUndefinedOrNull(height))
+			throw "width or height" + ERROR.IS_UNDEFINED_OR_NULL;
+		else if(width <= 0 || height <= 0)
+			throw "width or height" + ERROR.ONLY_POSITIVE_NUMBER;
+
+		dst = new IplImage();
+		dst.canvas = document.createElement('canvas');
+		dst.canvas.width = width;
+		dst.canvas.height = height;
+		if (cvUndefinedOrNull(dst.canvas)) throw 'canvas' + ERROR.IS_UNDEFINED_OR_NULL;
+		if (! dst.canvas.getContext) throw ERROR.NOT_GET_CONTEXT;
+		dst.height = dst.canvas.height;
+		dst.width = dst.canvas.width;
+		dst.imageData = dst.canvas.getContext("2d").getImageData(0, 0, dst.canvas.width, dst.canvas.height);
+		dst.RGBA = new Array(dst.width * dst.width * CHANNELS);
+	    for(var i = 0 ; i < dst.height ; i++){
+	    	for(var j = 0 ; j < dst.width ; j++){
+	    		for(var c = 0 ; c < CHANNELS - 1; dst.RGBA[c++ + (j + i * dst.width) * CHANNELS] = 0);
+		    	dst.RGBA[3 + (j + i * dst.width) * CHANNELS] = 255;
+	    	}
+	    }
+	}
+	catch(ex){
+		alert("cvCreateImage : " + ex);
+	}
+	
+	return dst;
+}
+
+//IplImage型をimgタグに出力する
+//入力
+//imgId Id型 imgタグのId
+//iplImage IplImage型 imgに転送する画像
+//出力
+//なし
+function cvShowImage(imgId, iplImage){
+	try{
+		if(cvUndefinedOrNull(imgId) || cvUndefinedOrNull(iplImage))
+			throw "imgId or iplImage" + ERROR.IS_UNDEFINED_OR_NULL;
+		cvRGBA2ImageData(iplImage);
+		if (iplImage.canvas.getContext) {
+
+			iplImage.canvas.getContext("2d").putImageData(iplImage.imageData, 0, 0);
+		    var imgElement = document.getElementById(imgId);
+		    if(imgElement == null) throw imgId + ERROR.IS_UNDEFINED_OR_NULL;
+		 
+		 	imgElement.width = iplImage.width;
+			imgElement.height = iplImage.height;
+		 	
+		    imgElement.src = DMY_IMG;
+		    imgElement.onload = function(event){
+			    imgElement.src = iplImage.canvas.toDataURL('image/jpeg');
+			};
+		}
+		else throw ERROR.NOT_GET_CONTEXT;
+	}
+	catch(ex){
+		alert("cvShowImage : " + ex);
+	}
+}
+
 //IplImage型をcanvasタグに出力する
 //入力
 //canvasId Id型 canvasタグのId
@@ -3632,6 +3489,153 @@ function cvShowImageToCanvasElement(canvasElement, iplImage){
 		alert("cvShowImageToCanvas : " + ex);
 	}
 }
+
+
+//IplImage型のRGBAの値をimageDataへ転送
+//cvShowImageで呼び出されることを想定
+//入力
+//iplImage IplImage型 自身のimageDataへ自身のRGBAの値がコピーされる画像
+//出力
+//なし
+function cvRGBA2ImageData(iplImage){
+	try{
+		if(cvUndefinedOrNull(iplImage)) throw "iplImage" + ERROR.IS_UNDEFINED_OR_NULL;
+		for(var i = 0 ; i < iplImage.height ; i++){
+			for(var j = 0 ; j < iplImage.width ; j++){
+				for(var c = 0 ; c < CHANNELS; c++){
+					iplImage.imageData.data[c + (j + i * iplImage.width) * CHANNELS] = 
+						iplImage.RGBA[c + (j + i * iplImage.width) * CHANNELS];
+				}
+			}
+		}	
+	}
+	catch(ex){
+		alert("RGBA2ImageData : " + ex);
+	}
+}
+//IplImage型のimageDataの値をRGBAへ転送
+//cvLoad**で呼び出されることを想定
+//入力
+//iplImage IplImage型 自身のRGBAへ自身のimageDataの値がコピーされる画像
+//出力
+//なし
+function cvImageData2RGBA(iplImage){
+	try{
+		if(cvUndefinedOrNull(iplImage)) throw "iplImage" + ERROR.IS_UNDEFINED_OR_NULL;
+		for(var i = 0 ; i < iplImage.height ; i++){
+			for(var j = 0 ; j < iplImage.width ; j++){
+				for(var c = 0 ; c < CHANNELS; c++){
+					iplImage.RGBA[c + (j + i * iplImage.width) * CHANNELS] =
+					 iplImage.imageData.data[c + (j + i * iplImage.width) * CHANNELS] ; 
+				}
+			}
+		}	
+	}
+	catch(ex){
+		alert("RGBA2ImageData : " + ex);
+	}
+}
+
+//imgタグのsrcからiplImageに変換する
+//入力
+//imgId  Id型 変換されるimgタグ
+//出力
+//iplImage型
+function cvGetIplImageAtImg(imgId){
+	var iplImage = null;
+	try{
+		if(cvUndefinedOrNull(imgId)) throw "imgId" + ERROR.IS_UNDEFINED_OR_NULL;
+		var imgElement = document.getElementById(imgId);
+		iplImage = new IplImage();
+	    iplImage.canvas = cvGetCanvasAtImgElement(imgElement);
+	    iplImage.width = iplImage.canvas.width;
+	    iplImage.height = iplImage.canvas.height;
+	    var context = iplImage.canvas.getContext("2d");
+	    var imgdata = context.getImageData(1, 1, 2, 2);
+	    iplImage.imageData = context.getImageData(0, 0, iplImage.canvas.width, iplImage.canvas.height);
+	    for(var i = 0 ; i < iplImage.height ; i++){
+	    	for(var j = 0 ; j < iplImage.width ; j++){
+	    		for(var c = 0 ; c < CHANNELS ; c++){
+		    		iplImage.RGBA[c + (j + i * iplImage.width) * CHANNELS] = 
+		    			iplImage.imageData.data[c + (j + i * iplImage.width) * CHANNELS];
+		    	}
+	    	}
+		}
+	}
+	catch(ex){
+		alert("cvGetIplImageAtImg : " + ex);
+	}
+	
+	return iplImage;
+}
+
+//canvasタグからIplImageへ転送
+//入力
+//canvasId canvasタグ canvasタグのオブジェクト
+//出力
+//IplImage型
+function cvGetIplImageAtCanvas(canvasId){
+	var iplImage = null;
+	try{
+		var canvasElement = document.getElementById(canvasId);
+		iplImage = cvGetIplImageAtCanvasElement(canvasElement);
+	}
+	catch(ex){
+		alert("cvGetIplImageAtCanvas : " + ex);
+	}
+	return iplImage;
+}
+
+//canvasエレメントからIplImageへ転送
+//入力
+//canvasElement canvasエレメント canvasのオブジェクト
+//出力
+//IplImage型
+function cvGetIplImageAtCanvasElement(canvasElement){
+	var iplImage = null;
+	try{
+		if(cvUndefinedOrNull(canvasElement))
+			throw "canvas" + ERROR.IS_UNDEFINED_OR_NULL;
+
+		iplImage = cvCreateImage(canvasElement.width, canvasElement.height);
+		iplImage.imageData = 
+			canvasElement.getContext("2d").getImageData(0, 0, canvasElement.width, canvasElement.height);
+		cvImageData2RGBA(iplImage);
+	}
+	catch(ex){
+		alert("cvGetIplImageAtCanvasElement : " + ex);
+	}
+	return iplImage;
+}
+
+
+//imgタグからcanvasへ転送
+//cvLoadImageで呼び出されることを想定
+//入力
+//image imgタグ imgタグのオブジェクト
+//出力
+//canvasタグ
+function cvGetCanvasAtImgElement(image){
+	var canvas = null;
+	try{
+		if(cvUndefinedOrNull(image)) throw "image" + ERROR.IS_UNDEFINED_OR_NULL;
+		
+		canvas = document.createElement('canvas');	
+		
+		if(cvUndefinedOrNull(canvas)) throw "canvas" + ERROR.IS_UNDEFINED_OR_NULL;
+	    
+    	canvas.width = image.width;
+    	canvas.height = image.height;
+    	
+    	canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);    	
+	}
+	catch(ex){
+		alert("cvGetCanvasAtImgElement : " + ex);
+	}
+	return canvas;
+}
+
+
 
 //CvMatの内容をalertで表示
 function cvAlertMat(src){
