@@ -1,3 +1,7 @@
+//メモ
+//imgタグの画像から直接IplImage型へは変換できない
+//ローカルの画像ファイルはクロスドメイン扱いとなりjavascriptのエラーが出る
+//
 //------------------データ型------------------------
 //canvasのRGBA値は0〜255の値しかもてないため専用の画像データ型を用意
 var IplImage = function(){
@@ -3360,7 +3364,7 @@ function cvLoadImageToCanvasAtEventFile(file, canvasId, iplImage, maxSize)
 	    		scale = (originalSize.width > originalSize.height) ? 
 		    		maxSize / originalSize.width : maxSize / originalSize.height;
 	    	img.width = scale * originalSize.width;
-	    	img.height = scale * originalSize.height;
+	    	img.height = scale * originalSize.height;	    	
 	    	iplImage.canvas = document.getElementById(canvasId);
 	    	iplImage.canvas.width = img.width;
 	    	iplImage.canvas.height = img.height;
@@ -3536,39 +3540,6 @@ function cvImageData2RGBA(iplImage){
 	}
 }
 
-//imgタグのsrcからiplImageに変換する
-//入力
-//imgId  Id型 変換されるimgタグ
-//出力
-//iplImage型
-function cvGetIplImageAtImg(imgId){
-	var iplImage = null;
-	try{
-		if(cvUndefinedOrNull(imgId)) throw "imgId" + ERROR.IS_UNDEFINED_OR_NULL;
-		var imgElement = document.getElementById(imgId);
-		iplImage = new IplImage();
-	    iplImage.canvas = cvGetCanvasAtImgElement(imgElement);
-	    iplImage.width = iplImage.canvas.width;
-	    iplImage.height = iplImage.canvas.height;
-	    var context = iplImage.canvas.getContext("2d");
-	    var imgdata = context.getImageData(1, 1, 2, 2);
-	    iplImage.imageData = context.getImageData(0, 0, iplImage.canvas.width, iplImage.canvas.height);
-	    for(var i = 0 ; i < iplImage.height ; i++){
-	    	for(var j = 0 ; j < iplImage.width ; j++){
-	    		for(var c = 0 ; c < CHANNELS ; c++){
-		    		iplImage.RGBA[c + (j + i * iplImage.width) * CHANNELS] = 
-		    			iplImage.imageData.data[c + (j + i * iplImage.width) * CHANNELS];
-		    	}
-	    	}
-		}
-	}
-	catch(ex){
-		alert("cvGetIplImageAtImg : " + ex);
-	}
-	
-	return iplImage;
-}
-
 //canvasタグからIplImageへ転送
 //入力
 //canvasId canvasタグ canvasタグのオブジェクト
@@ -3605,6 +3576,41 @@ function cvGetIplImageAtCanvasElement(canvasElement){
 	catch(ex){
 		alert("cvGetIplImageAtCanvasElement : " + ex);
 	}
+	return iplImage;
+}
+
+//imgタグのsrcからiplImageに変換する
+//入力
+//imgId  Id型 変換されるimgタグ
+//出力
+//iplImage型
+//備考
+//ローカル環境では動かない
+function cvGetIplImageAtImg(imgId){
+	var iplImage = null;
+	try{
+		if(cvUndefinedOrNull(imgId)) throw "imgId" + ERROR.IS_UNDEFINED_OR_NULL;
+		var imgElement = document.getElementById(imgId);
+		iplImage = new IplImage();
+	    iplImage.canvas = cvGetCanvasAtImgElement(imgElement);
+	    iplImage.width = iplImage.canvas.width;
+	    iplImage.height = iplImage.canvas.height;
+	    iplImage.RGBA = new Array(iplImage.width * iplImage.width * CHANNELS);
+		var context = iplImage.canvas.getContext("2d");
+	    iplImage.imageData = context.getImageData(0, 0, iplImage.canvas.width, iplImage.canvas.height);
+	    for(var i = 0 ; i < iplImage.height ; i++){
+	    	for(var j = 0 ; j < iplImage.width ; j++){
+	    		for(var c = 0 ; c < CHANNELS ; c++){
+		    		iplImage.RGBA[c + (j + i * iplImage.width) * CHANNELS] = 
+		    			iplImage.imageData.data[c + (j + i * iplImage.width) * CHANNELS];
+		    	}
+	    	}
+		}
+	}
+	catch(ex){
+		alert("cvGetIplImageAtImg : " + ex);
+	}
+	
 	return iplImage;
 }
 

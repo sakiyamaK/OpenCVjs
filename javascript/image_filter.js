@@ -598,7 +598,7 @@ function Canny(imgId, iplImage){
 	try{
 		var cannyImage = cvCreateImage(iplImage.width, iplImage.height);
 		cvCvtColor(iplImage, cannyImage, CV_CODE.RGB2GRAY);
-		cvCanny(cannyImage, cannyImage, 10, 100);
+		cvCanny(cannyImage, cannyImage, 80, 100);
 		cvShowImage(imgId, cannyImage);
 	}
 	catch(ex){
