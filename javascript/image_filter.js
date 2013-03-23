@@ -558,7 +558,8 @@ function Blackhat(imgId, iplImage){
 
 function Smooth(imgId, iplImage){
 	var newIplImage = cvCloneImage(iplImage);
-	cvSmooth(iplImage, newIplImage);
+	for(var i = 0 ; i < 10 ; i ++)
+		cvSmooth(newIplImage, newIplImage, CV_SMOOTH_TYPE.BILATERAL);
 	cvShowImage(imgId, newIplImage);
 }
 
@@ -598,7 +599,7 @@ function Canny(imgId, iplImage){
 	try{
 		var cannyImage = cvCreateImage(iplImage.width, iplImage.height);
 		cvCvtColor(iplImage, cannyImage, CV_CODE.RGB2GRAY);
-		cvCanny(cannyImage, cannyImage, 80, 100);
+		cvCanny(cannyImage, cannyImage, 50, 80);
 		cvShowImage(imgId, cannyImage);
 	}
 	catch(ex){

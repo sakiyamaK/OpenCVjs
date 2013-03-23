@@ -1,3 +1,317 @@
+
+////////////////////////////////////開発途中////////////////////////////////////
+
+//------------------データ型------------------------
+//SVMの学習パラメータ
+var CvSVMParams = function(){
+	svm_type: 0;
+	kernel_type: 0;
+	degree: 0; // poly 用
+    gamma: 0;  // poly/rbf/sigmoid 用
+    coef0: 0;  // poly/sigmoid 用
+
+    C: null;  // CV_SVM_C_SVC, CV_SVM_EPS_SVR, CV_SVM_NU_SVR 用
+    nu: null; // CV_SVM_NU_SVC, CV_SVM_ONE_CLASS, CV_SVM_NU_SVR 用
+    p: 0;  // CV_SVM_EPS_SVR 用
+    class_weights: null; // CV_SVM_C_SVC 用
+    term_crit: null;  // 終了条件
+}
+
+//反復アルゴリズムの終了条件
+var CvTermCriteria = function(){
+	int type: 0; //CV_TERMCRIT定数の組み合わせ
+	int max_iter: 0; //反復数の最大値
+	double epsilon; //目標精度
+}
+
+//------------------定数------------------------
+//反復アルゴリズムのための終了条件
+//CvTermCriteria型の変数に利用する
+var CV_TERMCRIT = {
+	ITER: 0,
+	NUMBER: CV_TERMCRIT.ITER,
+	EPS: 2
+}
+
+//------------------メソッド------------------------
+
+//サポートヴェクターマシン
+var CvSVM = function(){
+	
+	this.load = function(fileName){
+	}
+	
+	this.get_support_vector_count = function(){
+	}
+	
+	
+	//学習を行う
+	//入力
+	this.train = function (train_data, responses,
+                   	var_idx, sample_idx, params){
+		try{
+		
+			var ans = cvCreateMat(1, 1);
+			cvmMul(this.weight, train_data, ans);
+			if(ans.vals[0] * class < 0){
+				for(var i = 0 ; i < vector.cols ; i++){
+					weight.vals[i] += class * vector.vals[i];
+				}
+			}
+		}
+		catch(ex){
+			document.write(ex + " : train</br>");
+		}
+	}
+}
+
+//2次元ベクトルの角度と大きさを求めます
+//入力
+// xImage x座標の配列．(もしくはIplImage型のx方向の微分画像)
+// yImage y座標の配列．(もしくはIplImage型のy方向の微分画像)
+// magImage 大きさの出力配列(IplImage型)． xImage と同じサイズ，同じ型です．
+angle   角度の出力配列． x と同じサイズ，同じ型．角度はラジアン (  から   ) あるいは度 (0 から 360) で表されます．
+angleInDegrees   角度の表記にラジアン（デフォルト），または度のどちらを用いるかを指定するフラグ．//出力
+//CvMat型
+function cvCartToPolar(var xImgae, var yImage, var magImage, var angImage, var angleInDegrees){
+	try{
+		if(cvUndefinedOrNull(xImgae) || cvUndefinedOrNull(yImage) ||
+			cvUndefinedOrNull(magImage) || cvUndefinedOrNull(angImage))
+			throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
+		else if(xImgae.width != yImage.width || yImage.width != magImage.width ||  magImage.width != angImage.width ||
+			xImgae.height != yImage.height || yImage.height != magImage.height ||  magImage.height != angImage.height)
+			throw ERROR.DIFFERENT_SIZE;
+			
+		if(cvUndefinedOrNull(angleInDegrees))
+			angleInDegrees = false;
+
+		for(var i = 0 ; i < xImage.height;  i++){
+			var p = i * magImages.width *CHANNELS ;
+			for(var j = 0 ; j < xImage.width; j++){
+				p += j * CHANNELS ;
+				magImages.RBGA[p] = Math.sqrt(xImgae.RBGA[p] * xImgae.RBGA[p] + yImgae.RBGA[p] * yImgae.RBGA[p]);
+				angImage.RGBA[p] = Math.atan2(yImgae.RBGA[p], xImgae.RBGA[p]);
+				if(angleInDegrees) angImage.RGBA[p] *= 180 / Math.PI;
+			}
+		}
+		
+		
+	}
+	catch(ex){
+		alert("cvCartToPolar : " + ex);
+	}
+}
+
+function cvKMeans2(samples, cluster_count, labels, termcrit){
+	try{
+		if(cvUndefinedOrNull(samples) || cvUndefinedOrNull(cluster_count) || cvUndefinedOrNull(labels)
+			|| cvUndefinedOrNull(termcrit))
+			throw "samples or cluster_count or labels or termcrit " + ERROR.IS_UNDEFINED_OR_NULL;
+			
+			function clustering(samples, clusters, labels)
+			{
+				for(var i = 0 ; i < samples.height ; i++){
+					for(var j = 0 ; j < samples.width; j++){
+						var ji = (j + i * samples.width) * CHANNELS;
+						var c1 = samples.RGBA[ji];
+						var c2 = samples.RGBA[1 + ji];
+						var c3 = samples.RGBA[2 + ji];
+						
+						var disC1 = c1 - clusters.RGBA[0];
+						var disC2 = c2 - clusters.RGBA[1];
+						var disC3 = c3 - clusters.RGBA[2];
+						
+						var dis = disC1 * disC1 + disC2 * disC2 + disC3 * disC3;
+						
+						for(var cnum = 1 ; cnum < clusters.width; cnum++){
+								
+						}
+					}
+				}
+			}
+	}
+	catch(ex){
+		alert("cvKMeans2 : " + ex);
+	}
+}
+
+function cvInPaint(src, mask, dst, inpaintRadius, flags){
+	try{
+		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(mask) || cvUndefinedOrNull(dst)
+			|| cvUndefinedOrNull(inpaintRadius))
+			throw "src or mask or dst or inpaintRadius " + ERROR.IS_UNDEFINED_OR_NULL;
+		if(src.width != dst.width || src.height != dst.height ||
+			mask.width != dst.width || mask.height != dst.height ||)
+				throw "src or mask or dst " + ERROR.DIFFERENT_SIZE;
+		
+		if(flags != CV_INPAINT.TELEA)
+			throw "flagsは現在CV_INPAINT.TELENAしかサポートしていません";
+
+		function cvInPaintOneLoop(src, mask, dst, inpaintRadius, flags){
+			
+			// -- maskのエッジ探索 --
+			var edge = new cvCreateImage(src.width, src.height);
+			cvZero(edge);
+			for(var i = 0 ; i < edge.height ; i++){
+				if(i != 0 && i != edge.height - 1){
+					for(var j = 0 ; j < edge.width ; j++){
+						var v = 0;
+						if(j != 0 && j != edge.width - 1){
+							//8近傍チェック
+							for(var y = -1 ; y <= 1 ; y++){
+								for(var x = -1 ; x <= 1 ; x++){
+									if(mask.RGBA[(j + x + (i + y) * mask.width) * CHANNELS] == 0){
+										v = 255;
+										break;
+									}
+								}
+								if(v != 0) break;
+							}
+						}
+						edge.RGBA[(j + i * edge.width) * CHANNELS] = v;
+					}
+				}
+				else{
+					for(var j = 0 ; j < edge.width ; j++){
+						edge.RGBA[(j + i * edge.width) * CHANNELS] = 255;
+					}
+			}
+			
+			// -- 輝度勾配 --
+			gImage = cvCreateImage(src.width, src.height);
+			cvZero(gImage);
+			for(var i = 0 ; i < gImage.height ; i++){
+				for(var j = 0 ; j < gImage.width ; j++){
+					if(edge.RGBA[(j + i * edge.width) * CHANNNELS] != 0){
+						for(var c = 0 ; c < 3 ; c++){
+							var dx = src.RGBA[(j + 1 + i * src.width) * CHANNNELS] - src.RGBA[(j - 1 + i * src.width) * CHANNNELS];
+							var dx = src.RGBA[(j + (i + 1) * src.width) * CHANNNELS] - src.RGBA[(j + (i - 1) * src.width) * CHANNNELS];
+						}
+					}
+				}
+			}
+				
+			switch(flags){
+			case CV_INPAINT.NS:
+			break;
+			default:
+			break;
+			}
+		}
+	}
+	catch(ex){
+		alert("cvInPaint : " + ex);
+	}
+}
+
+//ハフ変換
+//入力
+//src IplImage型 GRAY表色系を想定(RGB表色系ならRで実行される)
+//method CV_HOUGH型 ハフ変換の種類
+//rho 少数 距離解像度 1ピクセルあたりの単位 
+//theta 少数 角度解像度 ラジアン単位
+//threshold 整数 対応する投票数がこの値より大きい場合のみ抽出された直線が返される
+//param1 少数 各手法に応じたパラメータ 解説参照
+//出力
+//[ラインの数][ラインの情報]の二次元配列が返る
+//[X][0]にrhoの値
+//[X][1]にthetaの値
+//解説
+//CV_HOUGH.STANDARDの場合
+//  param1,param2共に使用しない(0)
+//CV_HOUGH.PROBABILISTICの場合
+//  param1は最小の線の長さ使用しない(0)
+//  param2は同一線として扱う線分の最大間隔
+//CV_HOUGH.MULTI_SCALEの場合
+//  param1はrhoの序数（荒い距離はrho,詳細な距離ではrho/param1）
+//  param2はthetaの序数 （荒い角度はtheta,詳細な角度ではtheta/param2）
+//http://codezine.jp/article/detail/153
+function cvHoughLines2(src, method, rho, theta, threshold, param1, param2){
+	var rtn = null;
+	try{
+		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(method) ||
+			cvUndefinedOrNull(rho) || cvUndefinedOrNull(theta) || cvUndefinedOrNull(threshold))
+			throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
+		
+		if(method != CV_HOUGH.STANDARD)
+			throw "methodは現在CV_HOUGH.STANDARDしかサポートしていません";
+		
+		if(cvUndefinedOrNull(param1)) param1 = 0;
+		if(cvUndefinedOrNull(param2)) param2 = 0;
+		
+		//---------------------------------------
+		//-- 初期化 --
+		//---------------------------------------
+		var rtn = new Array();
+		var thetaMax = Math.floor(Math.PI/theta);
+		var sn = new Array(thetaMax); //サインカーブ配列
+		var cs = new Array(thetaMax);//コサインカーブ配列
+		var diagonal = new Array(src.height);//半径計算用斜線長テーブル
+		
+      	var counter = new Array(thetaMax);//直線検出用頻度カウンタ
+      	var rhoMax = Math.floor(Math.sqrt(src.width * src.width + src.height * src.height) + 0.5);
+      	for(var i = 0 ; i < counter.length ; i++){
+      		counter[i] = new Array(2 * rhoMax);
+      		for(var j = 0 ; j < counter[i].length ; j++){
+      			counter[i][j] = 0;
+      		}
+      	}
+
+		//三角関数テーブルを作成
+		for(var i = 0 ; i < sn.length ; i++){
+			sn[i] = Math.sin(i * theta);
+			cs[i] = Math.cos(i * theta);
+		}
+		
+		
+		switch(method){
+		
+		case CV_HOUGH.STANDARD:
+		
+		for(var i = 0 ; i < src.height ; i++){
+			for(var j = 0 ; j < src.width ; j++){
+				if(src.RGBA[(j + i * src.width) * CHANNELS] == 255){
+					for(var t = 0 ; t < thetaMax; t++){
+						r = Math.floor(j * cs[t] + i * sn[t] + 0.5);
+						counter[t][r + rhoMax]++;
+					}
+				}
+			}
+		}
+
+		break;
+		
+		case CV_HOUGH.PROBABILISTIC:
+		break;
+		case CV_HOUGH.MULTI_SCALE:
+		break;
+		}
+		
+		var num = 0;
+		for(var t = 0 ; t < counter.length ; t++){
+			for(var r = 0 ; r < counter[t].length ; r++){
+				if(counter[t][r] > threshold){
+					rtn[num] = new Array(2);
+					rtn[num][0] = r - rhoMax;
+					rtn[num][1] = t;
+					num++;
+				}
+			}
+		}
+	}
+	catch(ex){
+		alert("cvHoughLines2 : " + ex);
+	}
+	
+	return rtn;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+
+
+
 //メモ
 //imgタグの画像から直接IplImage型へは変換できない
 //ローカルの画像ファイルはクロスドメイン扱いとなりjavascriptのエラーが出る
@@ -26,21 +340,31 @@ var CvHistogram = function(){
 	ranges: null;
 }
 
-var Scalar = function(){
+var CvScalar = function(){
 	this.val = new Array(0, 0, 0, 255);
 }
 
-var Point = function(){
+var CvPoint = function(){
 	x: 0;
 	y: 0;
 }
 
-var Size = function(){
+var CvSize = function(){
 	width: 0;
 	height: 0;
 }
 
+
+
+
 //------------------定数------------------------
+//ハフ変換の種類
+var CV_HOUGH = {
+	STANDARD : 0,
+	PROBABILISTIC : 1,
+	MULTI_SCALE : 2
+}
+
 //逆行列の演算の種類
 var CV_INV = {
 	LU: 0,
@@ -133,6 +457,19 @@ var CV_INTER = {
 	CUBIC : 3
 }
 
+//インペイントの種類
+var CV_INPAINT = {
+	NS: 0,
+	TELEA: 1
+}
+
+//反復アルゴリズムのための終了条件
+//CvTermCriteria型の変数に利用する
+var CV_TERMCRIT = {
+	ITER: 1,
+	EPS: 2
+}
+
 //チャンネル数
 var CHANNELS = 4;
 
@@ -161,6 +498,8 @@ var DMY_IMG;
 
 
 //------------------メソッド------------------------
+
+
 //rows行cols列の行列を作る
 //C言語でいう a[rows][cols]
 //入力
@@ -1078,8 +1417,8 @@ function cvEqualizeHist(src, dst, color){
 //src IplImage型 計算対象となる画像
 //min_val 数値型の配列 要素数4 RGB表色系ならばr,g,b,aの最小値が入る 
 //max_val 数値型の配列 要素数4 RGB表色系ならばr,g,b,aの最大値が入る 
-//min_locs Point型の配列 要素数4 RGB表色系ならばr,g,b,aの最小値のピクセルの座標が入る
-//max_locs Point型の配列 要素数4 RGB表色系ならばr,g,b,aの最大値のピクセルの座標が入る
+//min_locs CvPoint型の配列 要素数4 RGB表色系ならばr,g,b,aの最小値のピクセルの座標が入る
+//max_locs CvPoint型の配列 要素数4 RGB表色系ならばr,g,b,aの最大値のピクセルの座標が入る
 //mask IplImage型 0か255のマスク画像 省略可
 //出力
 //なし
@@ -1130,13 +1469,13 @@ function cvMinMaxLoc(src, min_val, max_val, min_locs, max_locs, mask){
 //入力
 //src IplImage型 計算対象となる画像
 //出力
-//Scalar型 RGB表色系ならr,g,b,aの結果が代入されている
+//CvScalar型 RGB表色系ならr,g,b,aの結果が代入されている
 function cvCountNonZero(src){
 	var rtn = null;	
 	try{
 		if(cvUndefinedOrNull(src)) throw "src" + ERROR.IS_UNDEFINED_OR_NULL;
 		
-		rtn = new Scalar();
+		rtn = new CvScalar();
 		for(var k = 0 ; k < rtn.length ; rtn.val[k++] = 0);
 		
 		for(var i = 0 ; i < src.height ; i++){
@@ -1159,13 +1498,13 @@ function cvCountNonZero(src){
 //入力
 //src IplImage型 計算対象となる画像
 //出力
-//Scalar型 RGB表色系ならr,g,b,aの結果が代入されている
+//CvScalar型 RGB表色系ならr,g,b,aの結果が代入されている
 function cvSum(src){
 	var rtn = null;
 	try{
 		if(cvUndefinedOrNull(src)) throw "src" + ERROR.IS_UNDEFINED_OR_NULL;
 		
-		rtn = new Scalar();
+		rtn = new CvScalar();
 		
 		for(var k = 0 ; k < rtn.length ; rtn[k++] = 0);
 		
@@ -1188,7 +1527,7 @@ function cvSum(src){
 //src IplImage型 計算対象となる画像
 //mask IplImage型 0か255のマスク画像 省略可
 //出力
-//Scalar型 RGB表色系ならr,g,b,aの結果が代入されている
+//CvScalar型 RGB表色系ならr,g,b,aの結果が代入されている
 function cvAvg(src, mask){
 	var rtn = null;
 	try{
@@ -1212,8 +1551,8 @@ function cvAvg(src, mask){
 //画像の画素の平均値と分散を求める
 //入力
 //src IplImage型 計算対象となる画像
-//mean Scalar型 平均値が入る RGB表色系ならr,g,b,aの結果が代入されている
-//vrn Scalar型 分散が入る RGB表色系ならr,g,b,aの結果が代入されている
+//mean CvScalar型 平均値が入る RGB表色系ならr,g,b,aの結果が代入されている
+//vrn CvScalar型 分散が入る RGB表色系ならr,g,b,aの結果が代入されている
 //mask IplImage型 0か255のマスク画像 省略可
 //出力
 //なし
@@ -1246,8 +1585,8 @@ function cvAvgVrn(src, mean, vrn, mask){
 //画像の画素の平均値と標準偏差を求める
 //入力
 //src IplImage型 計算対象となる画像
-//mean Scalar型 平均値が入る RGB表色系ならr,g,b,aの結果が代入されている
-//vrn Scalar型 標準偏差が入る RGB表色系ならr,g,b,aの結果が代入されている
+//mean CvScalar型 平均値が入る RGB表色系ならr,g,b,aの結果が代入されている
+//vrn CvScalar型 標準偏差が入る RGB表色系ならr,g,b,aの結果が代入されている
 //mask IplImage型 0か255のマスク画像 省略可
 //出力
 //なし
@@ -1339,9 +1678,9 @@ function cvLabeling(src){
 //円を描く
 //入力
 //src IplImage型 図が描かれる画像
-//center Point型 円の中心座標
+//center CvPoint型 円の中心座標
 //radius int型 半径
-//color Scalar型 円の色
+//color CvScalar型 円の色
 //thickness 奇数 円周の太さ 0以上の値 0の場合、円は塗り潰される 省略可
 //出力
 //なし
@@ -1418,9 +1757,9 @@ function cvCircle(img, center, radius, color, thickness){
 //矩形を描く
 //入力
 //src IplImage型 図が描かれる画像
-//pt1 Point型 矩形の左上の座標
-//pt2 Point型 矩形の右下の座標
-//color Scalar型 矩形の色
+//pt1 CvPoint型 矩形の左上の座標
+//pt2 CvPoint型 矩形の右下の座標
+//color CvScalar型 矩形の色
 //thickness 奇数 外周の太さ 0以上の値 0の場合、矩形は塗り潰される 省略可
 //出力
 //なし
@@ -1456,8 +1795,8 @@ function cvRectangle(img, pt1, pt2, color, thickness){
 			}
 		}
 		else{
-			var pt3 = new Point();
-			var pt4 = new Point();
+			var pt3 = new CvPoint();
+			var pt4 = new CvPoint();
 			pt3.x = pt1.x; pt3.y = pt2.y;
 			pt4.x = pt2.x; pt4.y = pt1.y;
 			
@@ -1474,9 +1813,9 @@ function cvRectangle(img, pt1, pt2, color, thickness){
 
 //線分または直線を描く
 //src IplImage型 図が描かれる画像
-//pt1 Point型 直線の左上の座標
-//pt2 Point型 直線の右下の座標
-//color Scalar型 矩形の色
+//pt1 CvPoint型 直線の左上の座標
+//pt2 CvPoint型 直線の右下の座標
+//color CvScalar型 矩形の色
 //thickness 奇数 外周の太さ 1以上の値 省略可
 //isSegment true/false trueなら線分 falseなら直線 省略可
 //出力
@@ -1602,7 +1941,7 @@ function cvLine(img, pt1, pt2, color, thickness, isSegment){
 //入力
 //src IplImage型 変換する前の画像
 //dst IplImage型 変換した後の画像
-//element Size型 変換する際に確認する中心画素からの範囲 width,heightともに 3以上の奇数
+//element CvSize型 変換する際に確認する中心画素からの範囲 width,heightともに 3以上の奇数
 //operation CV_MOP配列 モルフォロジーの種類
 //iterations 整数 変換する回数
 //出力
@@ -1654,7 +1993,7 @@ function cvMorphologyEx(src, dst, element, operation, iterations){
 //src IplImage型 変換する前の画像
 //dst IplImage型 変換した後の画像
 //iterations 整数 変換する回数 省略可
-//element Size型 変換する際に確認する中心画素からの範囲 width,heightともに 3以上の奇数 省略可
+//element CvSize型 変換する際に確認する中心画素からの範囲 width,heightともに 3以上の奇数 省略可
 //出力
 //なし
 function cvErode(src, dst, iterations, element){
@@ -1671,7 +2010,7 @@ function cvErode(src, dst, iterations, element){
 //src IplImage型 変換する前の画像
 //dst IplImage型 変換した後の画像
 //iterations 整数 変換する回数 省略可
-//element Size型 変換する際に確認する中心画素からの範囲 width,heightともに 3以上の奇数 省略可
+//element CvSize型 変換する際に確認する中心画素からの範囲 width,heightともに 3以上の奇数 省略可
 //出力
 //なし
 function cvDilate(src, dst, iterations, element){
@@ -3061,7 +3400,7 @@ function cvConvertScaleAbs(src, dst){
 //dst IplImage型 膨張か収縮をした結果
 //isDilate true/false trueなら膨張 falseなら収縮
 //iterations 整数 繰り返し回数 省略可
-//element Size型 窓関数の縦横幅 奇数 省略可
+//element CvSize型 窓関数の縦横幅 奇数 省略可
 //出力
 //なし
 function cvDilateOrErode(src, dst, isDilate, iterations, element){
@@ -3071,7 +3410,7 @@ function cvDilateOrErode(src, dst, isDilate, iterations, element){
 
 		if(cvUndefinedOrNull(element))
 		{
-			element = new Size();
+			element = new CvSize();
 			element.width = 3;
 			element.height = 3;
 		}
@@ -3136,7 +3475,7 @@ function cvSetRGBA(src, c1, c2, c2, a){
 		if(cvUndefinedOrNull(c3)) c3 = 255;
 		if(cvUndefinedOrNull(a)) a = 255;
 
-		var color = new Scalar();
+		var color = new CvScalar();
  		color.val[0] = c1;
  		color.val[1] = c2;
  		color.val[2] = c3;
@@ -3152,7 +3491,7 @@ function cvSetRGBA(src, c1, c2, c2, a){
 //全座標に色を代入
 //入力
 //src IplImage型 色が代入される画像
-//color Scalar型 代入する色
+//color CvScalar型 代入する色
 //出力
 //なし
 function cvSet(src, color){
