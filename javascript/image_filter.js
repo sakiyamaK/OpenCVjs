@@ -250,8 +250,8 @@ function Labeling(imgId, iplImage){
 		min_locs = new Array(4);
 		max_locs = new Array(4);
 		for(var i = 0 ; i < 4 ; i++){
-			min_locs[i] = new Point();
-			max_locs[i] = new Point();
+			min_locs[i] = new CvPoint();
+			max_locs[i] = new CvPoint();
 		}
 
 		cvMinMaxLoc(iplImage2, min_val, max_val, min_locs, max_locs);
@@ -396,10 +396,10 @@ function Kamisama(imgId, iplImage){
 		var newIplImage = cvCloneImage(iplImage);
 		cvCvtColor(newIplImage, newIplImage, CV_CODE.RGB2GRAY);
 		
-		var pt1 = new Point();
+		var pt1 = new CvPoint();
 		pt1.x = Math.floor(newIplImage.width * Math.random());
 		pt1.y = Math.floor(newIplImage.height * Math.random());
-		var pt2 = new Point();
+		var pt2 = new CvPoint();
 		pt2.x = Math.floor(newIplImage.width * Math.random());
 		pt2.y = Math.floor(newIplImage.height * Math.random());
 

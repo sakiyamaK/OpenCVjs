@@ -1607,44 +1607,75 @@ function cvAvgSdv(src, mean, std, mask){
 //IplImage型
 //GRAY表色系の画像
 //各画素に0からnまでのラベルが代入されている
-function Labeling(imgId, iplImage){
+function cvLabeling(src){
+	var dst = null;
 	try{
-		var iplImage1 = cvCloneImage(iplImage);
-		cvCvtColor(iplImage1, iplImage1, CV_CODE.RGB2GRAY);
-		
-		cvThreshold(iplImage1, iplImage1, 100, 255, CV_THRESHOLD_TYPE.THRESH_BINARY_INV);
-
-		var iplImage2 = cvLabeling(iplImage1);
-		
-		min_val = new Array(4);
-		max_val = new Array(4);
-		min_locs = new Array(4);
-		max_locs = new Array(4);
-		for(var i = 0 ; i < 4 ; i++){
-			min_locs[i] = new CvPoint();
-			max_locs[i] = new CvPoint();
-		}
-
-		cvMinMaxLoc(iplImage2, min_val, max_val, min_locs, max_locs);
-		var maxV = max_val[0];
-		
-		for(i = 0 ; i < iplImage2.height ; i++){
-			for(j = 0 ; j < iplImage2.width ; j++){
-				var v = iplImage2.RGBA[(j + i * iplImage1.width) * CHANNELS] ;
-				iplImage1.RGBA[(j + i * iplImage2.width) * CHANNELS] = 255 * v / maxV;
-				iplImage1.RGBA[1 + (j + i * iplImage2.width) * CHANNELS] = 255;
-				iplImage1.RGBA[2 + (j + i * iplImage2.width) * CHANNELS] = (v == 0) ? 0 : 255;
-				iplImage1.RGBA[3 + (j + i * iplImage2.width) * CHANNELS] = 255;
+		var dmy = cvCloneImage(src);
+		dst = cvCreateImage(src.width, src.height);
+				
+		for(var i = 0 ; i < dst.height ; i++){
+			for(var j = 0 ; j < dst.width ; j++){
+				dst.RGBA[(j + i * dst.width) * CHANNELS] = 0;
 			}
 		}
 		
-		cvCvtColor(iplImage1, iplImage1, CV_CODE.HSV2RGB);
+		var lut = new Array(dmy.width * dmy.height);
+		for(var i = 0 ; i < lut.length ; i++) lut[i] = i;
 
-		cvShowImage(imgId, iplImage1);
+		var newNumber = 1;
+		var MAX = dmy.width * dmy.height;
+		var check = new Array(4);
+		
+		for(var i = 0 ; i < dmy.height ; i++){
+			for(var j = 0 ; j < dmy.width ; j++){
+				if(dmy.RGBA[(j + i * dmy.width) * CHANNELS] == 255){
+					if(i == 0 && j == 0){
+						dst.RGBA[(j + i * dst.width) * CHANNELS] = newNumber;
+						newNumber++;
+					}
+					else{
+						check[0] = (j - 1 < 0 || i - 1 < 0) ? MAX : dst.RGBA[(j - 1 + (i - 1) * dmy.width) * CHANNELS];
+						check[1] = (i - 1 < 0) ? MAX : dst.RGBA[(j + (i - 1) * dmy.width) * CHANNELS];
+						check[2] = (j + 1 > dmy.width - 1 || i - 1 < 0) ? MAX : dst.RGBA[(j + 1 + (i - 1) * dmy.width) * CHANNELS];
+						check[3] = (j - 1 < 0) ? MAX : dst.RGBA[(j - 1 + i * dmy.width) * CHANNELS];
+						check.sort( function(a,b) {return a-b;} );
+						
+						var m = check.length;
+						for(var n = 3 ; n >= 0 ; n--){
+							if(check[n] != 0 && check[n] != MAX) m = n;
+						}
+						
+						if(m == check.length){
+							dst.RGBA[(j + i * dst.width) * CHANNELS] = newNumber;
+							newNumber++;
+						}
+						else{							
+							dst.RGBA[(j + i * dst.width) * CHANNELS] = check[m];
+							c = m + 1;
+							for(var n = c ; n < check.length ; n++){
+								if(check[n] != MAX && lut[check[n]] > check[m])	lut[check[n]] = check[m];
+							}
+						}
+					}
+				}
+			}
+		}
+
+		for(var i = 0 ; i < dmy.height ; i++){
+			for(var j = 0 ; j < dmy.width ; j++){
+				while(true){
+					var v = dst.RGBA[(j + i * dst.width) * CHANNELS];
+					var n = lut[v];
+					if(v == n) break;
+					dst.RGBA[(j + i * dst.width) * CHANNELS] = n;
+				}			
+			}
+		}		
 	}
 	catch(ex){
 		alert("Labeling : " + ex);
 	}
+	return dst;
 }
 
 //円を描く
