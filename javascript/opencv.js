@@ -19,9 +19,9 @@ var CvSVMParams = function(){
 
 //反復アルゴリズムの終了条件
 var CvTermCriteria = function(){
-	int type: 0; //CV_TERMCRIT定数の組み合わせ
-	int max_iter: 0; //反復数の最大値
-	double epsilon; //目標精度
+	type: 0; //CV_TERMCRIT定数の組み合わせ
+	max_iter: 0; //反復数の最大値
+	epsilon; //目標精度
 }
 
 //------------------定数------------------------
@@ -29,12 +29,12 @@ var CvTermCriteria = function(){
 //CvTermCriteria型の変数に利用する
 var CV_TERMCRIT = {
 	ITER: 0,
-	NUMBER: CV_TERMCRIT.ITER,
+	NUMBER: 0,
 	EPS: 2
 }
 
 //------------------メソッド------------------------
-
+/*
 //サポートヴェクターマシン
 var CvSVM = function(){
 	
@@ -64,33 +64,36 @@ var CvSVM = function(){
 		}
 	}
 }
-
+*/
 //2次元ベクトルの角度と大きさを求めます
 //入力
 // xImage x座標の配列．(もしくはIplImage型のx方向の微分画像)
 // yImage y座標の配列．(もしくはIplImage型のy方向の微分画像)
-// magImage 大きさの出力配列(IplImage型)． xImage と同じサイズ，同じ型です．
-angle   角度の出力配列． x と同じサイズ，同じ型．角度はラジアン (  から   ) あるいは度 (0 から 360) で表されます．
-angleInDegrees   角度の表記にラジアン（デフォルト），または度のどちらを用いるかを指定するフラグ．//出力
+// magImage 大きさの出力配列(IplImage型)． xImageと同じサイズ
+//angImage 角度の出力配列(IplImage型)． xImageと同じサイズ角度はラジアン (-PI から PI) あるいは度 (0 から 360) で表されます．
+//angleInDegrees   角度の表記にラジアン（デフォルト），または度のどちらを用いるかを指定するフラグ．
+//出力
 //CvMat型
-function cvCartToPolar(var xImgae, var yImage, var magImage, var angImage, var angleInDegrees){
+function cvCartToPolar(xImage, yImage, magImage, angImage, angleInDegrees){
 	try{
-		if(cvUndefinedOrNull(xImgae) || cvUndefinedOrNull(yImage) ||
+		if(cvUndefinedOrNull(xImage) || cvUndefinedOrNull(yImage) ||
 			cvUndefinedOrNull(magImage) || cvUndefinedOrNull(angImage))
 			throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
-		else if(xImgae.width != yImage.width || yImage.width != magImage.width ||  magImage.width != angImage.width ||
-			xImgae.height != yImage.height || yImage.height != magImage.height ||  magImage.height != angImage.height)
+		else if(xImage.width != yImage.width || yImage.width != magImage.width ||  magImage.width != angImage.width ||
+			xImage.height != yImage.height || yImage.height != magImage.height ||  magImage.height != angImage.height)
 			throw ERROR.DIFFERENT_SIZE;
 			
 		if(cvUndefinedOrNull(angleInDegrees))
 			angleInDegrees = false;
 
 		for(var i = 0 ; i < xImage.height;  i++){
-			var p = i * magImages.width *CHANNELS ;
+			var p = i * magImage.width * CHANNELS ;
 			for(var j = 0 ; j < xImage.width; j++){
-				p += j * CHANNELS ;
-				magImages.RBGA[p] = Math.sqrt(xImgae.RBGA[p] * xImgae.RBGA[p] + yImgae.RBGA[p] * yImgae.RBGA[p]);
-				angImage.RGBA[p] = Math.atan2(yImgae.RBGA[p], xImgae.RBGA[p]);
+				p += CHANNELS ;
+				var xI = xImage.RGBA[p];
+				var yI = yImage.RGBA[p]
+				magImage.RGBA[p] = Math.sqrt(xI * xI + yI * yI);
+				angImage.RGBA[p] = Math.atan2(yI, xI);
 				if(angleInDegrees) angImage.RGBA[p] *= 180 / Math.PI;
 			}
 		}
@@ -141,7 +144,7 @@ function cvInPaint(src, mask, dst, inpaintRadius, flags){
 			|| cvUndefinedOrNull(inpaintRadius))
 			throw "src or mask or dst or inpaintRadius " + ERROR.IS_UNDEFINED_OR_NULL;
 		if(src.width != dst.width || src.height != dst.height ||
-			mask.width != dst.width || mask.height != dst.height ||)
+			mask.width != dst.width || mask.height != dst.height)
 				throw "src or mask or dst " + ERROR.DIFFERENT_SIZE;
 		
 		if(flags != CV_INPAINT.TELEA)
@@ -175,6 +178,7 @@ function cvInPaint(src, mask, dst, inpaintRadius, flags){
 					for(var j = 0 ; j < edge.width ; j++){
 						edge.RGBA[(j + i * edge.width) * CHANNELS] = 255;
 					}
+				}
 			}
 			
 			// -- 輝度勾配 --
@@ -1603,76 +1607,44 @@ function cvAvgSdv(src, mean, std, mask){
 //IplImage型
 //GRAY表色系の画像
 //各画素に0からnまでのラベルが代入されている
-function cvLabeling(src){
-	var dst = null;
+function Labeling(imgId, iplImage){
 	try{
-		var dmy = cvCloneImage(src);
-		dst = cvCreateImage(src.width, src.height);
-				
-		for(var i = 0 ; i < dst.height ; i++){
-			for(var j = 0 ; j < dst.width ; j++){
-				dst.RGBA[(j + i * dst.width) * CHANNELS] = 0;
-			}
-		}
+		var iplImage1 = cvCloneImage(iplImage);
+		cvCvtColor(iplImage1, iplImage1, CV_CODE.RGB2GRAY);
 		
-		var lut = new Array(dmy.width * dmy.height);
-		for(var i = 0 ; i < lut.length ; i++) lut[i] = i;
+		cvThreshold(iplImage1, iplImage1, 100, 255, CV_THRESHOLD_TYPE.THRESH_BINARY_INV);
+
+		var iplImage2 = cvLabeling(iplImage1);
 		
-		var newNumber = 1;
-		var MAX = dmy.width * dmy.height;
-		var check = new Array(4);
-		
-		for(var i = 0 ; i < dmy.height ; i++){
-			for(var j = 0 ; j < dmy.width ; j++){
-				if(dmy.RGBA[(j + i * dmy.width) * CHANNELS] == 255){
-					if(i == 0 && j == 0){
-						dst.RGBA[(j + i * dst.width) * CHANNELS] = newNumber;
-						newNumber++;
-					}
-					else{
-						check[0] = (j - 1 < 0 || i - 1 < 0) ? MAX : dst.RGBA[(j - 1 + (i - 1) * dmy.width) * CHANNELS];
-						check[1] = (i - 1 < 0) ? MAX : dst.RGBA[(j + (i - 1) * dmy.width) * CHANNELS];
-						check[2] = (j + 1 > dmy.width - 1 || i - 1 < 0) ? MAX : dst.RGBA[(j + 1 + (i - 1) * dmy.width) * CHANNELS];
-						check[3] = (j - 1 < 0) ? MAX : dst.RGBA[(j - 1 + i * dmy.width) * CHANNELS];
-						check.sort( function(a,b) {return a-b;} );
-						
-						var m = check.length;
-						for(var n = 3 ; n >= 0 ; n--){
-							if(check[n] != 0 && check[n] != MAX) m = n;
-						}
-						
-						if(m == check.length){
-							dst.RGBA[(j + i * dst.width) * CHANNELS] = newNumber;
-							newNumber++;
-						}
-						else{
-							
-							dst.RGBA[(j + i * dst.width) * CHANNELS] = check[m];
-							c = m + 1;
-							for(var n = c ; n < check.length ; n++){
-								if(check[n] != MAX && lut[check[n]] > check[m])	lut[check[n]] = check[m];
-							}
-						}
-					}
-				}
-			}
+		min_val = new Array(4);
+		max_val = new Array(4);
+		min_locs = new Array(4);
+		max_locs = new Array(4);
+		for(var i = 0 ; i < 4 ; i++){
+			min_locs[i] = new CvPoint();
+			max_locs[i] = new CvPoint();
 		}
 
-		for(var i = 0 ; i < dmy.height ; i++){
-			for(var j = 0 ; j < dmy.width ; j++){
-				while(true){
-					var v = dst.RGBA[(j + i * dst.width) * CHANNELS];
-					var n = lut[v];
-					if(v == n) break;
-					dst.RGBA[(j + i * dst.width) * CHANNELS] = n;
-				}
+		cvMinMaxLoc(iplImage2, min_val, max_val, min_locs, max_locs);
+		var maxV = max_val[0];
+		
+		for(i = 0 ; i < iplImage2.height ; i++){
+			for(j = 0 ; j < iplImage2.width ; j++){
+				var v = iplImage2.RGBA[(j + i * iplImage1.width) * CHANNELS] ;
+				iplImage1.RGBA[(j + i * iplImage2.width) * CHANNELS] = 255 * v / maxV;
+				iplImage1.RGBA[1 + (j + i * iplImage2.width) * CHANNELS] = 255;
+				iplImage1.RGBA[2 + (j + i * iplImage2.width) * CHANNELS] = (v == 0) ? 0 : 255;
+				iplImage1.RGBA[3 + (j + i * iplImage2.width) * CHANNELS] = 255;
 			}
 		}
+		
+		cvCvtColor(iplImage1, iplImage1, CV_CODE.HSV2RGB);
+
+		cvShowImage(imgId, iplImage1);
 	}
 	catch(ex){
-		alert("cvLabeling : " + ex);
+		alert("Labeling : " + ex);
 	}
-	return dst;
 }
 
 //円を描く
