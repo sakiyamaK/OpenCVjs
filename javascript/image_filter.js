@@ -1,27 +1,65 @@
-function Test(imgId, iplImage){
-	try{
-		var rows = 4;
-		var cols = 4;
-		
-		var mat = cvCreateMat(rows, cols);
-		var inv = cvCreateMat(rows, cols);
-		var kenzan = cvCreateMat(rows, cols);
-		
-		
-		mat.vals[0 + 0 * mat.cols] = 3; mat.vals[1 + 0 * mat.cols] = 1;  mat.vals[2 + 0 * mat.cols] = 1;  mat.vals[3 + 0 * mat.cols] = 4; 
-		mat.vals[0 + 1 * mat.cols] = 5; mat.vals[1 + 1 * mat.cols] = 1;  mat.vals[2 + 1 * mat.cols] = 3;  mat.vals[3 + 1 * mat.cols] = 4; 
-		mat.vals[0 + 2 * mat.cols] = 2; mat.vals[1 + 2 * mat.cols] = 0;  mat.vals[2 + 2 * mat.cols] = 1;  mat.vals[3 + 2 * mat.cols] = 0;
-		mat.vals[0 + 3 * mat.cols] = 1; mat.vals[1 + 3 * mat.cols] = 3;  mat.vals[2 + 3 * mat.cols] = 2;  mat.vals[3 + 3 * mat.cols] = 1;
-		
-		cvInverse(mat, inv);
-		cvmMul(mat, inv, kenzan);
 
-		cvAlertMat(inv);
-		cvAlertMat(kenzan);
+function Perceptron(imgId, iplImage){
+		try{
+		var newIplImage = cvCloneImage(iplImage);
+		
+		var inputss = new Array();
+		var answers = new Array();
+		//特徴点抽出
+		for(var i = 0 ; i < newIplImage.height ; i++){
+			for(var j = 0 ; j < newIplImage.width ; j++){
+				var ji = (j + i * newIplImage.width) * CHANNELS;
+				var r = newIplImage.RGBA[ji];
+				var g = newIplImage.RGBA[1 + ji];
+				var b = newIplImage.RGBA[2 + ji];
+				var answer = 0;
+				if(r > 200 && g < 50 && b < 50) answer = 1;
+				else if(r < 50 && g < 50 && b > 200)answer = -1;
+				if(answer != 0){
+					var inputs = new Array(j, i);
+					inputss[inputss.length] = inputs;
+					answers[answers.length] = answer;
+				}
+			}
+		}
+		
+		//学習
+		var termcriteria = new CvTermCriteria();
+		termcriteria.max_iter = 100000;
+		termcriteria.epsilon = 0;
+		
+		var params = cvPerceptronTrain(inputss, answers, 1, termcriteria);
+		
+		//予測
+		for(var i = 0 ; i < newIplImage.height ; i++){
+			for(var j = 0 ; j < newIplImage.width ; j++){
+			
+				var inputs = new Array(j, i);
+				var predict = cvPerceptronPredict(inputs, params);
+				
+				var r = 255; var g = 255; var b = 255;
+				if(predict >0){
+					r = 255; g = 0; b = 0;
+				}
+				else{
+					r = 0; g = 0; b = 255;
+				}
+				var ji = (j + i * newIplImage.width) * CHANNELS;
+				newIplImage.RGBA[ji] = r;
+				newIplImage.RGBA[1 + ji] = g;
+				newIplImage.RGBA[2 + ji] = b;
+			}
+		}
+		
+		cvShowImage(imgId, newIplImage);
 	}
 	catch(ex){
 		alert("Test : " + ex);
 	}
+}
+
+function Test(imgId, iplImage){
+
 }
 
 function EqualizeHist(imgId, iplImage){

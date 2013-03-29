@@ -17,12 +17,7 @@ var CvSVMParams = function(){
     term_crit: null;  // 終了条件
 }
 
-//反復アルゴリズムの終了条件
-var CvTermCriteria = function(){
-	type: 0; //CV_TERMCRIT定数の組み合わせ
-	max_iter: 0; //反復数の最大値
-	epsilon; //目標精度
-}
+
 
 //------------------定数------------------------
 //反復アルゴリズムのための終了条件
@@ -33,7 +28,11 @@ var CV_TERMCRIT = {
 	EPS: 2
 }
 
+
 //------------------メソッド------------------------
+
+
+
 /*
 //サポートヴェクターマシン
 var CvSVM = function(){
@@ -321,7 +320,7 @@ function cvHoughLines2(src, method, rho, theta, threshold, param1, param2){
 //ローカルの画像ファイルはクロスドメイン扱いとなりjavascriptのエラーが出る
 //
 //------------------データ型------------------------
-//canvasのRGBA値は0〜255の値しかもてないため専用の画像データ型を用意
+//canvasのRGBA値は0縲鰀255の値しかもてないため専用の画像データ型を用意
 var IplImage = function(){
 	width: 0;
 	height: 0;
@@ -358,7 +357,17 @@ var CvSize = function(){
 	height: 0;
 }
 
-
+//2層パーセプトロン用の学習データ
+var CvPerceptronParams = function(){
+	weights: null; //重みの配列
+	bias:0; //バイアス
+}
+//反復アルゴリズムの終了条件
+var CvTermCriteria = function(){
+	type: 0; //CV_TERMCRIT定数の組み合わせ
+	max_iter: 0; //反復数の最大値
+	epsilon: 0; //目標精度
+}
 
 
 //------------------定数------------------------
@@ -491,7 +500,7 @@ var ERROR = {
 	PLEASE_SQUARE_MAT : "は正方行列にしてください",
 	SWITCH_VALUE : "の値が正しくありません",
 	APERTURE_SIZE : "aperture_sizeは1, 3, 5または7 のいずれかにしてください",
-	ONLY_NUMBER : "は0〜3にして下さい"
+	ONLY_NUMBER : "は0から3にして下さい"
 }
 
 
@@ -503,6 +512,87 @@ var DMY_IMG;
 
 //------------------メソッド------------------------
 
+
+//２層パーセプトロンによる学習
+//入力
+// inputss 二次元array 学習データの二次元配列．inputss[学習ナンバー][次元]
+// answers array inputssの正解値配列(1 or -1) answers[学習ナンバー]
+// nyu 少数 学習倍率 低くするとと正確だが収束が遅い
+// termcriteria CvTermCriteria型 type以外の値を指定する
+//出力
+//CvPerceptromParams型
+function cvPerceptronTrain(inputss, answers, nyu, termcriteria){
+	var params = null;
+	try{
+		if(cvUndefinedOrNull(inputss) || cvUndefinedOrNull(answers) ||
+			cvUndefinedOrNull(nyu) || cvUndefinedOrNull(termcriteria))
+			throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
+
+		params = new CvPerceptromParams();
+		params.weights = new Array(inputss[0].length);
+		for(var i = 0 ; i < params.weights.length ; i++) params.weights[i] = 0;
+		params.bias = 0;
+		
+		var max = -1;
+		for(var i = 0 ; i < inputss.length; i++){
+			var dmy = 0;
+			for(var j = 0 ; j < inputss[i].length ; j++)
+				dmy += inputss[i][j] * inputss[i][j];
+			if(max < dmy) max = dmy;
+		}
+		max = Math.sqrt(max);
+
+		var nowLoop = 0;
+		while(true){
+			var isMiss = false;
+			for(var i = 0 ; i < answers.length; i++){
+				var sum = 0;
+				for(var j = 0 ; j < inputss[i].length ; j++)
+					sum += params.weights[j] * inputss[i][j];
+				if(answers[i] *(sum + params.bias) <= termcriteria.epsilon){
+					isMiss = true;
+					var na = nyu * answers[i];
+					for(var j = 0 ; j < inputss[i].length; j++)
+						params.weights[j] += na * inputss[i][j];
+					params.bias += na * max * max;
+				}
+			}
+			nowLoop++;
+			if(termcriteria.max_iter < nowLoop) break;
+			else if(! isMiss) break;
+		}
+	}
+	catch(ex){
+		alert("cvPerceptronTrain : " + ex);
+	}
+	
+	return params;
+}
+
+//２層パーセプトロンによる予測
+//入力
+//inputs array 予測データ
+//params CvPerceptromParams cvPerceptronTrainによって得られた学習データ
+//出力
+//1 or -1
+function cvPerceptronPredict(inputs, params){
+	var ans = 0;
+	try{
+		if(cvUndefinedOrNull(inputs) || cvUndefinedOrNull(params))
+			throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
+			
+		var sum = 0;
+		for(var i = 0 ; i < inputs.length ; i++)
+			sum += params.weights[i] * inputs[i];
+		sum += params.bias;
+		
+		ans = (sum >= 0) ? 1 : -1;
+	}
+	catch(ex){
+		alert("cvPerceptronPredict : " + ex);
+	}
+	return ans;
+}
 
 //rows行cols列の行列を作る
 //C言語でいう a[rows][cols]
@@ -1332,7 +1422,7 @@ function cvCalcHist(src, hist, accumulate, mask){
 //入力
 //src IplImage型 ヒストグラムを均一化する画像
 //dst IplImage型 ヒストグラムが均一化された画像画像
-//color int型 0〜3のみ どの色情報を均一化するか
+//color int型 0縲鰀3のみ どの色情報を均一化するか
 function cvEqualizeHist(src, dst, color){
 	try{
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst))
