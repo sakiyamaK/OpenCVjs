@@ -1,4 +1,38 @@
 
+function Test(imgId, iplImage){
+	try{
+/*	
+		var iplImage0 = cvCreateImage(128, 128);
+		var iplImage1 = cvCreateImage(128, 128);
+		var iplImage2 = cvCreateImage(128, 128);
+		var iplImage3 = cvCreateImage(128, 128);
+		
+		for(var i = 0 ; i < iplImage0.height ; i++){
+			for(var j = 0 ; j < iplImage0.width ; j++){
+				iplImage0.RGBA[(j + i *iplImage0.width) * CHANNELS] = 128;
+				iplImage1.RGBA[(j + i *iplImage0.width) * CHANNELS] = 128;
+				iplImage2.RGBA[(j + i *iplImage0.width) * CHANNELS] = 128;
+				iplImage3.RGBA[(j + i *iplImage0.width) * CHANNELS] = 255;
+			}
+		}
+		
+		var iplImage4 = cvCreateImage(128, 128);
+		
+		cvMerge(iplImage0, iplImage1, iplImage2, iplImage3, iplImage4);
+*/
+		cvCvtColor(iplImage, iplImage, CV_CODE.RGB2GRAY);
+		
+		var dst = cvPowerOfTwo(iplImage);	
+		cvFFT(dst, true);
+		cvFFT(dst, false);	
+		cvShowImage(imgId, dst);
+	}
+	catch(ex){
+		alert("Test : " + ex);
+	}
+}
+
+
 function Perceptron(imgId, iplImage){
 		try{
 		var newIplImage = cvCloneImage(iplImage);
@@ -54,13 +88,11 @@ function Perceptron(imgId, iplImage){
 		cvShowImage(imgId, newIplImage);
 	}
 	catch(ex){
-		alert("Test : " + ex);
+		alert("Perceptron : " + ex);
 	}
 }
 
-function Test(imgId, iplImage){
 
-}
 
 function EqualizeHist(imgId, iplImage){
 	try{

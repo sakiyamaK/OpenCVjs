@@ -683,8 +683,10 @@ function cvmAdd(matA, matB, matX){
 				throw "引数の" + ERROR.DIFFERENT_SIZE;
 		
 		for(var i = 0 ; i < matX.rows ; i++){
+			var im = i * matX.cols;
 			for(var j = 0 ; j < matX.cols ; j++){
-				matX.vals[j + i * matX.cols] = matA.vals[j + i * matA.cols] + matB.vals[j + i * matB.cols];
+				var ji = j + im;
+				matX.vals[ji] = matA.vals[ji] + matB.vals[ji];
 			}
 		}
 	}
@@ -709,8 +711,10 @@ function cvmSub(matA, matB, matX){
 				throw "引数の" + ERROR.DIFFERENT_SIZE;
 		
 		for(var i = 0 ; i < matX.rows ; i++){
+			var im = i * matX.cols;
 			for(var j = 0 ; j < matX.cols ; j++){
-				matX.vals[j + i * matX.cols] = matA.vals[j + i * matA.cols] - matB.vals[j + i * matB.cols];
+				var ji = j + im;
+				matX.vals[ji] = matA.vals[ji] - matB.vals[ji];
 			}
 		}
 	}
@@ -734,10 +738,12 @@ function cvmMul(matA, matB, matX){
 				throw "引数" + ERROR.DIFFERENT_ROWS_OR_COLS;
 		
 		for(var i = 0 ; i < matX.rows ; i++){
+			var im = i * matX.cols;
 			for(var j = 0 ; j < matX.cols ; j++){
 				var v = 0;
-				for(var l = 0 ; l < matA.cols ; l++) v += matA.vals[l + i * matB.cols] * matB.vals[j + l * matB.cols];
-				matX.vals[j + i * matX.cols] = v;
+				for(var l = 0 ; l < matA.cols ; l++) 
+					v += matA.vals[l + im] * matB.vals[j + l * matB.cols];
+				matX.vals[j + im] = v;
 			}
 		}
 	}
@@ -760,8 +766,11 @@ function cvmTranspose(matA, matX){
 				throw "引数の" + ERROR.DIFFERENT_ROWS_OR_COLS;
 		
 		for(var i = 0 ; i < matX.rows ; i++){
+			var im = i * matX.cols;
+			var jm = i;
 			for(var j = 0 ; j < matX.cols ; j++){
-				matX.vals[j + i * matX.cols] = matA.vals[i + j * matA.cols];
+				matX.vals[j + im] = matA.vals[jm];
+				jm += matA.cols;
 			}
 		}
 	}
@@ -996,8 +1005,11 @@ function cvMerge(src0, src1, src2, src3, dst){
 			}
 
 			for(var i = 0 ; i < src.height ; i++){
+				var is = i * src.width * CHANNELS;
+				var js = 0;
 				for(var j = 0 ; j < src.width ; j++){
-					dst.RGBA[c + (j + i * dst.width)*CHANNELS] = src.RGBA[(j + i * src.width) * CHANNELS];
+					dst.RGBA[c + js + is] = src.RGBA[js + is];
+					js += CHANNELS;
 				}
 			}
 		}
@@ -1039,11 +1051,14 @@ function cvSplit(src, dst0, dst1, dst2, dst3){
 			}
 
 			for(var i = 0 ; i < src.height ; i++){
+				var is = i * src.width * CHANNELS;
+				var js = 0;
 				for(var j = 0 ; j < src.width ; j++){
-					dst.RGBA[(j + i * dst.width)*CHANNELS] = src.RGBA[c + (j + i * src.width) * CHANNELS];
-					dst.RGBA[1 + (j + i * dst.width)*CHANNELS] = src.RGBA[c + (j + i * src.width) * CHANNELS];
-					dst.RGBA[2 + (j + i * dst.width)*CHANNELS] = src.RGBA[c + (j + i * src.width) * CHANNELS];
-					dst.RGBA[3 + (j + i * dst.width)*CHANNELS] = 255;
+					dst.RGBA[js + is] = src.RGBA[c + js + is];
+					dst.RGBA[1 + js + is] = src.RGBA[c + js + is];
+					dst.RGBA[2 + js + is] = src.RGBA[c + js + is];
+					dst.RGBA[3 + js + is] = 255;
+					js += CHANNELS;
 				}
 			}
 		}
@@ -1080,13 +1095,17 @@ function cvPowerOfTwo(src){
 
 		for(var c = 0 ; c < CHANNELS; c++){
 			for(var i = 0 ; i < dst.height ; i++){
+				var is =  i * dst.width * CHANNELS;
+				var js = 0;
 				var vi = i;
 				if(vi > src.height - 1) vi = src.height - 2 - i % src.height;
-				for(var j = 0 ; j < dst.width ; j++){					
+				vi *= src.width;
+				for(var j = 0 ; j < dst.width ; j++){	
 					var vj = j;
 					if(vj > src.width - 1) vj = src.width - 2 - j % src.width;
-					dst.RGBA[c + (j + i * dst.width) * CHANNELS] = 
-						src.RGBA[c + (vj + vi * src.width) * CHANNELS];
+					dst.RGBA[c + js + is] = 
+						src.RGBA[c + (vj + vi) * CHANNELS];
+					js += CHANNELS;
 				}
 			}
 		}
@@ -1119,11 +1138,14 @@ function cvCloping(src, xs, ys, width, height){
 			
 		dst = cvCreateImage(width, height);
 		for(var i = 0 ; i < dst.height ; i++){
+			var is = i * dst.width * CHANNELS;
+			var js = 0;
 			for(var j = 0 ; j < dst.width ; j++){
 				for(var c = 0 ; c < CHANNELS ; c++){
-					dst.RGBA[c + (j + i * dst.width) * CHANNELS] = 
+					dst.RGBA[c + js + is] = 
 							src.RGBA[c + (j + xs + (i + ys) * src.width) * CHANNELS];
 				}
+				js += CHANNELS;
 			}
 		}
 	}
@@ -1168,7 +1190,6 @@ function cvFFT(src, isForward){
 				xp = xp2;
 				xp2 = Math.floor(xp2/2);
 				w *= 2;
-				console.log(xp2);
 				for(var k = 0, i = - xp; k < xp2; i++)
 				{
 					var arg = w * k;
@@ -1227,29 +1248,40 @@ function cvFFT(src, isForward){
 		var ar = new Array(src.width);
 		var ai = new Array(src.width);
 		for(var i = 0 ; i < src.height ; i++){
+			var is =  i * src.width * CHANNELS;
+			var js = 0;
 			for(var j = 0 ; j < src.width ; j++){
-				ar[j] = src.RGBA[(j + i * src.width) * CHANNELS];
-				ai[j] = src.RGBA[1 + (j + i * src.width) * CHANNELS];
+				ar[j] = src.RGBA[js + is];
+				ai[j] = src.RGBA[1 + js + is];
+				js += CHANNELS;
 			}
 			oneLineFFT(ar, ai, isForward);
+			js = 0;
 			for(var j = 0 ; j < src.width ; j++){
-				src.RGBA[(j + i * src.width) * CHANNELS] = ar[j] ;
-				src.RGBA[1 + (j + i * src.width) * CHANNELS] = ai[j] ;
+				src.RGBA[js + is] = ar[j] ;
+				src.RGBA[1 + js + is] = ai[j] ;
+				js += CHANNELS;
 			}
 		}
 		
 		//縦方向
 		ar = new Array(src.height);
 		ai = new Array(src.height);
+		var schan = src.width * CHANNELS;
 		for(var j = 0 ; j < src.width ; j++){
+			var js = j * CHANNELS;
+			var is = 0;
 			for(var i = 0 ; i < src.height ; i++){
-				ar[i] = src.RGBA[(j + i * src.width) * CHANNELS];
-				ai[i] = src.RGBA[1 + (j + i * src.width) * CHANNELS];
+				ar[i] = src.RGBA[js + is];
+				ai[i] = src.RGBA[1 + js + is];
+				is += schan;
 			}
 			oneLineFFT(ar, ai, isForward);
+			is = 0;
 			for(var i = 0 ; i < src.height ; i++){
-				src.RGBA[(j + i * src.width) * CHANNELS] = ar[j] ;
-				src.RGBA[1 + (j + i * src.width) * CHANNELS] = ai[j] ;
+				src.RGBA[js + is] = ar[j] ;
+				src.RGBA[1 + js + is] = ai[j] ;
+				is += schan;
 			}
 		}
 	}
@@ -2217,11 +2249,12 @@ function cvCopy(src, dst){
 		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL;
 		
 		for(var i = 0 ; i < src.height ; i++){
+			var is =  i * src.width * CHANNELS;
+			var js = 0;
 			for(var j = 0 ; j < src.width ; j++){
-				for(var c = 0 ; c < CHANNELS ; c++){
-					dst.RGBA[c + (j + i * src.width) * CHANNELS] = 
-						src.RGBA[c + (j + i * src.width) * CHANNELS];
-				}
+				for(var c = 0 ; c < CHANNELS ; c++)
+					dst.RGBA[c + js + is] = src.RGBA[c + js + is];
+				js += CHANNELS;
 			}
 		}
 	}
@@ -3614,9 +3647,12 @@ function cvZero(src){
 	try{
 		if(cvUndefinedOrNull(src)) throw "src" + ERROR.IS_UNDEFINED_OR_NULL;
 		for(var i = 0 ; i < src.height ; i++){
+			var is = i * src.width * CHANNELS;
+			var js = 0;
 			for(var j = 0 ; j < src.width ; j++){
-				for(var c = 0 ; c < CHANNELS - 1 ; src.RGBA[c++ + (j + i * src.width) * CHANNELS] = 0);
-				src.RGBA[3 + (j + i * src.width) * CHANNELS] = 255;
+				for(var c = 0 ; c < CHANNELS - 1 ; src.RGBA[c++ + js + is] = 0);
+				src.RGBA[3 + js + is] = 255;
+				js+= CHANNELS;
 			}
 		}
 	}
@@ -3844,9 +3880,12 @@ function cvCreateImage(width, height){
 		dst.imageData = dst.canvas.getContext("2d").getImageData(0, 0, dst.canvas.width, dst.canvas.height);
 		dst.RGBA = new Array(dst.width * dst.width * CHANNELS);
 	    for(var i = 0 ; i < dst.height ; i++){
+	    	var is = i * dst.width * CHANNELS;
+	    	var js = 0;
 	    	for(var j = 0 ; j < dst.width ; j++){
-	    		for(var c = 0 ; c < CHANNELS - 1; dst.RGBA[c++ + (j + i * dst.width) * CHANNELS] = 0);
-		    	dst.RGBA[3 + (j + i * dst.width) * CHANNELS] = 255;
+	    		for(var c = 0 ; c < CHANNELS - 1; dst.RGBA[c++ + js + is] = 0);
+		    	dst.RGBA[3 + js + is] = 255;
+		    	js += CHANNELS;
 	    	}
 	    }
 	}
@@ -3937,11 +3976,13 @@ function cvRGBA2ImageData(iplImage){
 	try{
 		if(cvUndefinedOrNull(iplImage)) throw "iplImage" + ERROR.IS_UNDEFINED_OR_NULL;
 		for(var i = 0 ; i < iplImage.height ; i++){
+			var is = i * iplImage.width * CHANNELS;
+			var js = 0;
 			for(var j = 0 ; j < iplImage.width ; j++){
 				for(var c = 0 ; c < CHANNELS; c++){
-					iplImage.imageData.data[c + (j + i * iplImage.width) * CHANNELS] = 
-						iplImage.RGBA[c + (j + i * iplImage.width) * CHANNELS];
+					iplImage.imageData.data[c + js + is] = iplImage.RGBA[c + js + is];
 				}
+				js += CHANNELS;
 			}
 		}	
 	}
@@ -3959,11 +4000,13 @@ function cvImageData2RGBA(iplImage){
 	try{
 		if(cvUndefinedOrNull(iplImage)) throw "iplImage" + ERROR.IS_UNDEFINED_OR_NULL;
 		for(var i = 0 ; i < iplImage.height ; i++){
+			var is = i * iplImage.width * CHANNELS;
+			var js = 0;
 			for(var j = 0 ; j < iplImage.width ; j++){
 				for(var c = 0 ; c < CHANNELS; c++){
-					iplImage.RGBA[c + (j + i * iplImage.width) * CHANNELS] =
-					 iplImage.imageData.data[c + (j + i * iplImage.width) * CHANNELS] ; 
+					iplImage.RGBA[c + js + is] = iplImage.imageData.data[c + js + is] ; 
 				}
+				js += CHANNELS;
 			}
 		}	
 	}
@@ -4031,11 +4074,13 @@ function cvGetIplImageAtImg(imgId){
 		var context = iplImage.canvas.getContext("2d");
 	    iplImage.imageData = context.getImageData(0, 0, iplImage.canvas.width, iplImage.canvas.height);
 	    for(var i = 0 ; i < iplImage.height ; i++){
+	    	var is = i * iplImage.width * CHANNELS;
+			var js = 0;
 	    	for(var j = 0 ; j < iplImage.width ; j++){
 	    		for(var c = 0 ; c < CHANNELS ; c++){
-		    		iplImage.RGBA[c + (j + i * iplImage.width) * CHANNELS] = 
-		    			iplImage.imageData.data[c + (j + i * iplImage.width) * CHANNELS];
+		    		iplImage.RGBA[c + js + is] = iplImage.imageData.data[c + js + is];
 		    	}
+		    	js += CHANNELS;
 	    	}
 		}
 	}
