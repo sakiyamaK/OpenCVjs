@@ -528,7 +528,7 @@ function cvPerceptronTrain(inputss, answers, nyu, termcriteria){
 			cvUndefinedOrNull(nyu) || cvUndefinedOrNull(termcriteria))
 			throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
 
-		params = new CvPerceptromParams();
+		params = new CvPerceptronParams();
 		params.weights = new Array(inputss[0].length);
 		for(var i = 0 ; i < params.weights.length ; i++) params.weights[i] = 0;
 		params.bias = 0;
@@ -572,7 +572,7 @@ function cvPerceptronTrain(inputss, answers, nyu, termcriteria){
 //２層パーセプトロンによる予測
 //入力
 //inputs array 予測データ
-//params CvPerceptromParams cvPerceptronTrainによって得られた学習データ
+//params CvPerceptronParams cvPerceptronTrainによって得られた学習データ
 //出力
 //1 or -1
 function cvPerceptronPredict(inputs, params){
