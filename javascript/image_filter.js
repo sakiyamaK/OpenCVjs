@@ -2,30 +2,79 @@
 function Test(imgId, iplImage){
 	try{
 /*	
-		var iplImage0 = cvCreateImage(128, 128);
-		var iplImage1 = cvCreateImage(128, 128);
-		var iplImage2 = cvCreateImage(128, 128);
-		var iplImage3 = cvCreateImage(128, 128);
+		var grayImage = cvCloneImage(iplImage);
+		cvCvtColor(grayImage, graymage, CV_CODE.RGB2GRAY);
 		
-		for(var i = 0 ; i < iplImage0.height ; i++){
-			for(var j = 0 ; j < iplImage0.width ; j++){
-				iplImage0.RGBA[(j + i *iplImage0.width) * CHANNELS] = 128;
-				iplImage1.RGBA[(j + i *iplImage0.width) * CHANNELS] = 128;
-				iplImage2.RGBA[(j + i *iplImage0.width) * CHANNELS] = 128;
-				iplImage3.RGBA[(j + i *iplImage0.width) * CHANNELS] = 255;
+		var fxImage = cvCloneImage(grayImage);
+		cvSobel(fxImage, fxImage, 1, 0);
+		
+		var fyImage = cvCloneImage(grayImage);
+		cvSobel(fyImage, fyImage, 0, 1);
+		
+		var magImage = cvCloneImage(grayImage);
+		var angImage = cvCloneImage(grayImage);
+		
+		cvCartToPolar(fxImage, fyImage, magImage, angImage);
+		
+		var dstImage = cvCloneImage(grayImage);
+*/
+		var newIplImage = cvCloneImage(iplImage);
+		
+		var inputss = new Array();
+		var answers = new Array();
+		//特徴点抽出
+		for(var i = 0 ; i < newIplImage.height ; i++){
+			for(var j = 0 ; j < newIplImage.width ; j++){
+				var ji = (j + i * newIplImage.width) * CHANNELS;
+				var r = newIplImage.RGBA[ji];
+				var g = newIplImage.RGBA[1 + ji];
+				var b = newIplImage.RGBA[2 + ji];
+				var answer = 0;
+				if(r > 200 && g < 50 && b < 50) answer = 1;
+				else if(r < 50 && g < 50 && b > 200)answer = -1;
+				if(answer != 0){
+					var inputs = new Array(j, i);
+					inputss[inputss.length] = inputs;
+					answers[answers.length] = answer;
+				}
 			}
 		}
 		
-		var iplImage4 = cvCreateImage(128, 128);
+		//学習
+		var termcriteria = new CvTermCriteria();
+		termcriteria.max_iter = 100000;
+		termcriteria.epsilon = 10;
 		
-		cvMerge(iplImage0, iplImage1, iplImage2, iplImage3, iplImage4);
-*/
-		cvCvtColor(iplImage, iplImage, CV_CODE.RGB2GRAY);
+		var params = cvSVMTrain(inputss, answers, 1, termcriteria);
 		
-		var dst = cvPowerOfTwo(iplImage);	
-		cvFFT(dst, true);
-		cvFFT(dst, false);	
-		cvShowImage(imgId, dst);
+		for(var i = 0 ; i < params.weights.length ; i++){
+			console.log(params.weights[i] + ", ");
+		}
+		
+		//予測
+		for(var i = 0 ; i < newIplImage.height ; i++){
+			for(var j = 0 ; j < newIplImage.width ; j++){
+			
+				if(i == 0 && j < 10) console.log("j, i" + j + ", " + i );
+				var inputs = new Array(j, i);
+				var predict = cvSVMPredict(inputs, params);
+				
+				var r = 255; var g = 255; var b = 255;
+				if(predict >0){
+					r = 255; g = 0; b = 0;
+				}
+				else{
+					r = 0; g = 0; b = 255;
+				}
+				var ji = (j + i * newIplImage.width) * CHANNELS;
+				newIplImage.RGBA[ji] = r;
+				newIplImage.RGBA[1 + ji] = g;
+				newIplImage.RGBA[2 + ji] = b;
+			}
+		}
+		
+		cvShowImage(imgId, newIplImage);
+		
 	}
 	catch(ex){
 		alert("Test : " + ex);
@@ -34,7 +83,7 @@ function Test(imgId, iplImage){
 
 
 function Perceptron(imgId, iplImage){
-		try{
+	try{
 		var newIplImage = cvCloneImage(iplImage);
 		
 		var inputss = new Array();
@@ -92,7 +141,48 @@ function Perceptron(imgId, iplImage){
 	}
 }
 
+function Soft_Amaro(imgId, iplImage){
+	try{
+		//ソフトフォーカス
+		var newIplImage = cvCloneImage(iplImage);
+		var bg = cvCloneImage(iplImage);
 
+		cvSmooth(bg, bg, CV_SMOOTH_TYPE.GAUSSIAN, 7);
+		cvBlendImage(bg, newIplImage, newIplImage, CV_BLEND_MODE.SCREEN);
+		
+		var AMARO_RED_TONE_CURVE_UNDER_X = 0;
+		var AMARO_RED_TONE_CURVE_UNDER_Y = 20;
+		var AMARO_RED_TONE_CURVE_OVER_X = 255;
+		var AMARO_RED_TONE_CURVE_OVER_Y = 255;
+		
+		var AMARO_GREEN_TONE_CURVE_UNDER_X = 10;
+		var AMARO_GREEN_TONE_CURVE_UNDER_Y = 0;
+		var AMARO_GREEN_TONE_CURVE_OVER_X = 255;
+		var AMARO_GREEN_TONE_CURVE_OVER_Y = 255;
+
+		var AMARO_BLUE_TONE_CURVE_UNDER_X = 0;
+		var AMARO_BLUE_TONE_CURVE_UNDER_Y = 20;
+		var AMARO_BLUE_TONE_CURVE_OVER_X = 255;
+		var AMARO_BLUE_TONE_CURVE_OVER_Y = 255;
+		
+		cvToneCurve(newIplImage, newIplImage,
+			AMARO_RED_TONE_CURVE_UNDER_X, AMARO_RED_TONE_CURVE_UNDER_Y,
+			AMARO_RED_TONE_CURVE_OVER_X, AMARO_RED_TONE_CURVE_OVER_Y, 0);
+
+		cvToneCurve(newIplImage, newIplImage,
+			AMARO_GREEN_TONE_CURVE_UNDER_X, AMARO_GREEN_TONE_CURVE_UNDER_Y,
+			AMARO_GREEN_TONE_CURVE_OVER_X, AMARO_GREEN_TONE_CURVE_OVER_Y, 1);
+			
+		cvToneCurve(newIplImage, newIplImage,
+			AMARO_BLUE_TONE_CURVE_UNDER_X, AMARO_BLUE_TONE_CURVE_UNDER_Y,
+			AMARO_BLUE_TONE_CURVE_OVER_X, AMARO_BLUE_TONE_CURVE_OVER_Y, 2);
+		
+		cvShowImage(imgId, newIplImage);
+	}
+	catch(ex){
+		alert("EqualizeHist : " + ex);
+	}
+}
 
 function EqualizeHist(imgId, iplImage){
 	try{
