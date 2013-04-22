@@ -4,6 +4,7 @@
         <meta charset="UTF-8">
         <title>OpenCVjs</title>
         <script type="text/javascript" charset="UTF-8" src = "javascript/opencv.js"></script>
+        <script type="text/javascript" charset="UTF-8" src = "javascript/ml.js"></script>
         <script type="text/javascript" charset="UTF-8" src = "javascript/image_filter.js"></script>
                 
         <script type="text/javascript" charset="UTF-8">
@@ -22,6 +23,8 @@
     	    	<input type="file" id="file1" onClick="cvLoadImagePre(event, 'file1')" onchange="cvLoadImages(event, dispImages, iplImages, 800)" multiple>
     	    	複数画像の読み込み
     	<br />	
+    	<input type="button" value="original" onClick="Original('dispImage', iplImage)" />
+		<br />
     	<input type="button" value="comic" onClick="Comic('dispImage', iplImage)" />	
     	<input type="button" value="HDR_Xpro" onClick="HDR_Xpro('dispImage', iplImage)" />		
 		<input type="button" value="xpro" onClick="Xpro('dispImage', iplImage)" />		
@@ -34,9 +37,9 @@
 		<input type="button" value="vivit" onClick="Vivit('dispImage', iplImage)">
 		<input type="button" value="white_black" onClick="WhiteBlack('dispImage', iplImage)">
 		<input type="button" value="lightFall" onClick="LightFall('dispImage', iplImage)">
-		<input type="button" value="original" onClick="Original('dispImage', iplImage)" />
 		<br />
 		<input type="button" value="test" onClick="Test('dispImage', iplImage)">
+		<input type="button" value="SVM" onClick="SVM('dispImage', iplImage)">
 		<input type="button" value="perceptron" onClick="Perceptron('dispImage', iplImage)">
 		<input type="button" value="labeling" onClick="Labeling('dispImage', iplImage)">
 		<input type="button" value="sobel" onClick="Sobel('dispImage', iplImage)">
@@ -45,7 +48,6 @@
 		<input type="button" value="bilateral" onClick="Bilateral('dispImage', iplImage)">
 		<input type="button" value="equalizeHist" onClick="EqualizeHist('dispImage', iplImage)">
 		<input type="button" value="smooth" onClick="Smooth('dispImage', iplImage)">
-		<input type="button" value="canny" onClick="Canny('dispImage', iplImage)">
 		<br />
 		<input type="button" value="resize" onClick="Resizes(dispImages, iplImages, 1.5)">
 		複数画像の読み込み用

@@ -7,92 +7,6 @@
 
 //------------------メソッド------------------------
 
-//２層サポートベクターマシンによる学習
-//入力
-// inputss 二次元array 学習データの二次元配列．inputss[学習ナンバー][次元]
-// answers array inputssの正解値配列(1 or -1) answers[学習ナンバー]
-// nyu 少数型 学習倍率 低くするとと正確だが収束が遅い
-// termcriteria CvTermCriteria型 type以外の値を指定する
-//出力
-//CvPerceptromParams型
-function cvSVMTrain(inputss, answers, nyu, termcriteria){
-	var params = null;
-	try{
-		if(cvUndefinedOrNull(inputss) || cvUndefinedOrNull(answers) ||
-			cvUndefinedOrNull(nyu) || cvUndefinedOrNull(termcriteria))
-			throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
-
-		params = new CvSVMParams();
-		params.weights = new Array(inputss[0].length);
-		for(var i = 0 ; i < params.weights.length ; i++) params.weights[i] = 0;
-		params.bias = 0;
-		
-		var max = -1;
-		for(var i = 0 ; i < inputss.length; i++){
-			var dmy = 0;
-			for(var j = 0 ; j < inputss[i].length ; j++)
-				dmy += inputss[i][j] * inputss[i][j];
-			if(max < dmy) max = dmy;
-		}
-		max = Math.sqrt(max);
-
-		var nowLoop = 0;
-		while(true){
-			var isMiss = false;
-			for(var i = 0 ; i < answers.length; i++){
-				var sum = 0;
-				//predict
-				for(var j = 0 ; j < inputss[i].length ; j++)
-					sum += params.weights[j] * inputss[i][j];
-				//閾値
-				if(answers[i] *(sum + params.bias) <= termcriteria.epsilon){
-					isMiss = true;
-					var na = nyu * answers[i]; //学習効率
-					for(var j = 0 ; j < inputss[i].length; j++)
-					{
-						var wt = params.weights[j];
-						params.weights[j] += na * inputss[i][j];
-						params.weights[j] -= nyu * wt;
-					}
-					params.bias += na * max * max;
-				}
-			}
-			nowLoop++;
-			if(termcriteria.max_iter < nowLoop) break;
-			else if(! isMiss) break;
-		}
-	}
-	catch(ex){
-		alert("cvSVMTrain : " + ex);
-	}
-	
-	return params;
-}
-
-//２層サポートベクターマシンによる予測
-//入力
-//inputs array 予測データ
-//params CvSVMParams cvSVMTrainによって得られた学習データ
-//出力
-//1 or -1
-function cvSVMPredict(inputs, params){
-	var ans = 0;
-	try{
-		if(cvUndefinedOrNull(inputs) || cvUndefinedOrNull(params))
-			throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
-			
-		var sum = 0;
-		for(var i = 0 ; i < inputs.length ; i++)
-			sum += params.weights[i] * inputs[i];
-		sum += params.bias;
-		ans = (sum >= 0) ? 1 : -1;
-	}
-	catch(ex){
-		alert("cvSVMPredict : " + ex);
-	}
-	return ans;
-}
-
 //2次元ベクトルの角度と大きさを求めます
 //入力
 // xImage x座標の配列．(もしくはIplImage型のx方向の微分画像)
@@ -386,41 +300,13 @@ var CvSize = function(){
 	height: 0;
 }
 
-//2層パーセプトロン用の学習データ
-var CvPerceptronParams = function(){
-	weights: null; //重みの配列
-	bias:0; //バイアス
-}
 
-//SVMの学習パラメータ
-var CvSVMParams = function(){
-	weights: null; //重みの配列
-	bias:0; //バイアス
-}
 //反復アルゴリズムの終了条件
 var CvTermCriteria = function(){
 	type: 0; //CV_TERMCRIT定数の組み合わせ
 	max_iter: 0; //反復数の最大値
 	epsilon: 0; //目標精度
 }
-
-/*
-//SVMの学習パラメータ
-var CvSVMParams = function(){
-	svm_type: 0;
-	kernel_type: 0;
-	degree: 0; // poly 用
-    gamma: 0;  // poly/rbf/sigmoid 用
-    coef0: 0;  // poly/sigmoid 用
-
-    C: null;  // CV_SVM_C_SVC, CV_SVM_EPS_SVR, CV_SVM_NU_SVR 用
-    nu: null; // CV_SVM_NU_SVC, CV_SVM_ONE_CLASS, CV_SVM_NU_SVR 用
-    p: 0;  // CV_SVM_EPS_SVR 用
-    class_weights: null; // CV_SVM_C_SVC 用
-    term_crit: null;  // 終了条件
-}
-*/
-
 
 //------------------定数------------------------
 
@@ -571,88 +457,6 @@ var DMY_IMG;
 
 
 //------------------メソッド------------------------
-
-
-//２層パーセプトロンによる学習
-//入力
-// inputss 二次元array 学習データの二次元配列．inputss[学習ナンバー][次元]
-// answers array inputssの正解値配列(1 or -1) answers[学習ナンバー]
-// nyu 少数 学習倍率 低くするとと正確だが収束が遅い
-// termcriteria CvTermCriteria型 type以外の値を指定する
-//出力
-//CvPerceptromParams型
-function cvPerceptronTrain(inputss, answers, nyu, termcriteria){
-	var params = null;
-	try{
-		if(cvUndefinedOrNull(inputss) || cvUndefinedOrNull(answers) ||
-			cvUndefinedOrNull(nyu) || cvUndefinedOrNull(termcriteria))
-			throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
-
-		params = new CvPerceptronParams();
-		params.weights = new Array(inputss[0].length);
-		for(var i = 0 ; i < params.weights.length ; i++) params.weights[i] = 0;
-		params.bias = 0;
-		
-		var max = -1;
-		for(var i = 0 ; i < inputss.length; i++){
-			var dmy = 0;
-			for(var j = 0 ; j < inputss[i].length ; j++)
-				dmy += inputss[i][j] * inputss[i][j];
-			if(max < dmy) max = dmy;
-		}
-		max = Math.sqrt(max);
-
-		var nowLoop = 0;
-		while(true){
-			var isMiss = false;
-			for(var i = 0 ; i < answers.length; i++){
-				var sum = 0;
-				for(var j = 0 ; j < inputss[i].length ; j++)
-					sum += params.weights[j] * inputss[i][j];
-				if(answers[i] *(sum + params.bias) <= termcriteria.epsilon){
-					isMiss = true;
-					var na = nyu * answers[i];
-					for(var j = 0 ; j < inputss[i].length; j++)
-						params.weights[j] += na * inputss[i][j];
-					params.bias += na * max * max;
-				}
-			}
-			nowLoop++;
-			if(termcriteria.max_iter < nowLoop) break;
-			else if(! isMiss) break;
-		}
-	}
-	catch(ex){
-		alert("cvPerceptronTrain : " + ex);
-	}
-	
-	return params;
-}
-
-//２層パーセプトロンによる予測
-//入力
-//inputs array 予測データ
-//params CvPerceptronParams cvPerceptronTrainによって得られた学習データ
-//出力
-//1 or -1
-function cvPerceptronPredict(inputs, params){
-	var ans = 0;
-	try{
-		if(cvUndefinedOrNull(inputs) || cvUndefinedOrNull(params))
-			throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
-			
-		var sum = 0;
-		for(var i = 0 ; i < inputs.length ; i++)
-			sum += params.weights[i] * inputs[i];
-		sum += params.bias;
-		
-		ans = (sum >= 0) ? 1 : -1;
-	}
-	catch(ex){
-		alert("cvPerceptronPredict : " + ex);
-	}
-	return ans;
-}
 
 //rows行cols列の行列を作る
 //C言語でいう a[rows][cols]

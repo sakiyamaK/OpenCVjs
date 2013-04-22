@@ -1,26 +1,14 @@
 
 function Test(imgId, iplImage){
+	cvShowImage(imgId, iplImage);
+}
+
+function SVM(imgId, iplImage){
 	try{
-/*	
-		var grayImage = cvCloneImage(iplImage);
-		cvCvtColor(grayImage, graymage, CV_CODE.RGB2GRAY);
-		
-		var fxImage = cvCloneImage(grayImage);
-		cvSobel(fxImage, fxImage, 1, 0);
-		
-		var fyImage = cvCloneImage(grayImage);
-		cvSobel(fyImage, fyImage, 0, 1);
-		
-		var magImage = cvCloneImage(grayImage);
-		var angImage = cvCloneImage(grayImage);
-		
-		cvCartToPolar(fxImage, fyImage, magImage, angImage);
-		
-		var dstImage = cvCloneImage(grayImage);
-*/
+
 		var newIplImage = cvCloneImage(iplImage);
 		
-		var inputss = new Array();
+		var trainss = new Array();
 		var answers = new Array();
 		//特徴点抽出
 		for(var i = 0 ; i < newIplImage.height ; i++){
@@ -33,9 +21,9 @@ function Test(imgId, iplImage){
 				if(r > 200 && g < 50 && b < 50) answer = 1;
 				else if(r < 50 && g < 50 && b > 200)answer = -1;
 				if(answer != 0){
-					var inputs = new Array(j, i);
-					inputss[inputss.length] = inputs;
-					answers[answers.length] = answer;
+					var trains = new Array(j/newIplImage.width, i/newIplImage.height);
+					trainss.push(trains);
+					answers.push(answer);
 				}
 			}
 		}
@@ -43,21 +31,29 @@ function Test(imgId, iplImage){
 		//学習
 		var termcriteria = new CvTermCriteria();
 		termcriteria.max_iter = 100000;
-		termcriteria.epsilon = 10;
+		termcriteria.epsilon = 0.1;
 		
-		var params = cvSVMTrain(inputss, answers, 1, termcriteria);
+		var cvSVMP = new CvSVMParams();
+		cvSVMP.kernel_type = CV_SVM_KERNEL_TYPE.POLY;
+		cvSVMP.degree = 4.0;
+		cvSVMP.gamma = 1.0;
+		cvSVMP.coef0 = 1.0;
+		cvSVMP.C = 5;
+		cvSVMP.term_crit = termcriteria;
+		cvSVMP.tolerance = termcriteria.epsilon;
+		cvSVMP.minLearnData = 10;
 		
-		for(var i = 0 ; i < params.weights.length ; i++){
-			console.log(params.weights[i] + ", ");
-		}
+		var cvSVM = new CvSVM();
+		
+		cvSVM.train(trainss, answers, null, null, cvSVMP);
 		
 		//予測
 		for(var i = 0 ; i < newIplImage.height ; i++){
 			for(var j = 0 ; j < newIplImage.width ; j++){
 			
 				if(i == 0 && j < 10) console.log("j, i" + j + ", " + i );
-				var inputs = new Array(j, i);
-				var predict = cvSVMPredict(inputs, params);
+				var inputs = new Array(j/newIplImage.width, i/ newIplImage.height);
+				var predict = cvSVM.predict(inputs, trainss);
 				
 				var r = 255; var g = 255; var b = 255;
 				if(predict >0){
@@ -111,14 +107,20 @@ function Perceptron(imgId, iplImage){
 		termcriteria.max_iter = 100000;
 		termcriteria.epsilon = 0;
 		
-		var params = cvPerceptronTrain(inputss, answers, 1, termcriteria);
+		var pctP = new CvPerceptronParams();
+		pctP.nu = 1;
+		pctP.term_crit = termcriteria;
+		
+		var cvPerceptron = new CvPerceptron();
+
+		var params = cvPerceptron.train(inputss, answers, pctP);
 		
 		//予測
 		for(var i = 0 ; i < newIplImage.height ; i++){
 			for(var j = 0 ; j < newIplImage.width ; j++){
 			
 				var inputs = new Array(j, i);
-				var predict = cvPerceptronPredict(inputs, params);
+				var predict = cvPerceptron.predict(inputs);
 				
 				var r = 255; var g = 255; var b = 255;
 				if(predict >0){
