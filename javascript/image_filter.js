@@ -780,7 +780,7 @@ function Canny(imgId, iplImage){
 
 
 
-function Vivit(imgId, iplImage){
+function Vivid(imgId, iplImage){
 	try{
 		var newIplImage = cvCloneImage(iplImage);
 		cvCvtColor(iplImage, newIplImage, CV_CODE.RGB2HLS);
@@ -794,7 +794,7 @@ function Vivit(imgId, iplImage){
 		cvShowImage(imgId, newIplImage);
 	}
 	catch(ex){
-		alert("Vivit : " + ex);
+		alert("Vivid : " + ex);
 	}
 }
 
