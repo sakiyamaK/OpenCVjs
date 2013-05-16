@@ -8,11 +8,13 @@ function SVM(imgId, iplImage){
 
 		var newIplImage = cvCloneImage(iplImage);
 		
-		var trainss = new Array();
-		var answers = new Array();
-		//特徴点抽出
+		var trainss = new Array(); //学習データの2次元配列
+		var answers = new Array(); //クラスデータ
+		
+		//学習
 		for(var i = 0 ; i < newIplImage.height ; i++){
 			for(var j = 0 ; j < newIplImage.width ; j++){
+				//各座標の画素を取得し赤クラスと青クラスに分類
 				var ji = (j + i * newIplImage.width) * CHANNELS;
 				var r = newIplImage.RGBA[ji];
 				var g = newIplImage.RGBA[1 + ji];
@@ -21,47 +23,52 @@ function SVM(imgId, iplImage){
 				if(r > 200 && g < 50 && b < 50) answer = 1;
 				else if(r < 50 && g < 50 && b > 200)answer = -1;
 				if(answer != 0){
+					//座標を学習データに代入
 					var trains = new Array(j/newIplImage.width, i/newIplImage.height);
 					trainss.push(trains);
 					answers.push(answer);
 				}
 			}
 		}
-		
-		//学習
+
+		//SVMクラスに読み込ませる終了条件クラスのインスタンスを生成		
 		var termcriteria = new CvTermCriteria();
-		termcriteria.max_iter = 100000;
-		termcriteria.epsilon = 0.1;
+		termcriteria.max_iter = 100000; //最大繰り返し回数
+		termcriteria.epsilon = 0.1; //C-SVMのイプシロン
 		
+		//SVMクラスに読み込ませるパラメータクラスのインスタンスを生成
 		var cvSVMP = new CvSVMParams();
-		cvSVMP.kernel_type = CV_SVM_KERNEL_TYPE.POLY;
-		cvSVMP.degree = 4.0;
-		cvSVMP.gamma = 1.0;
-		cvSVMP.coef0 = 1.0;
-		cvSVMP.C = 5;
-		cvSVMP.term_crit = termcriteria;
-		cvSVMP.tolerance = termcriteria.epsilon;
-		cvSVMP.minLearnData = 10;
+		cvSVMP.kernel_type = CV_SVM_KERNEL_TYPE.POLY; //SVMのカーネルの種類
+		cvSVMP.degree = 4.0; //カーネルで使われるチューニングパラメータ1
+		cvSVMP.gamma = 1.0; //カーネルで使われるチューニングパラメータ2
+		cvSVMP.coef0 = 1.0; //カーネルで使われるチューニングパラメータ3
+		cvSVMP.C = 5; //C-SVMで使われるC
+		cvSVMP.term_crit = termcriteria; //終了条件クラスを代入
+		cvSVMP.tolerance = termcriteria.epsilon; //許容する計算誤差
+		cvSVMP.minLearnData = 10; //学習データの最低数
 		
+		//SVMクラスのインスタンスを生成
 		var cvSVM = new CvSVM();
-		
+		//学習
 		cvSVM.train(trainss, answers, null, null, cvSVMP);
 		
-		//予測
+		//学習データを用いて画像の座標の色を予測する
 		for(var i = 0 ; i < newIplImage.height ; i++){
 			for(var j = 0 ; j < newIplImage.width ; j++){
-			
-				if(i == 0 && j < 10) console.log("j, i" + j + ", " + i );
+				//予測対象の座標を特徴量として配列に代入
 				var inputs = new Array(j/newIplImage.width, i/ newIplImage.height);
+				//予測
 				var predict = cvSVM.predict(inputs, trainss);
 				
 				var r = 255; var g = 255; var b = 255;
+				//予測結果が1なら赤、0なら青とする
 				if(predict >0){
 					r = 255; g = 0; b = 0;
 				}
 				else{
 					r = 0; g = 0; b = 255;
 				}
+				//特徴量となった座標の色に代入
 				var ji = (j + i * newIplImage.width) * CHANNELS;
 				newIplImage.RGBA[ji] = r;
 				newIplImage.RGBA[1 + ji] = g;
@@ -69,8 +76,8 @@ function SVM(imgId, iplImage){
 			}
 		}
 		
-		cvShowImage(imgId, newIplImage);
-		
+		//画像を出力
+		cvShowImage(imgId, newIplImage);		
 	}
 	catch(ex){
 		alert("Test : " + ex);

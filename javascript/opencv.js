@@ -3200,6 +3200,14 @@ function cvCvtColor(src, dst, code){
 		break;
 		
 		case CV_CODE.HLS2RGB:
+				function calc(n1, n2, hue) {
+				    hue = (hue + 180) % 360;
+				    if(hue < 60) return n1 + (n2 - n1) * hue / 60;
+				    else if(hue < 180) return n2;
+				    else if(hue < 240) return n1 + (n2 - n1) * (240 - hue) / 60;
+				    else return n1;
+				}
+
 			for (i = 0; i < dst.height; i++) {
 				for (j = 0; j < dst.width; j++) {	
 					var h = dst.RGBA[(j + i * dst.width) * CHANNELS];
@@ -3220,15 +3228,7 @@ function cvCvtColor(src, dst, code){
 					dst.RGBA[(j + i * dst.width) * CHANNELS] = r;
 					dst.RGBA[1 + (j + i * dst.width) * CHANNELS] = g;
 					dst.RGBA[2 + (j + i * dst.width) * CHANNELS] = b;
-					dst.RGBA[3 + (j + i * dst.width) * CHANNELS] = src.RGBA[3 + (j + i * dst.width) * CHANNELS];
-					
-					function calc(n1, n2, hue) {
-					    hue = (hue + 180) % 360;
-					    if(hue < 60) return n1 + (n2 - n1) * hue / 60;
-					    else if(hue < 180) return n2;
-					    else if(hue < 240) return n1 + (n2 - n1) * (240 - hue) / 60;
-					    else return n1;
-					}
+					dst.RGBA[3 + (j + i * dst.width) * CHANNELS] = src.RGBA[3 + (j + i * dst.width) * CHANNELS];					
 				}
 			}
 		break;
