@@ -1,6 +1,22 @@
 
 function Test(imgId, iplImage){
-	cvShowImage(imgId, iplImage);
+	try{
+		var xI = cvCreateImage(1, 1);
+		var yI = cvCreateImage(1, 1);
+		xI.RGBA[0] = -1;
+		yI.RGBA[0] = 0.00000001;
+		
+		var magI = cvCreateImage(1, 1);
+		var angI = cvCreateImage(1, 1);
+		
+		cvCartToPolar(xI, yI, magI, angI, false);
+		
+		console.log("長さ = " + magI.RGBA[0]);
+		console.log("角度 = " + angI.RGBA[0]);
+	}
+	catch(ex){
+		alert("Test : " + ex);
+	}
 }
 
 function SVM(imgId, iplImage){
@@ -21,7 +37,7 @@ function SVM(imgId, iplImage){
 				var b = newIplImage.RGBA[2 + ji];
 				var answer = 0;
 				if(r > 200 && g < 50 && b < 50) answer = 1;
-				else if(r < 50 && g < 50 && b > 200)answer = -1;
+				else if(r < 50 && g < 50 && b > 200) answer = -1;
 				if(answer != 0){
 					//座標を学習データに代入
 					var trains = new Array(j/newIplImage.width, i/newIplImage.height);
@@ -58,7 +74,7 @@ function SVM(imgId, iplImage){
 				//予測対象の座標を特徴量として配列に代入
 				var inputs = new Array(j/newIplImage.width, i/ newIplImage.height);
 				//予測
-				var predict = cvSVM.predict(inputs, trainss);
+				var predict = cvSVM.predict(inputs);
 				
 				var r = 255; var g = 255; var b = 255;
 				//予測結果が1なら赤、0なら青とする
@@ -77,10 +93,10 @@ function SVM(imgId, iplImage){
 		}
 		
 		//画像を出力
-		cvShowImage(imgId, newIplImage);		
+		cvShowImage(imgId, newIplImage);
 	}
 	catch(ex){
-		alert("Test : " + ex);
+		alert("SVM : " + ex);
 	}
 }
 
@@ -189,7 +205,7 @@ function Soft_Amaro(imgId, iplImage){
 		cvShowImage(imgId, newIplImage);
 	}
 	catch(ex){
-		alert("EqualizeHist : " + ex);
+		alert("Soft_Amaro : " + ex);
 	}
 }
 

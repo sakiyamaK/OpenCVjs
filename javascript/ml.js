@@ -28,11 +28,12 @@ var CvSVM = function(){
     this.class_weights = null; // 学習した重み
     this.b = 0;	//バイアス初期化
 
-    this.trainssLength = 0;    
     this.svmP = null;    
     this.svmIndexes = null; //サポートベクターになるindex
 
     //-------Trainメソッドの引数trainss変数で初期化される----------
+    //学習データ
+    this.transs = null;
     // ラグランジュの未定乗数
     this.lambda = null;
      // ラグランジュ係数の値を保存するキャッシュ
@@ -65,6 +66,13 @@ var CV_SVM_KERNEL_TYPE = {
 
 //------------------メソッド------------------------
 
+CvSVM.prototype.save(fileNameFullPath){
+	try{
+	}
+	catch(ex){
+		alert("CvSVM.prototype.save : " + ex);
+	}
+}
 
 CvSVM.prototype._kernel = function(trains2, trains1){
 	var r = 0.0;
@@ -99,7 +107,7 @@ CvSVM.prototype._kernel = function(trains2, trains1){
 CvSVM.prototype._f = function(idx1, trainss, responses){
 	var F = 0.0;
 	try{
-		for(var idx2 = 0; idx2 < this.trainssLength;  idx2++ ){
+		for(var idx2 = 0; idx2 < trainss.length;  idx2++ ){
 			if( this.lambda[idx2] == 0.0 ) continue;
 			F += this.lambda[idx2] * responses[idx2] * this._kernel(trainss[idx2], trainss[idx1]);
 		}
@@ -242,9 +250,9 @@ CvSVM.prototype._update = function(idx1, e1, trainss, responses){
 		var maxE2Idx = -1;
 		var offset;
 		//探索条件1
-		offset = parseInt(Math.random() * this.trainssLength);
-		for(var idx2 = 0 ; idx2 < this.trainssLength ; idx2++){
-			var pos = (idx2 + offset) % this.trainssLength;
+		offset = parseInt(Math.random() * trainss.length);
+		for(var idx2 = 0 ; idx2 < trainss.length ; idx2++){
+			var pos = (idx2 + offset) % trainss.length;
 			if(this.lambda[pos] > this.svmP.term_crit.epsilon && this.lambda[pos] < (this.svmP.C - this.svmP.term_crit.epsilon)){
 				e2 = this.eCache[pos];
 				var dmy = Math.abs(e2 - e1);
@@ -258,18 +266,18 @@ CvSVM.prototype._update = function(idx1, e1, trainss, responses){
 			return 1;
 			
 		//探索条件2
-		offset = parseInt(Math.random() * this.trainssLength);
-		for(var idx2 = 0 ; idx2 < this.trainssLength ; idx2++){
-			var pos = (idx2 + offset) % this.trainssLength;
+		offset = parseInt(Math.random() * trainss.length);
+		for(var idx2 = 0 ; idx2 < trainss.length ; idx2++){
+			var pos = (idx2 + offset) % trainss.length;
 			if(this.lambda[pos] > this.svmP.term_crit.epsilon && this.lambda[pos] < (this.svmP.C - this.svmP.term_crit.epsilon) &&
 				this._stepSMO(idx1, idx2, e1, trainss, responses) == 1)
 				return 1;
 		}
 		
 		//探索条件3
-		offset = parseInt(Math.random() * this.trainssLength);
-		for(var idx2 = 0 ; idx2 < this.trainssLength ; idx2++){
-			var pos = (idx2 + offset) % this.trainssLength;
+		offset = parseInt(Math.random() * trainss.length);
+		for(var idx2 = 0 ; idx2 < trainss.length ; idx2++){
+			var pos = (idx2 + offset) % trainss.length;
 			if( ! (this.lambda[pos] > this.svmP.term_crit.epsilon && this.lambda[pos] < (this.svmP.C - this.svmP.term_crit.epsilon)) &&
 				this._stepSMO(idx1, idx2, e1, trainss, responses) == 1)
 				return 1;
@@ -328,11 +336,20 @@ CvSVM.prototype.train = function(trainss, responses, varIndex, sampleIndex, cvSV
 	    			"データ長を等しくして下さい";
 	 
 	    /////////////////変数の初期化///////////////////////
+	    //学習データのコピー
+	    this.trainss = new Array(trainss.length);
+	    for(var i = 0 ; i < this.trainss.length ; i++){
+	    	this.trainss[i] = new Array(trainss[i].length);
+	    	for(var j = 0 ; j < this.trainss[i].length ; j++){
+	    		this.trainss[i][j] = trainss[i][j];
+	    	}
+	    }
+	    
 	    // ラグランジュの未定乗数
 	    this.lambda = new Array(trainss.length);
 	    for(var i = 0; i < this.lambda.length; this.lambda[i++] = 0);
 	     // ラグランジュ係数の値を保存するキャッシュ
-	    this.eCache = new Array(trainss.length);
+	    this.eCache = new Array(this.trainss.length);
 		//重み
 	    this.class_weights = new Array(trainss.length);    
 	    for(var i = 0; i < this.class_weights.length; this.class_weights[i++] = 0);
@@ -341,8 +358,6 @@ CvSVM.prototype.train = function(trainss, responses, varIndex, sampleIndex, cvSV
 	    
 	    this.svmIndexes = new Array();
 	    
-	    //学習データの数
-	    this.trainssLength = trainss.length;
 	    /////////////////////////////////////////////////////////////
 	    
 	    var alldata = true;//すべてのデータを処理する場合
@@ -386,15 +401,15 @@ CvSVM.prototype.train = function(trainss, responses, varIndex, sampleIndex, cvSV
 //trains 2次元array 重みの学習に使った学習データ
 //出力
 //1 or -1
-CvSVM.prototype.predict = function(predicts, trainss){
+CvSVM.prototype.predict = function(predicts){
 	var ans = 0.0;
 	try{
-		if(cvUndefinedOrNull(predicts) || cvUndefinedOrNull(trainss))
-				throw "predicts or trainss" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(cvUndefinedOrNull(predicts))
+				throw "predicts" + ERROR.IS_UNDEFINED_OR_NULL;
 
 		for(var i = 0; i < this.svmIndexes.length; i++ ){
 			var idx = this.svmIndexes[i];
-			ans += this.class_weights[idx] * this._kernel(trainss[idx], predicts);
+			ans += this.class_weights[idx] * this._kernel(this.trainss[idx], predicts);
 		}
 		ans -= this.b;
 		

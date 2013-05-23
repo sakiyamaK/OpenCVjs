@@ -3,49 +3,7 @@
 
 
 
-
-
 //------------------メソッド------------------------
-
-//2次元ベクトルの角度と大きさを求めます
-//入力
-// xImage x座標の配列．(もしくはIplImage型のx方向の微分画像)
-// yImage y座標の配列．(もしくはIplImage型のy方向の微分画像)
-// magImage 大きさの出力配列(IplImage型)． xImageと同じサイズ
-//angImage 角度の出力配列(IplImage型)． xImageと同じサイズ角度はラジアン (-PI から PI) あるいは度 (0 から 360) で表されます．
-//angleInDegrees   角度の表記にラジアン（デフォルト），または度のどちらを用いるかを指定するフラグ．
-//出力
-//CvMat型
-function cvCartToPolar(xImage, yImage, magImage, angImage, angleInDegrees){
-	try{
-		if(cvUndefinedOrNull(xImage) || cvUndefinedOrNull(yImage) ||
-			cvUndefinedOrNull(magImage) || cvUndefinedOrNull(angImage))
-			throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
-		else if(xImage.width != yImage.width || yImage.width != magImage.width ||  magImage.width != angImage.width ||
-			xImage.height != yImage.height || yImage.height != magImage.height ||  magImage.height != angImage.height)
-			throw ERROR.DIFFERENT_SIZE;
-			
-		if(cvUndefinedOrNull(angleInDegrees))
-			angleInDegrees = false;
-
-		for(var i = 0 ; i < xImage.height;  i++){
-			var p = i * magImage.width * CHANNELS ;
-			for(var j = 0 ; j < xImage.width; j++){
-				p += CHANNELS ;
-				var xI = xImage.RGBA[p];
-				var yI = yImage.RGBA[p]
-				magImage.RGBA[p] = Math.sqrt(xI * xI + yI * yI);
-				angImage.RGBA[p] = Math.atan2(yI, xI);
-				if(angleInDegrees) angImage.RGBA[p] *= 180 / Math.PI;
-			}
-		}
-		
-		
-	}
-	catch(ex){
-		alert("cvCartToPolar : " + ex);
-	}
-}
 
 function cvKMeans2(samples, cluster_count, labels, termcrit){
 	try{
@@ -457,6 +415,47 @@ var DMY_IMG;
 
 
 //------------------メソッド------------------------
+
+//2次元ベクトルの角度と大きさを求めます
+//入力
+// xImage IplImage型 x座標の値(x方向の微分画像)
+// yImage IplImage型 y座標の値(y方向の微分画像)
+// magImage IplImage型 大きさの出力 xImageと同じサイズ
+//angImage IplImage型 角度の出力 xImageと同じサイズ角度はラジアン (-PI から PI) あるいは度 (-180 から 180) で表される
+//angleInDegrees bool型 角度の表記にラジアン（デフォルト），または度のどちらを用いるかを指定するフラグ trueでラジアン
+//出力
+//なし
+function cvCartToPolar(xImage, yImage, magImage, angImage, angleInDegrees){
+	try{
+		if(cvUndefinedOrNull(xImage) || cvUndefinedOrNull(yImage) ||
+			cvUndefinedOrNull(magImage) || cvUndefinedOrNull(angImage))
+			throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
+		else if(xImage.width != yImage.width || yImage.width != magImage.width ||  magImage.width != angImage.width ||
+			xImage.height != yImage.height || yImage.height != magImage.height ||  magImage.height != angImage.height)
+			throw ERROR.DIFFERENT_SIZE;
+			
+		if(cvUndefinedOrNull(angleInDegrees))
+			angleInDegrees = false;
+
+		for(var i = 0 ; i < xImage.height;  i++){
+			var p = i * magImage.width * CHANNELS ;
+			for(var j = 0 ; j < xImage.width; j++){
+				var xI = xImage.RGBA[p];
+				var yI = yImage.RGBA[p]
+				magImage.RGBA[p] = Math.sqrt(xI * xI + yI * yI);
+				angImage.RGBA[p] = Math.atan2(yI, xI);
+				if(angleInDegrees) angImage.RGBA[p] *= 180 / Math.PI;
+				p += CHANNELS ;
+			}
+		}
+		
+		
+	}
+	catch(ex){
+		alert("cvCartToPolar : " + ex);
+	}
+}
+
 
 //rows行cols列の行列を作る
 //C言語でいう a[rows][cols]
