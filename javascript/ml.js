@@ -66,11 +66,11 @@ var CV_SVM_KERNEL_TYPE = {
 
 //------------------メソッド------------------------
 
-CvSVM.prototype.save(fileNameFullPath){
+CvSVM.prototype._save = function(fileNameFullPath){
 	try{
 	}
 	catch(ex){
-		alert("CvSVM.prototype.save : " + ex);
+		alert("CvSVM.prototype._save : " + ex);
 	}
 }
 

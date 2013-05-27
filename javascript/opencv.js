@@ -116,6 +116,7 @@ function cvInPaint(src, mask, dst, inpaintRadius, flags){
 //theta 少数 角度解像度 ラジアン単位
 //threshold 整数 対応する投票数がこの値より大きい場合のみ抽出された直線が返される
 //param1 少数 各手法に応じたパラメータ 解説参照
+//param2 少数 各手法に応じたパラメータ 解説参照
 //出力
 //[ラインの数][ラインの情報]の二次元配列が返る
 //[X][0]にrhoの値
@@ -173,13 +174,16 @@ function cvHoughLines2(src, method, rho, theta, threshold, param1, param2){
 		case CV_HOUGH.STANDARD:
 		
 		for(var i = 0 ; i < src.height ; i++){
+			var is = i * src.width * CHANNELS;
+			var js = 0;
 			for(var j = 0 ; j < src.width ; j++){
-				if(src.RGBA[(j + i * src.width) * CHANNELS] == 255){
+				if(src.RGBA[js + is] == 255){
 					for(var t = 0 ; t < thetaMax; t++){
 						r = Math.floor(j * cs[t] + i * sn[t] + 0.5);
 						counter[t][r + rhoMax]++;
 					}
 				}
+				js += CHANNELS;
 			}
 		}
 
