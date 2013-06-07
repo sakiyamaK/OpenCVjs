@@ -305,7 +305,9 @@ var CV_CODE = {
 	RGB2HSV: 1,
 	HSV2RGB: 2,
 	RGB2HLS: 3,
-	HLS2RGB: 4
+	HLS2RGB: 4,
+	RGB2YCbCr: 5,
+	YCbCr2RGB: 6
 }
 
 //ブレンドの種類
@@ -1028,6 +1030,7 @@ function cvCloping(src, xs, ys, width, height){
 //src IplImage型 GRAY表色系を想定(RGB表色系ならRがFFTされる) ※解説参照
 //isForward true/false trueなら順変換 falseなら逆変換
 //出力
+//なし
 //解説
 //srcのwidthとheight共に2のべき乗である必要がある
 //計算結果は実数値が最初のチャンネル、虚数値がふたつめのチャンネルに代入される 
@@ -1551,8 +1554,8 @@ function cvAvg(src, mask){
 //なし
 function cvAvgVrn(src, mean, vrn, mask){
 	try{
-		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(mean) || cvUndefinedOrNull(std))
-			throw "src or mean or std" + ERROR.IS_UNDEFINED_OR_NULL;
+		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(mean) || cvUndefinedOrNull(vrn))
+			throw "src or mean or vrn" + ERROR.IS_UNDEFINED_OR_NULL;
 		if(cvUndefinedOrNull(mask)) mask = 0;
 		if(mask != 0) throw "mask は現在サポートされていません";
 		
@@ -3072,8 +3075,8 @@ function cvCvtColor(src, dst, code){
 		
 		switch(code){
 		case CV_CODE.RGB2GRAY:
-			for (i = 0; i < dst.height; i++) {
-				for (j = 0; j < dst.width; j++) {
+			for (var i = 0; i < dst.height; i++) {
+				for (var j = 0; j < dst.width; j++) {
 				
 					var v = (src.RGBA[(j + i * dst.width) * CHANNELS] + 
 							src.RGBA[1 + (j + i * dst.width) * CHANNELS] + 
@@ -3089,8 +3092,8 @@ function cvCvtColor(src, dst, code){
 		
 		case CV_CODE.RGB2HSV:
 			
-			for (i = 0; i < dst.height; i++) {
-				for (j = 0; j < dst.width; j++) {
+			for (var i = 0; i < dst.height; i++) {
+				for (var j = 0; j < dst.width; j++) {
 				
 					var r = src.RGBA[(j + i * dst.width) * CHANNELS];
 					var g = src.RGBA[1 + (j + i * dst.width) * CHANNELS];
@@ -3116,8 +3119,8 @@ function cvCvtColor(src, dst, code){
 		break;
 		
 		case CV_CODE.HSV2RGB:
-			for (i = 0; i < dst.height; i++) {
-				for (j = 0; j < dst.width; j++) {
+			for (var i = 0; i < dst.height; i++) {
+				for (var j = 0; j < dst.width; j++) {
 				
 					var h = src.RGBA[(j + i * dst.width) * CHANNELS];
 					var s = src.RGBA[1 + (j + i * dst.width) * CHANNELS];
@@ -3169,8 +3172,8 @@ function cvCvtColor(src, dst, code){
 		break;
 		
 		case CV_CODE.RGB2HLS:
-			for (i = 0; i < dst.height; i++) {
-				for (j = 0; j < dst.width; j++) {
+			for (var i = 0; i < dst.height; i++) {
+				for (var j = 0; j < dst.width; j++) {
 				
 					var r = src.RGBA[(j + i * dst.width) * CHANNELS];
 					var g = src.RGBA[1 + (j + i * dst.width) * CHANNELS];
@@ -3211,8 +3214,8 @@ function cvCvtColor(src, dst, code){
 				    else return n1;
 				}
 
-			for (i = 0; i < dst.height; i++) {
-				for (j = 0; j < dst.width; j++) {	
+			for (var i = 0; i < dst.height; i++) {
+				for (var j = 0; j < dst.width; j++) {	
 					var h = dst.RGBA[(j + i * dst.width) * CHANNELS];
 					var l = dst.RGBA[1 + (j + i * dst.width) * CHANNELS];
 					var s = dst.RGBA[2 + (j + i * dst.width) * CHANNELS];
@@ -3232,6 +3235,46 @@ function cvCvtColor(src, dst, code){
 					dst.RGBA[1 + (j + i * dst.width) * CHANNELS] = g;
 					dst.RGBA[2 + (j + i * dst.width) * CHANNELS] = b;
 					dst.RGBA[3 + (j + i * dst.width) * CHANNELS] = src.RGBA[3 + (j + i * dst.width) * CHANNELS];					
+				}
+			}
+		break;
+		
+		case CV_CODE.RGB2YCbCr:
+			for (var i = 0; i < src.height; i++) {
+				for (var j = 0; j < src.width; j++) {
+					var r = src.RGBA[(j + i * src.width) * CHANNELS];
+					var g = src.RGBA[1 + (j + i * src.width) * CHANNELS];
+					var b = src.RGBA[2 + (j + i * src.width) * CHANNELS];
+					
+					var Y = (r + g + b) / 3;
+					var Cb = -0.168777 * r - 0.331223 * g + 0.5 * b;
+					var Cr = 0.5 * r - 0.418358 * g - 0.081642 * b;
+					
+					dst.RGBA[(j + i * dst.width) * CHANNELS] = Y;
+					dst.RGBA[1 + (j + i * dst.width) * CHANNELS] = Cb;
+					dst.RGBA[2 + (j + i * dst.width) * CHANNELS] = Cr;
+					dst.RGBA[3 + (j + i * dst.width) * CHANNELS] = src.RGBA[3 + (j + i * dst.width) * CHANNELS];
+					
+				}
+			}
+		break;
+		
+		case CV_CODE.YCbCr2RGB:
+			for (var i = 0; i < src.height; i++) {
+				for (var j = 0; j < src.width; j++) {
+					var Y = src.RGBA[(j + i * src.width) * CHANNELS];
+					var Cb = src.RGBA[1 + (j + i * src.width) * CHANNELS];
+					var Cr = src.RGBA[2 + (j + i * src.width) * CHANNELS];
+					
+					var r = Y + 1.402176 * Cr;
+					var g = Y - 0.714489 * Cr - 0.345619 * Cb;
+					var b = Y + 1.771046 * Cb;
+					
+					dst.RGBA[(j + i * dst.width) * CHANNELS] = r;
+					dst.RGBA[1 + (j + i * dst.width) * CHANNELS] = g;
+					dst.RGBA[2 + (j + i * dst.width) * CHANNELS] = b;
+					dst.RGBA[3 + (j + i * dst.width) * CHANNELS] = src.RGBA[3 + (j + i * src.width) * CHANNELS];					
+					
 				}
 			}
 		break;
@@ -3573,6 +3616,7 @@ function cvLoadImage(event, imgId, iplImage, maxSize){
 		var file = event.target.files[0];
 		if (file){
 			cvLoadImageAtEventFile(file, imgId, iplImage, maxSize);
+			event = null;
 		}
 	}
 	catch(ex){
@@ -3623,27 +3667,33 @@ function cvLoadImageAtEventFile(file, imgId, iplImage, maxSize)
 		reader.readAsDataURL(file);
 		reader.onload = function(event){
 			var imgElement = document.getElementById(imgId);
-		    imgElement.src = event.target.result;
-		    imgElement.onload = function(){
-		    	var originalSize = cvGetOriginalSizeAtImgElement(imgElement);
-		    	var scale = 1;
-		    	if(maxSize != -1 && (originalSize.width > maxSize || originalSize.height > maxSize))
-		    		scale = (originalSize.width > originalSize.height) ? 
-			    		maxSize / originalSize.width : maxSize / originalSize.height;
-		    	imgElement.width = scale * originalSize.width;
-		    	imgElement.height = scale * originalSize.height;
-			    iplImage.canvas = cvGetCanvasAtImgElement(imgElement);
-			    iplImage.width = iplImage.canvas.width;
-			    iplImage.height = iplImage.canvas.height;
-			    iplImage.RGBA = new Array(iplImage.width * iplImage.width * CHANNELS);
-			    iplImage.imageData = iplImage.canvas.getContext("2d").getImageData(0, 0, iplImage.canvas.width, iplImage.canvas.height);
-			    cvImageData2RGBA(iplImage);		    
+			imgElement.src = DMY_IMG;
+			imgElement.onload = function(){
+			    imgElement.src = event.target.result;
+			    imgElement.onload = function(){
+			    	var originalSize = cvGetOriginalSizeAtImgElement(imgElement);
+			    	var scale = 1;
+			    	if(maxSize != -1 && (originalSize.width > maxSize || originalSize.height > maxSize))
+			    		scale = (originalSize.width > originalSize.height) ? 
+				    		maxSize / originalSize.width : maxSize / originalSize.height;
+			    	imgElement.width = scale * originalSize.width;
+			    	imgElement.height = scale * originalSize.height;
+				    iplImage.canvas = cvGetCanvasAtImgElement(imgElement);
+				    iplImage.width = iplImage.canvas.width;
+				    iplImage.height = iplImage.canvas.height;
+				    iplImage.RGBA = new Array(iplImage.width * iplImage.width * CHANNELS);
+				    iplImage.imageData = iplImage.canvas.getContext("2d").getImageData(0, 0, iplImage.canvas.width, iplImage.canvas.height);
+				    cvImageData2RGBA(iplImage);
+				    event = null;
+				};
 			};
 		};
 		reader.onerror = function(event){
-			if (event.target.error.code == event.target.error.NOT_READABLE_ERR) {
-				alert(ERROR.NOT_READ_FILE);
-			}
+			console.log(ERROR.NOT_READ_FILE);
+			alert(ERROR.NOT_READ_FILE);
+//			if (event.target.error.code == event.target.error.NOT_READABLE_ERR) {
+//				alert(ERROR.NOT_READ_FILE);
+//			}
 		};
 	}
 	catch(ex){
@@ -3710,6 +3760,7 @@ function cvLoadImageToCanvasAtEventFile(file, canvasId, iplImage, maxSize)
 		    iplImage.imageData = iplImage.canvas.getContext("2d").getImageData(0, 0, iplImage.canvas.width, iplImage.canvas.height);
 		   cvImageData2RGBA(iplImage);
 		   cvShowImageToCanvas(canvasId, iplImage);
+		   event = null;
 		};
 		reader.onerror = function(event){
 			if (event.target.error.code == event.target.error.NOT_READABLE_ERR) {

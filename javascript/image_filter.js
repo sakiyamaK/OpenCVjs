@@ -1,21 +1,45 @@
 
 function Test(imgId, iplImage){
 	try{
-		var xI = cvCreateImage(1, 1);
-		var yI = cvCreateImage(1, 1);
-		xI.RGBA[0] = -1;
-		yI.RGBA[0] = 0.00000001;
+		var newIplImage = cvCreateImage(256, 256);
 		
-		var magI = cvCreateImage(1, 1);
-		var angI = cvCreateImage(1, 1);
+		for(var i = 0 ; i < newIplImage.height ; i++){
+			for(var j = 0 ; j < newIplImage.width ; j++){
+				for(var c = 0 ; c < 4; c++){
+					newIplImage.RGBA[c + (j + i * newIplImage.width) * CHANNELS] = 0;
+				}
+			}
+		}
 		
-		cvCartToPolar(xI, yI, magI, angI, false);
 		
-		console.log("長さ = " + magI.RGBA[0]);
-		console.log("角度 = " + angI.RGBA[0]);
+		cvShowImage(imgId, newIplImage);
 	}
 	catch(ex){
 		alert("Test : " + ex);
+	}
+}
+
+function EmbedWatermark(imgId, iplImage, watermark, embedStrength, blockSize){
+	try{
+		var newIplImage = cvEmbedWatermark(iplImage, watermark, embedStrength, blockSize);
+		
+		cvShowImage(imgId, newIplImage);
+		
+		alert("埋め込みが完了しました");
+	}
+	catch(ex){
+		alert("EmbedWatermark : " + ex);
+	}
+}
+
+function ExtractWatermark(iplImage, strLen, embedStrength, blockSize){
+	try{
+		var watermark = cvExtractWatermark(iplImage, strLen, embedStrength, blockSize);
+		
+		alert("この画像に埋め込まれている透かしは「" + watermark + "」です");
+	}
+	catch(ex){
+		alert("ExtractWatermark : " + ex);
 	}
 }
 
