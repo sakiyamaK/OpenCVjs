@@ -631,7 +631,7 @@ function Kamisama(imgId, iplImage){
 			}
 		}
 
-		var color = new Scalar();
+		var color = new CvScalar();
 		color.r = color.g = color.b = 255;
 
 		cvLine(newIplImage, pt1, pt2, color, 11, false);
