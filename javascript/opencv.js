@@ -3503,7 +3503,7 @@ function cvDilateOrErode(src, dst, isDilate, iterations, element){
 //a 整数 アルファ値
 //出力
 //なし
-function cvSetRGBA(src, c1, c2, c2, a){
+function cvSetRGBA(src, c1, c2, c3, a){
 	try{
 		if(cvUndefinedOrNull(src)) throw "src" + ERROR.IS_UNDEFINED_OR_NULL;
 		if(cvUndefinedOrNull(c1)) c1 = 255;

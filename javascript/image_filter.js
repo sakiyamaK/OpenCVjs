@@ -1,16 +1,40 @@
 
 function Test(imgId, iplImage){
 	try{
-		var newIplImage = cvCreateImage(256, 256);
-		
-		for(var i = 0 ; i < newIplImage.height ; i++){
-			for(var j = 0 ; j < newIplImage.width ; j++){
-				for(var c = 0 ; c < 4; c++){
-					newIplImage.RGBA[c + (j + i * newIplImage.width) * CHANNELS] = 0;
+		var count = 10;
+		var radius = iplImage.height / count / 2;
+		var dmy = iplImage.width / count / 2;
+		var randX = true;
+		if(radius > dmy){
+			radius = dmy;
+			randX = false;
+		}
+
+		var newIplImage = cvCreateImage(iplImage.width, iplImage.height);
+		cvSetRGBA(newIplImage, 0, 255, 0, 255);
+
+		for(var i = 0 ; i <= count ; i++){
+			var y = i * newIplImage.height / count;
+			if(!randX) y +=  Math.floor( Math.random() * radius/2 );
+			for(var j = 0 ; j <= count ; j++){
+				var x = j * newIplImage.width / count;
+				if(randX) x +=  Math.floor( Math.random() * radius/2 );
+				for(var ry = -radius ; ry < radius ; ry++){
+					var yy = y + ry;
+					for(var rx = -radius ; rx < radius ; rx++){
+						var xx = x + rx;
+						if(xx >= 0 && yy >= 0 && 
+						xx < newIplImage.width && yy < newIplImage.height &&
+						(rx * rx + ry * ry < radius * radius)){
+							var xy = (xx + yy * newIplImage.width) * CHANNELS;
+							newIplImage.RGBA[xy] = iplImage.RGBA[xy];
+							newIplImage.RGBA[xy + 1] = iplImage.RGBA[xy + 1];
+							newIplImage.RGBA[xy + 2] = iplImage.RGBA[xy + 2];
+						}
+					}
 				}
 			}
 		}
-		
 		
 		cvShowImage(imgId, newIplImage);
 	}
@@ -631,7 +655,7 @@ function Kamisama(imgId, iplImage){
 			}
 		}
 
-		var color = new CvScalar();
+		var color = new Scalar();
 		color.r = color.g = color.b = 255;
 
 		cvLine(newIplImage, pt1, pt2, color, 11, false);
