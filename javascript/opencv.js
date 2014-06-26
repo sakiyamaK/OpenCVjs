@@ -398,19 +398,20 @@ var CHANNELS = 4;
 
 //エラー文
 var ERROR = {
-	IS_UNDEFINED_OR_NULL : "がundefinedかnullです",
-	DIFFERENT_SIZE : "IplImageサイズは全て同じにして下さい",
-	DIFFERENT_ROWS_OR_COLS: "行と列が正しくありません",
-	DIFFERENT_LENGTH: "の長さは全て同じにして下さい",
-	ONLY_ADD_NUMBER : "は奇数にして下さい",
-	ONLY_INTERGER_NUMBER : "は整数にして下さい",
-	ONLY_POSITIVE_NUMBER : "は正の値にして下さい",
-	NOT_READ_FILE : "ファイルが読み込めません",
-	NOT_GET_CONTEXT : "contextが読み込めません",
-	PLEASE_SQUARE_MAT : "は正方行列にしてください",
-	SWITCH_VALUE : "の値が正しくありません",
-	APERTURE_SIZE : "aperture_sizeは1, 3, 5または7 のいずれかにしてください",
-	ONLY_NUMBER : "は0から3にして下さい"
+	IS_UNDEFINED_OR_NULL : "がundefinedかnullです"
+	,DIFFERENT_SIZE : "IplImageサイズは全て同じにして下さい"
+	,DIFFERENT_ROWS_OR_COLS: "行と列が正しくありません"
+	,DIFFERENT_LENGTH: "の長さは全て同じにして下さい"
+    ,INVALID_SIZE : "の長さが不正です"
+	,ONLY_ADD_NUMBER : "は奇数にして下さい"
+	,ONLY_INTERGER_NUMBER : "は整数にして下さい"
+	,ONLY_POSITIVE_NUMBER : "は正の値にして下さい"
+	,NOT_READ_FILE : "ファイルが読み込めません"
+	,NOT_GET_CONTEXT : "contextが読み込めません"
+	,PLEASE_SQUARE_MAT : "は正方行列にしてください"
+	,SWITCH_VALUE : "の値が正しくありません"
+	,APERTURE_SIZE : "aperture_sizeは1, 3, 5または7 のいずれかにしてください"
+	,ONLY_NUMBER : "は0から3にして下さい"
 }
 
 
@@ -2020,68 +2021,48 @@ function cvDilate(src, dst, iterations, element){
 //積分画像を生成
 //入力
 //src IplImage型 原画像
-//dst IplImage型 生成される積分画像
-//squm IplImage型 各ピクセルを2乗して積分画像 省略可
+//sum IplImage型 生成される積分画像
+//sqsum IplImage型 各ピクセルを2乗して積分画像 省略可
 //tilted_sum IplImage型 45度回転させた積分画像 省略可
 //出力
 //なし
-function cvIntegral(src, dst, sqsum, tilted_sum){
+function cvIntegral(src, sum, sqsum, tilted_sum){
 	try{
-		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(dst)) throw "src or dst" + ERROR.IS_UNDEFINED_OR_NULL;
-		if(src.width != dst.width || src.height != dst.height) throw ERROR.DIFFERENT_SIZE;
-		
-		cvZero(dst);
+		if(cvUndefinedOrNull(src) || cvUndefinedOrNull(sum)) throw "src or sum" + ERROR.IS_UNDEFINED_OR_NULL;
+
+		if(src.width + 1 != sum.width || src.height + 1 != sum.height) throw "sum" + ERROR.INVALID_SIZE;
+		cvZero(sum);
+        
 		if(!cvUndefinedOrNull(sqsum)){
-			if(src.width != sqsum.width || src.height != sqsum.height) throw ERROR.DIFFERENT_SIZE;
+			if(src.width + 1 != sqsum.width || src.height + 1 != sqsum.height) throw "sqSum" + ERROR.INVALID_SIZE;
 			cvZero(sqsum);
 		}
 		if(!cvUndefinedOrNull(tilted_sum)){
-			if(src.width != tilted_sum.width || src.height != tilted_sum.height) throw ERROR.DIFFERENT_SIZE;
+			if(src.width + 1 != tilted_sum.width || src.height + 1 != tilted_sum.height) throw "tilted_sum" + ERROR.INVALID_SIZE;
 			cvZero(tilted_sum);
 		}
-		
-		for(var i = 0 ; i < dst.height ; i++){
-			for(var j = 0 ; j < dst.width ; j++){
-				for(var c = 0 ; c < CHANNELS - 1; c++){
-					dst.RGBA[c + (j + i * dst.width) * CHANNELS] = 
-						src.RGBA[c + (j + i * src.width) * CHANNELS] + ((j == 0) ? 0 : dst.RGBA[c + (j-1 + i * dst.width) * CHANNELS]);
-					if(!cvUndefinedOrNull(sqsum))
-						sqsum.RGBA[c + (j + i * sqsum.width) * CHANNELS] = 
-							src.RGBA[c + (j + i * src.width) * CHANNELS] * src.RGBA[c + (j + i * src.width) * CHANNELS]
-							 + ((j == 0) ? 0 : sqsum.RGBA[c + (j-1 + i * sqsum.width) * CHANNELS]);
-					if(!cvUndefinedOrNull(tilted_sum))
-						tilted_sum.RGBA[c + (j + i * tilted_sum.width) * CHANNELS] = src.RGBA[c + (j + i * src.width) * CHANNELS] + 
-							((j == 0 || i == 0) ? 0 : tilted_sum.RGBA[c + (j-1 + (i-1) * tilted_sum.width) * CHANNELS]);
-				}
-			}
-		}
-		for(var j = 0 ; j < dst.width ; j++){
-			for(var i = 0 ; i < dst.height ; i++){
-				for(var c = 0 ; c < CHANNELS - 1; c++){
-					dst.RGBA[c + (j + i * dst.width) * CHANNELS] += ((i == 0) ? 0 : dst.RGBA[c + (j + (i-1) * dst.width) * CHANNELS]);
-					if(!cvUndefinedOrNull(sqsum))
-						sqsum.RGBA[c + (j + i * sqsum.width) * CHANNELS] += ((i == 0) ? 0 : sqsum.RGBA[c + (j + (i-1) * sqsum.width) * CHANNELS]);
-
-					if(!cvUndefinedOrNull(tilted_sum)){
-						tilted_sum.RGBA[c + (j + i * tilted_sum.width) * CHANNELS]  = src.RGBA[c + (j + i * src.width) * CHANNELS];
-						for(var y = 1 ; y <= i ; y++){
-							var ii = i - y;
-							var jl = j - y;
-							var jr = j + y;
-							if(jl >= 0) 
-								tilted_sum.RGBA[c + (j + i * tilted_sum.width) * CHANNELS] += src.RGBA[c + (jl + ii * tilted_sum.width) * CHANNELS];
-							if(jr < tilted_sum.width) 
-								tilted_sum.RGBA[c + (j + i * tilted_sum.width) * CHANNELS] += src.RGBA[c + (jr + ii * tilted_sum.width) * CHANNELS];
-						}
-						if(i != 0)
-							tilted_sum.RGBA[c + (j + i * tilted_sum.width) * CHANNELS] += tilted_sum.RGBA[c + (j + (i - 1) * tilted_sum.width) * CHANNELS];	
-					}
-				
-				}
-			}
-		}
-		
-	
+        
+        for (var yy = 0; yy < sum.height; yy++){
+            for (var xx = 0; xx < sum.width; xx++){
+                for (var y = 0; y < yy; y++){
+                    for (var x = 0; x < xx; x++){
+                        for(var c = 0; c < CHANNELS - 1; c++){
+                            var v = src.RGBA[c + (x + y * src.width) * CHANNELS];
+                            sum.RGBA[c + (xx + yy * sum.width) * CHANNELS] += v;
+                            sqsum.RGBA[c + (xx + yy * sqsum.width) * CHANNELS] += v * v;
+                        }
+                    }
+                    for (var x = 0; x < src.width; x++){
+                        if(Math.abs(x - xx + 1) <= yy - y - 1){
+                            for(var c = 0; c < CHANNELS - 1; c++){
+                                var v = src.RGBA[c + (x + y * src.width) * CHANNELS];
+                                tilted_sum.RGBA[c + (xx + yy * tilted_sum.width) * CHANNELS] += v;
+                            }
+                        }
+                    }
+                }
+            }
+        }
 	}
 	catch(ex){
 		alert("cvIntegral : " + ex);
