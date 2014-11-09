@@ -1291,39 +1291,6 @@ function cvmEigen(mat, eps, maxLoop){
     return rtn;
 }
 
-
-//--[test]--
-var mat = cvCreateMat(5, 5);
-for(var i = 0 ; i < mat.rows ; i++){
-    for(var j = 0 ; j < mat.cols ; j++){
-        mat.vals[j + i * mat.cols] = Math.random() *10;
-    }
-}
-var mat = cvmMul(cvmTranspose(mat), mat);
-
-//mat.vals[0] = 5;
-//mat.vals[1] = 1;
-//mat.vals[2] = -2;
-//mat.vals[3] = 1;
-//mat.vals[4] = 6;
-//mat.vals[5] = -1;
-//mat.vals[6] = -2;
-//mat.vals[7] = -1;
-//mat.vals[8] = 5;
-
-var ee = cvmEigen(mat, 0.0000001, 10000);
-
-
-cvDWriteMatrix(mat, "org");
-cvDWriteMatrix(ee[0], "固有値");
-cvDWriteMatrix(ee[1], "固有ベクトル");
-
-var oev = cvmMul(mat, ee[1]);
-
-cvDWriteMatrix(oev, "org固有ベクトル");
-//------------------------
-
-
 //チャンネルを合成する
 //入力
 //src0 IplImage型 dstの0チャンネルに合成される
