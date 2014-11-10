@@ -5,12 +5,6 @@
 
 //------------------メソッド------------------------
 
-//行列のrankを求める
-function cvmRank(mat){
-    return -1;
-}
-
-
 function cvKMeans2(samples, cluster_count, labels, termcrit){
     try{
         if(cvUndefinedOrNull(samples) || cvUndefinedOrNull(cluster_count) || cvUndefinedOrNull(labels)
@@ -925,7 +919,6 @@ function cvmInverse(mat, method){
     return invMat;
 }
 
-//[todo]
 //特異値分解の演算
 //入力
 //A CvMat型 特異値分解される行列(M*N)
@@ -1172,7 +1165,6 @@ function cvmQR(mat){
             throw "mat" + ERROR.IS_UNDEFINED_OR_NULL;
         
         var rank = cvmRank(mat);
-        rank = mat.cols;//[test]cvmRankができたらこの１行は消す
         if(rank != mat.cols)
             throw "matの列数とrankが合いません";
         
@@ -1547,7 +1539,6 @@ function cvmDoubleDiagonalization(mat, eps){
                         break;
                         
                     case 6://ar^(times)の第１行の第３項以降を０とするようなハウスホルダー変換を右から行う
-                        //[todo]
                         vec = cvCreateMat(1, mwidth);
                         vec.vals[0] = mar.vals[0];
                         vec.vals[1] = Math.sqrt(norm2MatrixRow(mar, 0, 1, mwidth));
@@ -1587,7 +1578,75 @@ function cvmDoubleDiagonalization(mat, eps){
     return rtn;
 }
 
+//行列のrankを求める
+function cvmRank(org, eps){
 
+    var rtn = -1;
+    try{
+        if(cvUndefinedOrNull(eps))
+            eps = CV_DEF_EPS;
+        
+        var mat = cvmCopy(org);
+        for(var k = 0; k < mat.rows; k++){
+            var p = mat.vals[k + k * mat.cols];//ピボット係数
+            if(p == 0){
+                //入れ替える
+                for(var kk = k + 1 ; kk < mat.rows ; kk++){
+                    if(Math.abs(mat.vals[k + kk * mat.cols]) > eps){
+                        p = mat.vals[k + kk * mat.cols];
+                        for(var i = 0 ; i < mat.cols ; i++){
+                            var tmp = mat.vals[i + k * mat.cols];
+                            mat.vals[i + k * mat.cols] = mat.vals[i + kk * mat.cols];
+                            mat.vals[i + kk * mat.cols] = tmp;
+                        }
+                        break;
+                    }
+                }
+                //入れ替える要素がない場合は次へ
+                if(p == 0){
+                    break;
+                }
+            }
+        
+            for (var i = k; i <  mat.cols; i++)
+                mat.vals[i + k * mat.cols] /= p;  // ピボット係数を１にするためピボット行を割り算
+            
+            for (var i = 0; i < mat.rows; i++){// ピボット列の掃き出し
+                if(i != k){
+                    var d = mat.vals[k + i * mat.cols];
+                    for(var j = k; j < mat.cols; j++)
+                        mat.vals[j + i * mat.cols] -= d * mat.vals[j + k * mat.cols];
+                } 
+            }
+        }
+        
+        rtn = -1;
+        for(var i = 0 ; i < mat.rows; i++){
+            for(var j = 0 ; j < mat.cols; j++){
+                if(Math.abs(mat.vals[j + i * mat.cols]) > eps){
+                    break;
+                }
+                if(j == mat.cols - 1){
+                    rtn = i;
+                    break;
+                }
+            }
+            if(rtn != -1){
+                break;
+            }
+            else if(i == mat.rows - 1){
+                rtn = mat.rows;
+                break;
+            }
+        }
+        
+    }
+    catch(ex){
+        alert("cvmRank : " + ex);
+    }
+    
+    return rtn;
+}
 
 //チャンネルを合成する
 //入力
