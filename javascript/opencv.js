@@ -931,34 +931,67 @@ function cvmInverse(mat, method){
 //A CvMat型 特異値分解される行列(M*N)
 //flags
 //出力
+//[W, U, V]
 //W CvMat型 特異値行列の結果(M*NまたはN*N)
 //U CvMat型 左直交行列(M*MまたはM*N)
 //V CvMat型 右直交行列(N*N)
 function cvmSVD(A, flags){
+    
+    var rtn = null;
     try{
         if(cvUndefinedOrNull(A))
             throw "第一引数" + ERROR.IS_UNDEFINED_OR_NULL;
         if(cvUndefinedOrNull(flags)) flags = CV_SVD.ZERO;
-        if(flags != CV_SVD.ZERO){
-            throw "flagsはCV_SVD.ZEROしか現在サポートされていません";
-        }
         
-        //        var trA = cvCreateMat(A.cols, A.rows);
-        //        var AA = cvCreateMat(A.rows, A.rows);
-        //
-        //        cvmTranspose(A, trA);
-        //
-        //        cvmMul(A, trA, AA);
-        //
-        //        var W = trA;
-        //        var U = AA;
-        //        var V = cvCreateMat(10, 10);
+        switch(flags){
+            case CV_SVD.ZERO:
+            {
+                var trA = cvmTranspose(A);
+                
+                var AtA = cvmMul(trA, A);
+                var AAt = cvmMul(A, trA);
+                
+                var ee1 = cvmEigen(AtA);
+                var ee2 = cvmEigen(AtA);
+                
+                //A^tAの固有ベクトルが左特異ベクトル
+                var U = cvmCopy(ee1[1]);
+                
+                //AA^tの固有ベクトルの転置が右特異ベクトル
+                var V = cvmCopy(cvmTranspose(ee2[1]));
+                
+                
+                //A^tAの0以上の固有値の平方根が特異値になる
+                var eValues = ee1[0];
+                var t = eValues.rows;
+                for(var i = 0 ; i < eValues.rows ; i++){
+                    if(eValues.vals[i] < 0){
+                        t = i;
+                        break;
+                    }
+                }
+                
+                var W = cvCreateMat(t, 1);
+                
+                for(var i = 0 ; i < W.rows ; i++){
+                    W.vals[i] = Math.sqrt(eValues.vals[i]);
+                }
+                
+                rtn = [W, U, V];
+
+            }
+                break;
+                
+            default:
+                throw "flagsはCV_SVD.ZEROしか現在サポートされていません";
+                break;
+        }
     }
     catch(ex){
         alert("cvmSVD : " + ex);
     }
     
-    //    return [W, U, V];
+    return rtn;
 }
 
 //LU分解の演算
