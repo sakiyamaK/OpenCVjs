@@ -4,6 +4,51 @@
 
 
 //------------------メソッド------------------------
+//[todo]
+//Orthogonal Matching Pursuit
+//スパースコーディングの係数選択法
+//画像内から小領域のブロックをひとつのベクトルとして処理する
+//入力
+//mat CvMat型 スパース表現にする画像
+//blockWidth int型 ブロックの横幅
+//blockHeight int型 ブロックの縦幅
+function cvmOMP(mat, blockWidth, blockHeight){
+    try{
+        //バリデーション
+        if(cvUndefinedOrNull(mat))
+            throw "mat" + ERROR.IS_UNDEFINED_OR_NULL;
+        //デフォルト値
+        if(cvUndefinedOrNull(blockWidth))
+            blockWidth = 8;
+        if(cvUndefinedOrNull(blockHeight))
+            blockHeight = 8;
+        
+        var blockCols = Math.ceil(mat.cols / blockWidth);
+        var blockRows = Math.ceil(mat.rows / blockHeight);
+        
+        var block = cvCreateMat(blockWidth, blockHeight);
+        
+        for(var bc = 0 ; bc < blockCols ; bc++){
+            var bcbh = bc * blockHeight;
+            for(var br = 0 ; br < blockRows ; br++){
+                var bbw = br * blockWidth;
+                
+                //matからblockを取り出す
+                for(var bh = 0 ; bh < blockHeight ; bh++){
+                    var bhbw = bh * blockWidth;
+                    for(var bw = 0 ; bw < blockWidth ; bw++){
+                        block.vals[bw + bhbw] = mat.vals[bbw + bw + (bhbw + bcbh) * mat.cols];
+                    }
+                }
+                
+                
+            }
+        }
+    }
+    catch(ex){
+        alert("cvmOMP : " + ex);
+    }
+}
 
 function cvKMeans2(samples, cluster_count, labels, termcrit){
     try{
@@ -227,27 +272,35 @@ function cvHoughLines2(src, method, rho, theta, threshold, param1, param2){
 //------------------データ型------------------------
 //canvasのRGBA値は0から255の値しかもてないため専用の画像データ型を用意
 var IplImage = function(){
-width: 0;
-height: 0;
-canvas: null;
-imageData: null;
-RGBA: null;
+this.width = 0;
+this.height = 0;
+this.canvas = null;
+this.imageData = null;
+this.RGBA = null;
 }
 
 //行列だがrowsかcolsを1にすることでベクトルとしても扱う
 var CvMat = function(){
-rows: 0;
-cols: 0;
-vals: null;
+this.rows = 0;
+this.cols = 0;
+this.vals = null;
+}
+
+//スパース行列
+//本家のデータ構造とは大きく違う
+var CvSparseMat = function(){
+    this.rows = 0;
+    this.cols = 0;
+    this.vals = null;
 }
 
 var CvHistogram = function(){
-type: 0;
-bins: null;
-thres: null;
-thres2: null;
-mat: null;
-ranges: null;
+this.type = 0;
+this.bins = null;
+this.thres = null;
+this.thres2 = null;
+this.mat = null;
+this.ranges = null;
 }
 
 var CvScalar = function(){
@@ -255,13 +308,13 @@ var CvScalar = function(){
 }
 
 var CvPoint = function(){
-x: 0;
-y: 0;
+this.x = 0;
+this.y = 0;
 }
 
 var CvSize = function(){
-width: 0;
-height: 0;
+this.width = 0;
+this.height = 0;
 }
 
 
@@ -1647,6 +1700,57 @@ function cvmRank(org, eps){
     
     return rtn;
 }
+
+
+//row行cols列の疎行列を作る
+//入力
+//rows 整数 (y座標)
+//cols 整数 (x座標)
+//出力
+//CvMat型
+//備考
+//内部のvalssは{row:row, col:col, value:value}オブジェクトの配列
+//valssの座標以外は全て0を意味する
+function cvCreateSparseMat(rows, cols){
+    var rtn = new CvSparseMat();
+    rtn.rows = rows;
+    rtn.cols = cols;
+    rtn.vals = new Array();
+    
+    return rtn;
+}
+
+//スパース行列に値を代入(基本的にスパース行列へ値を代入するにはこのメソッドを使う)
+//入力
+//smat CvSparseMat型 値が追加/変更されるスパース行列
+//row int型  値を追加/変更するrow座標
+//col int型  値を追加/変更するcol座標
+//value double 型 追加/変更する値
+function cvSparseMatSet(smat, row, col, value){
+    try{
+        if(cvUndefinedOrNull(smat) || cvUndefinedOrNull(value)||
+           cvUndefinedOrNull(row) || cvUndefinedOrNull(col))
+            throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
+        
+        if(smat.rows - 1 < row || smat.cols - 1 < col ||
+           row < 0 || col < 0)
+            throw "引数の値が不正です";
+        //変更
+        for(var i = 0 ; i < smat.vals.length ; i++){
+            if(smat.vals[i].row == row && smat.vals[i].col == col){
+                smat.vals[i].value = value;
+                return;
+            }
+        }
+        
+        //追記
+        smat.vals.push({row:row, col:col, value:value});
+    }
+    catch(ex){
+        alert("cvSparseMatset : " + ex);
+    }
+}
+
 
 //チャンネルを合成する
 //入力
