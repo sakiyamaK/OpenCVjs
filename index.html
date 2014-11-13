@@ -4,20 +4,12 @@
         <meta charset="UTF-8">
         <title>OpenCVjs</title>
         <script type="text/javascript" charset="UTF-8" src = "javascript/opencv.js"></script>
-        <script type="text/javascript" charset="UTF-8" src = "javascript/ml.js"></script>
         <script type="text/javascript" charset="UTF-8" src = "javascript/image_filter.js"></script>
-        <script type="text/javascript" charset="UTF-8" src = "javascript/digital_watermark.js"></script>
                 
         <script type="text/javascript" charset="UTF-8">
-        	DMY_IMG = "javascript/dmy.jpg";
         	var iplImage = new IplImage();
         	var iplImages = [new IplImage(), new IplImage(), new IplImage()];
         	var dispImages = ["dispImage1", "dispImage2", "dispImage3"];
-        	
-        	var account = "@sakiyamaK";
-        	var accountLength = account.length;
-        	var blockSize = 16;
-        	var embedStrength = 10;
 		</script>
     </head>
     
@@ -52,15 +44,10 @@
 		<input type="button" value="bilateral" onClick="Bilateral('dispImage', iplImage)">
 		<input type="button" value="equalizeHist" onClick="EqualizeHist('dispImage', iplImage)">
 		<input type="button" value="smooth" onClick="Smooth('dispImage', iplImage)">
+		<br/>
+		<input type="button" value="test" onClick="Test('dispImage', iplImage)">	練習用
 		<br />
-		<input type="button" value="embed" onClick="EmbedWatermark('dispImage', iplImage, account, embedStrength, blockSize)">
-		<input type="button" value="extract" onClick="ExtractWatermark(iplImage, accountLength, embedStrength, blockSize)">
-		電子透かし
-		<br />
-		<input type="button" value="test" onClick="Test('dispImage', iplImage)">練習用
-		<br />
-		<input type="button" value="resize" onClick="Resizes(dispImages, iplImages, 1.5)">
-		複数画像の読み込み用
+		<input type="button" value="resize" onClick="Resizes(dispImages, iplImages, 1.5)"> 複数画像の読み込み用
 		<hr />
 		<img id="dispImage" src="">
 		<img id="dispImage1" src="">

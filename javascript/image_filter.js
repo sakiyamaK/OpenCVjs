@@ -1,16 +1,26 @@
 
 function Test(imgId, iplImage){
 	try{
-        var width = 3;
-        var height = 3;
-		var a = cvCreateImage(width, height);
-        var sum = cvCreateImage(width + 1, height + 1);
-        var sqSum = cvCreateImage(width + 1, height + 1);
-        var tilted_sum = cvCreateImage(width + 1, height + 1);
+        var A = cvCreateMat(3, 2);
+        A.vals[0] = 1; A.vals[1] = 2;
+        A.vals[2] = 3; A.vals[3] = 4;
+        A.vals[4] = 1; A.vals[5] = 2;
         
-		cvSetRGBA(a, 1, 1, 1, 255);
+        //--転置行列との掛け算--
+        var trA = cvCreateMat(A.cols, A.rows);
+        var AA = cvCreateMat(A.rows, A.rows);
+//        cvmTranspose(A, trA);
+//        cvmMul(A, trA, AA);
         
-        cvIntegral(a, sum, sqSum, tilted_sum);
+        
+
+        cvAlertMat(A);
+        cvAlertMat(trA);
+        cvAlertMat(AA);
+        
+//        console.log(A);
+//        console.log(W);
+//        console.log(U);
 	}
 	catch(ex){
 		alert("Test : " + ex);
