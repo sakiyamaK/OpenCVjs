@@ -6,7 +6,10 @@ document.write('<script type="text/javascript" charset="UTF-8" src="javascript/m
 document.write('<script type="text/javascript" charset="UTF-8" src="javascript/module/highgui.js"></script>');
 
 //開発中メソッド
-document.write('<script type="text/javascript" charset="UTF-8" src="javascript/module/beta.js"></script>');
+document.write('<script type="text/javascript" charset="UTF-8" src="javascript/module/00_develop.js"></script>');
+
+//test用メソッド
+document.write('<script type="text/javascript" charset="UTF-8" src="javascript/module/test.js"></script>');
 
 //メモ
 //imgタグの画像から直接IplImage型へは変換できない

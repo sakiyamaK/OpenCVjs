@@ -1,18 +1,18 @@
 //------------------データ型------------------------
 //canvasのRGBA値は0から255の値しかもてないため専用の画像データ型を用意
 var IplImage = function(){
-this.width = 0;
-this.height = 0;
-this.canvas = null;
-this.imageData = null;
-this.RGBA = null;
+    this.width = 0;
+    this.height = 0;
+    this.canvas = null;
+    this.imageData = null;
+    this.RGBA = null;
 }
 
 //行列だがrowsかcolsを1にすることでベクトルとしても扱う
 var CvMat = function(){
-this.rows = 0;
-this.cols = 0;
-this.vals = null;
+    this.rows = 0;
+    this.cols = 0;
+    this.vals = null;
 }
 
 //スパース行列
@@ -24,12 +24,12 @@ var CvSparseMat = function(){
 }
 
 var CvHistogram = function(){
-this.type = 0;
-this.bins = null;
-this.thres = null;
-this.thres2 = null;
-this.mat = null;
-this.ranges = null;
+    this.type = 0;
+    this.bins = null;
+    this.thres = null;
+    this.thres2 = null;
+    this.mat = null;
+    this.ranges = null;
 }
 
 var CvScalar = function(){
@@ -37,22 +37,27 @@ var CvScalar = function(){
 }
 
 var CvPoint = function(){
-this.x = 0;
-this.y = 0;
+    this.x = 0;
+    this.y = 0;
 }
 
 var CvSize = function(){
-this.width = 0;
-this.height = 0;
+    this.width = 0;
+    this.height = 0;
 }
 
 
-//反復アルゴリズムの終了条件
+//-----反復アルゴリズムの終了条件
+//その定数
+const CV_DEF_EPS = 0.00001;
+const CV_DEF_MAX_ITE = 100000;
+
 var CvTermCriteria = function(){
-type: 0; //CV_TERMCRIT定数の組み合わせ
-max_iter: 0; //反復数の最大値
-epsilon: 0; //目標精度
+    this.type = 0; //CV_TERMCRIT定数の組み合わせ
+    this.max_iter = CV_DEF_MAX_ITE; //反復数の最大値
+    this.eps = CV_DEF_EPS; //目標精度
 }
+
 
 //------------------定数------------------------
 
@@ -63,8 +68,6 @@ const DMY_IMG = "/module/dmy.jpg";
 //チャンネル数
 const CHANNELS = 4;
 
-
-const CV_DEF_EPS = 0.00001;
 
 
 //-----------------構造体------------------------
@@ -329,9 +332,9 @@ function cvmMul(matA, matB){
     
     try{
         if(cvUndefinedOrNull(matA) || cvUndefinedOrNull(matB))
-            throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
+            throw "引数のどれかの" + ERROR.IS_UNDEFINED_OR_NULL;
         if(matA.cols != matB.rows)
-            throw "引数" + ERROR.DIFFERENT_ROWS_OR_COLS;
+            throw "引数のどれかの" + ERROR.DIFFERENT_ROWS_OR_COLS;
         
         matX = cvCreateMat(matA.rows, matB.cols);
         
@@ -351,6 +354,40 @@ function cvmMul(matA, matB){
     }
     
     return matX;
+}
+
+//行列の列を最後に追加
+//入力
+//mat1 CvMat型
+//vec2 CvMat型
+//col int型
+//出力
+//CvMat型
+function cvmInsertCol(mat1, mat2, col){
+    var rtn = null;
+    try{
+        if(cvUndefinedOrNull(mat1) || cvUndefinedOrNull(mat2))
+            throw "mat1 or mat2" + ERROR.IS_UNDEFINED_OR_NULL;
+        
+        if(mat1.rows != mat2.rows)
+            throw "mat1とmat2" + ERROR.DIFFERENT_ROWS_OR_COLS;
+        
+        rtn = cvCreateMat(mat1.rows, mat1.cols + 1);
+        
+        for(var i = 0 ; i < rtn.rows ; i++){
+            for(var j = 0 ; j < rtn.cols ; j++){
+                if(j == rtn.cols - 1)
+                    rtn.vals[j + i * rtn.cols] = mat2.vals[col + i * mat2.cols];
+                else
+                    rtn.vals[j + i * rtn.cols] = mat1.vals[j + i * mat1.cols];
+            }
+        }
+        
+    }
+    catch(ex){
+        alert("cvmInsertCol : " + ex);
+    }
+    return rtn;
 }
 
 //行列の転置
@@ -385,7 +422,7 @@ function cvmTranspose(matA){
 //入力
 //mat1 CvMat型　1番目の行列
 //mat2 CvMat型 2番目の行列 nullならmat1だけでノルム計算
-//normType CV_NORM型 ノルムのタイプ
+//normType CV_NORM型 ノルムのタイプ デフォルト CV_NORM.L1
 //mask CvMat型 マスクの行列(現在は利用不可)
 //出力
 //ノルムの計算結果
@@ -396,6 +433,9 @@ function cvmNorm(mat1, mat2, normType, mask){
             throw "mat1" + ERROR.IS_UNDEFINED_OR_NULL;
         if(!cvUndefinedOrNull(mat2) && (mat1.rows != mat2.rows || mat1.cols != mat2.cols))
             throw "mat1 と mat2" + ERROR.DIFFERENT_ROWS_OR_COLS;
+        
+        if(cvUndefinedOrNull(normType))
+            normType = CV_NORM.L1;
         
         switch(normType){
             case CV_NORM.C:
@@ -504,208 +544,82 @@ function cvmDot(mat1, rows, mat2, cols){
     return rtn;
 }
 
-//逆行列の演算
+//行列のrankを求める
 //入力
-//mat CvMat型 逆行列を求める行列
-//method CV_INV配列 アルゴリズムの種類
+//org CvMat型
+//cvTermCriteria CvTermCriteria型
 //出力
-//CvMat型　求まった行列が代入される行列
-function cvmInverse(mat, method){
-    var invMat = null;
-    try{
-        if(cvUndefinedOrNull(mat))
-            throw "mat" + ERROR.IS_UNDEFINED_OR_NULL;
-        if(cvUndefinedOrNull(method)) method = CV_INV.LU;
-        if(method == CV_INV.SVD_SYM)
-            throw "CV_INV.SVD_SYM は現在サポートされていません";
-        
-        invMat = cvCreateMat(mat.rows, mat.cols);
-        
-        switch(method){
-            case CV_INV.LU:
-                if(mat.cols != mat.rows)
-                    throw "CV_INV.LUの場合、mat" + PLEASE_SQUARE_MAT;
-                
-                //前進代入
-                function Lforwardsubs(L, b, y){
-                    for(var i = 0 ; i < L.rows ; i++)
-                        y.vals[i * y.cols] = b.vals[i * b.cols];
-                    
-                    for(var i = 0 ; i < L.rows ; i++){
-                        y.vals[i * y.cols] /= L.vals[i + i * L.cols];
-                        for(var j = i + 1 ; j < L.cols ; j++){
-                            y.vals[j * y.cols] -= y.vals[i * y.cols] * L.vals[ i + j * L.cols];
-                        }
-                    }
-                }
-                //後退代入
-                function Ubackwardsubs(U, y, x){
-                    for(var i = 0 ; i < U.rows; i++)
-                        x.vals[i * x.cols] = y.vals[i * y.cols];
-                    
-                    for(var i = U.rows-1 ; i >= 0; i--){
-                        x.vals[i * x.cols] /= U.vals[i + i * U.cols];
-                        for(var j = i-1 ; j >= 0 ; j--){
-                            x.vals[j * x.cols] -= x.vals[i * x.cols] * U.vals[i + j * U.cols];
-                        }
-                    }
-                }
-                
-                // -- matのLU分解 --
-                var L = cvCreateMat(mat.rows, mat.cols);
-                var U = cvCreateMat(mat.rows, mat.cols);
-                cvLU(mat, L, U);
-                
-                for(var i = 0 ; i < mat.cols ; i++)
-                {
-                    var initVec = cvCreateMat(mat.rows, 1);
-                    for(var v = 0 ;  v < mat.rows ; v++)
-                        initVec.vals[v] = (v == i) ? 1 : 0 ;
-                    
-                    var dmyVec = cvCreateMat(mat.rows, 1);
-                    var inverseVec = cvCreateMat(mat.rows, 1);
-                    
-                    Lforwardsubs(L, initVec, dmyVec);
-                    Ubackwardsubs(U, dmyVec, inverseVec);
-                    
-                    for(var v = 0 ; v < mat.rows ; v++){
-                        invMat.vals[i + v * invMat.cols] = inverseVec.vals[v * inverseVec.cols];
-                    }
-                }
-                
-                break;
-            case CV_INV.SVD:
-                
-                break;
-            case CV_INV.SVD_SYM: break;
-        }
-    }
-    catch(ex){
-        alert("cvmInverse : " + ex);
-    }
+//rank数
+function cvmRank(org, cvTermCriteria){
     
-    return invMat;
-}
-
-//特異値分解の演算
-//入力
-//A CvMat型 特異値分解される行列(M*N)
-//flags
-//出力
-//[W, U, V]
-//W CvMat型 特異値行列の結果(M*NまたはN*N)
-//U CvMat型 左直交行列(M*MまたはM*N)
-//V CvMat型 右直交行列(N*N)
-function cvmSVD(A, flags){
-    
-    var rtn = null;
+    var rtn = -1;
     try{
-        if(cvUndefinedOrNull(A))
-            throw "第一引数" + ERROR.IS_UNDEFINED_OR_NULL;
-        if(cvUndefinedOrNull(flags)) flags = CV_SVD.ZERO;
+        if(cvUndefinedOrNull(cvTermCriteria))
+            cvTermCriteria = new CvTermCriteria();
         
-        switch(flags){
-            case CV_SVD.ZERO:
-            {
-                var trA = cvmTranspose(A);
-                
-                var AtA = cvmMul(trA, A);
-                var AAt = cvmMul(A, trA);
-                
-                var ee1 = cvmEigen(AtA);
-                var ee2 = cvmEigen(AtA);
-                
-                //A^tAの固有ベクトルが左特異ベクトル
-                var U = cvmCopy(ee1[1]);
-                
-                //AA^tの固有ベクトルの転置が右特異ベクトル
-                var V = cvmCopy(cvmTranspose(ee2[1]));
-                
-                
-                //A^tAの0以上の固有値の平方根が特異値になる
-                var eValues = ee1[0];
-                var t = eValues.rows;
-                for(var i = 0 ; i < eValues.rows ; i++){
-                    if(eValues.vals[i] < 0){
-                        t = i;
+        var mat = cvmCopy(org);
+        for(var k = 0; k < mat.rows; k++){
+            var p = mat.vals[k + k * mat.cols];//ピボット係数
+            if(p == 0){
+                //入れ替える
+                for(var kk = k + 1 ; kk < mat.rows ; kk++){
+                    if(Math.abs(mat.vals[k + kk * mat.cols]) > cvTermCriteria.eps){
+                        p = mat.vals[k + kk * mat.cols];
+                        for(var i = 0 ; i < mat.cols ; i++){
+                            var tmp = mat.vals[i + k * mat.cols];
+                            mat.vals[i + k * mat.cols] = mat.vals[i + kk * mat.cols];
+                            mat.vals[i + kk * mat.cols] = tmp;
+                        }
                         break;
                     }
                 }
-                
-                var W = cvCreateMat(t, 1);
-                
-                for(var i = 0 ; i < W.rows ; i++){
-                    W.vals[i] = Math.sqrt(eValues.vals[i]);
+                //入れ替える要素がない場合は次へ
+                if(p == 0){
+                    break;
                 }
-                
-                rtn = [W, U, V];
-                
             }
-                break;
-                
-            default:
-                throw "flagsはCV_SVD.ZEROしか現在サポートされていません";
-                break;
+            
+            for (var i = k; i <  mat.cols; i++)
+                mat.vals[i + k * mat.cols] /= p;  // ピボット係数を１にするためピボット行を割り算
+            
+            for (var i = 0; i < mat.rows; i++){// ピボット列の掃き出し
+                if(i != k){
+                    var d = mat.vals[k + i * mat.cols];
+                    for(var j = k; j < mat.cols; j++){
+                        mat.vals[j + i * mat.cols] -= d * mat.vals[j + k * mat.cols];
+                        if(Math.abs(mat.vals[j + i * mat.cols]) < cvTermCriteria.eps)
+                            mat.vals[j + i * mat.cols] = 0;
+                    }
+                }
+            }
         }
+        
+        rtn = -1;
+        for(var i = 0 ; i < mat.rows; i++){
+            for(var j = 0 ; j < mat.cols; j++){
+                if(Math.abs(mat.vals[j + i * mat.cols]) > cvTermCriteria.eps){
+                    break;
+                }
+                if(j == mat.cols - 1){
+                    rtn = i;
+                    break;
+                }
+            }
+            if(rtn != -1){
+                break;
+            }
+            else if(i == mat.rows - 1){
+                rtn = mat.rows;
+                break;
+            }
+        }
+        
     }
     catch(ex){
-        alert("cvmSVD : " + ex);
+        alert("cvmRank : " + ex);
     }
     
     return rtn;
-}
-
-//LU分解の演算
-//入力
-//mat CvMat型 LU分解される行列
-//L CvMat型 Lの結果が代入される行列
-//U CvMat型 Uの結果が代入される行列
-//出力
-//なし
-function cvmLU(mat, L, U){
-    try{
-        if(cvUndefinedOrNull(mat) || cvUndefinedOrNull(L)  || cvUndefinedOrNull(U) )
-            throw "引数のどれか" + ERROR.IS_UNDEFINED_OR_NULL;
-        if(mat.rows != mat.cols || mat.rows == 0 || mat.cols == 0 ||
-           L.rows != L.cols || L.rows == 0 || L.cols == 0 ||
-           U.rows != U.cols || U.rows == 0 || U.cols == 0 ||
-           mat.rows != L.rows || mat.rows != U.rows ||
-           mat.cols != L.cols || mat.cols != U.cols)
-            throw "全ての引数" + ERROR.PLEASE_SQUARE_MAT + " かつ 行列数は同じにして下さい";
-        
-        //初期化
-        for(var i=0; i < mat.rows; i++){
-            for(var j=0; j < mat.cols; j++){
-                L.vals[j + i * L.cols] = 0;
-                U.vals[j + i * U.cols] = 0;
-                if(i==j) L.vals[j + i * L.cols]=1.0;
-            }
-        }
-        
-        var sum;
-        for(var i=0; i < mat.rows; i++){
-            for(var j=0; j < mat.cols; j++){
-                if( i > j ){
-                    //-- L成分を求める --
-                    sum=0.0;
-                    for(var k=0; k < j; k++){
-                        sum+=L.vals[k + i * L.cols] * U.vals[j + k * U.cols];
-                    }
-                    L.vals[j + i * L.cols] = (mat.vals[j + i * mat.cols] - sum) / U.vals[j + j * U.cols];
-                }else{
-                    // --U成分を求める--
-                    sum=0.0;
-                    for(var k=0;k<i;k++){
-                        sum+=L.vals[k + i * L.cols] * U.vals[j + k * U.cols];
-                    }
-                    U.vals[j + i * U.cols]=mat.vals[j + i * mat.cols] - sum;
-                }
-            }
-        }
-    }
-    catch(ex){
-        alert("cvmLU : " + ex);
-    }
 }
 
 //行列式の演算
@@ -760,89 +674,34 @@ function cvmDet(mat){
     return rtn;
 }
 
-//householder法
-//入力
-//vec1 CvMat型 rowsかcolsが1の行列 = ベクトル
-//vec2 CvMat型 vec1と同じ大きさの行列 = ベクトル
-//出力
-//householder行列
-//備考
-//householder行列をhhとする
-//hh * vec1 = vec2
-//hh * vec2 = vec1
-//hh = hh^t = hh^-1
-//hh * hh = I
-function cvmHouseHolder(vec1, vec2){
-    var rtn = null;
-    try{
-        if(cvUndefinedOrNull(vec1) || cvUndefinedOrNull(vec2)){
-            throw "vec1 or vec2" + ERROR.IS_UNDEFINED_OR_NULL;
-        }
-        if(vec1.rows != vec2.rows || vec1.cols != vec2.cols){
-            throw "vec1とvec2" + ERROR.DIFFERENT_ROWS_OR_COLS;
-        }
-        //横ベクトル同士か縦ベクトル同士か判断
-        var isRowVec = true;
-        var length = vec1.rows;
-        if(vec1.rows == 1){
-            isRowVec = false;
-            length = vec1.cols;
-        }
-        else if(vec1.cols != 1){
-            throw "vec1 and vec2 はベクトルではありません";
-        }
-        
-        //単位行列
-        var im = cvCreateIdentityMat(length, length);
-        
-        //差分のノルムの２乗
-        var dstV = cvmSub(vec1, vec2);
-        var dstNrm2 = cvmNorm(dstV, null, CV_NORM.L2Square);
-        
-        if(dstNrm2 == 0){
-            return im;
-        }
-        
-        //dstVとdstV^tの掛け算をし、その結果をノルムの２乗で割り、２倍する
-        var dstMat = cvCreateMat(length, length);
-        for(var i = 0 ; i < length ; i++){
-            for(var j = 0 ; j < length ; j++){
-                dstMat.vals[j + i * length] = dstV.vals[i] * dstV.vals[j] / dstNrm2 * 2;
-            }
-        }
-        //単位行列からひく
-        rtn = cvmSub(im, dstMat);
-    }
-    catch(ex){
-        alert("cvmHouseHolder : " + ex);
-    }
-    
-    return rtn;
-}
-
-
 //QR分解
 //入力
-//mat CvMat型 QR分解する行列
+//mat CvMat型 QR分解する行列 rows >= cols
+//cvTermCriteria CvTermCriteria型
 //出力
 //[Q, R] 配列内のデータはそれぞれCvMat型
-function cvmQR(mat){
-    var rt = null;
+function cvmQR(mat, cvTermCriteria){
+    var rtn = null;
     try{
+        //バリデーション
         if(cvUndefinedOrNull(mat))
             throw "mat" + ERROR.IS_UNDEFINED_OR_NULL;
         
-        var rank = cvmRank(mat);
-        if(rank != mat.cols)
-            throw "matの列数とrankが合いません";
+        if(mat.rows < mat.cols){
+            throw "mat.rows >= mat.colsでなければいけません";
+        }
+        
+        //デフォルト
+        if(cvUndefinedOrNull(cvTermCriteria))
+            cvTermCriteria = new CvTermCriteria();
         
         var Q = cvCreateIdentityMat(mat.rows, mat.rows);
         var R = cvCreateMat(mat.rows, mat.cols);
         for(var i = 0 ; i < mat.rows * mat.cols ; i++)
             R.vals[i] = mat.vals[i];
         
-        //rank回のループによりQR分館
-        for(var r = 0 ; r < rank - 1 ; r++){
+        //ループによりQR分解
+        for(var r = 0 ; r < mat.cols ; r++){
             //r列目のr行目からmat.rowsまでのノルム
             var norm = 0;
             for(var i = r ; i < mat.rows ; i++)
@@ -874,7 +733,7 @@ function cvmQR(mat){
             Q = cvmMul(H, Q);
         }
         
-        rtn = [cvmTranspose(Q), R];
+        rtn = [Q, R];
         
     }
     catch(ex){
@@ -884,16 +743,15 @@ function cvmQR(mat){
     return rtn;
 }
 
-//正則行列の固有値及び固有ベクトルを求める
+//LU分解の演算
 //入力
-//mat CvMat型 固有値と固有ベクトルを求める正則行列
-//eps double型 対角化の精度 デフォルト CV_DEF_EPS
-//maxLoop int型 対角化の精度を出すための無限ループの最大回数 デフォルト = mat.rows * 2;
+//mat CvMat型 LU分解される行列
 //出力
-//[eValues, eVects]
-//eValues CvMat型 固有値が大きい順に並ぶ1列(行)の行列(つまりベクトル)
-//eVects CvMat型 固有ベクトル
-function cvmEigen(mat, eps, maxLoop){
+// [L, U]
+//L CvMat型 Lの結果が代入される行列
+//U CvMat型 Uの結果が代入される行列
+//なし
+function cvmLU(mat){
     var rtn = null;
     try{
         if(cvUndefinedOrNull(mat))
@@ -901,420 +759,121 @@ function cvmEigen(mat, eps, maxLoop){
         if(mat.rows != mat.cols || mat.rows == 0 || mat.cols == 0)
             throw "mat" + ERROR.PLEASE_SQUARE_MAT;
         
-        //正則化のチェック
-        for(var i = 0 ; i < mat.rows ; i++){
-            for(var j = i + 1 ; j < mat.cols ; j++){
-                if(mat.vals[j + i * mat.cols] != mat.vals[i + j *mat.cols]){
-                    throw "matは正則行列ではありません";
-                }
+        var L = cvCreateMat(mat.rows, mat.cols);
+        var U = cvCreateMat(mat.rows, mat.cols);
+        
+        //初期化
+        for(var i=0; i < mat.rows; i++){
+            for(var j=0; j < mat.cols; j++){
+                L.vals[j + i * L.cols] = 0;
+                U.vals[j + i * U.cols] = 0;
+                if(i==j) L.vals[j + i * L.cols]=1.0;
             }
         }
         
-        //精度の値を確認
-        if(cvUndefinedOrNull(eps))
-            eps = CV_DEF_EPS;
-        
-        //最大ループの値を確認
-        if(cvUndefinedOrNull(maxLoop))
-            maxLoop = mat.rows * 2;
-        
-        //オリジナルの配列をコピー
-        var rq = cvCreateMat(mat.rows, mat.cols);
-        for(var i = 0 ; i < mat.rows * mat.cols ; i++)
-            rq.vals[i] = mat.vals[i];
-        
-        
-        //固有ベクトル
-        var eVects = cvCreateIdentityMat(mat.rows, mat.rows);
-        
-        //---QR法による三重対角化---
-        var loop = 0;
-        while(true){
-            var qr = cvmQR(rq);
-            eVects = cvmMul(eVects, qr[0]);
-            rq = cvmMul(qr[1],qr[0]);
-            
-            //精度のチェック
-            var isOK = true;
-            for(var i = 0 ; i < rq.rows ; i++){
-                for(var j = 0; j < rq.cols ; j++){
-                    //三重対角化の値のある部分なら次へ
-                    if(i - 1 == j || i == j || i + 1 == j)
-                        continue;
-                    //閾値より大きければチェックの終わり
-                    if(Math.abs(rq.vals[j + i * rq.cols]) > eps){
-                        isOK = false;
-                        break;
+        var sum;
+        for(var i=0; i < mat.rows; i++){
+            for(var j=0; j < mat.cols; j++){
+                if( i > j ){
+                    //-- L成分を求める --
+                    sum=0.0;
+                    for(var k=0; k < j; k++){
+                        sum+=L.vals[k + i * L.cols] * U.vals[j + k * U.cols];
                     }
-                }
-                //閾値より大きい値があった場合はfor文を抜ける
-                if(!isOK)
-                    break;
-            }
-            
-            loop++;
-            if(isOK || loop > maxLoop) break;
-        }
-        
-        //固有値を代入
-        var eValues = cvCreateMat(rq.rows, 1);
-        for(var i = 0 ; i < eValues.rows; i++){
-            eValues.vals[i] = rq.vals[i + i * rq.cols];
-        }
-        
-        //降順に並び替え
-        for(var i = 0 ; i < eValues.rows ; i++){
-            //最大値のindexを探索
-            var maxV = eValues.vals[i];
-            var maxIndex = i;
-            for(var j = i + 1 ; j < eValues.rows; j++){
-                if(maxV < eValues.vals[j]){
-                    maxV = eValues.vals[j];
-                    maxIndex = j;
+                    L.vals[j + i * L.cols] = (mat.vals[j + i * mat.cols] - sum) / U.vals[j + j * U.cols];
+                }else{
+                    // --U成分を求める--
+                    sum=0.0;
+                    for(var k=0;k<i;k++){
+                        sum+=L.vals[k + i * L.cols] * U.vals[j + k * U.cols];
+                    }
+                    U.vals[j + i * U.cols]=mat.vals[j + i * mat.cols] - sum;
                 }
             }
-            
-            //固有値を入れ替える
-            var tmp = eValues.vals[i];
-            eValues.vals[i] = eValues.vals[maxIndex];
-            eValues.vals[maxIndex] = tmp;
-            
-            //固有ベクトルを入れ替える
-            for(var y = 0 ; y < eVects.rows ; y++){
-                tmp = eVects.vals[i + y * eVects.cols];
-                eVects.vals[i + y * eVects.cols] = eVects.vals[maxIndex + y * eVects.cols];
-                eVects.vals[maxIndex + y * eVects.cols] = tmp;
-            }
-            
         }
-        
-        rtn = [eValues, eVects];
+        rtn = [L, U];
     }
     catch(ex){
-        alert("cvmEigen : " + ex);
+        alert("cvmLU : " + ex);
     }
-    
     return rtn;
 }
 
-//行列の二重対角化
+
+//householder法
+//vec1をvec2にするような変換行列を求める ※vec1とvec2のノルムは等しくなければならない
 //入力
-//mat CvMat型 対角化する行列
-//eps double型 計算精度 デフォルト CV_DEF_EPS
-function cvmDoubleDiagonalization(mat, eps){
+//vec1 CvMat型 rowsかcolsが1の行列 = ベクトル
+//vec2 CvMat型 vec1と同じ大きさの行列 = ベクトル
+//cvTermCriteria CvTermCriteria型 計算精度
+//出力
+//householder行列
+//備考
+//householder行列をhhとする
+//hh * vec1 = vec2
+//hh * vec2 = vec1
+//hh = hh^t = hh^-1
+//hh * hh = I
+function cvmHouseHolder(vec1, vec2, cvTermCriteria){
     var rtn = null;
     try{
         //バリデーション
-        if(cvUndefinedOrNull(mat))
-            throw "mat" + ERROR.IS_UNDEFINED_OR_NULL;
-        
-        //デフォルト値
-        if(cvUndefinedOrNull(eps)) eps = CV_DEF_EPS;
-        
-        //--内部で使う処理を関数化--
-        //行列から指定した範囲の行列を抜き出す
-        function partMatrix(mat, sx, sy, ex, ey){
-            
-            var mcols = ex - sx;
-            var mrows = ey - sy;
-            
-            var mar = cvCreateMat(mrows, mcols);
-            for(var i = 0 ; i < mar.rows ; i++){
-                for(var j = 0 ; j < mar.cols ; j++){
-                    mar.vals[j + i * mar.cols] = mat.vals[sx + j + (sy + i) * mat.cols];
-                }
-            }
-            
-            return mar;
+        if(cvUndefinedOrNull(vec1) || cvUndefinedOrNull(vec2)){
+            throw "vec1 or vec2" + ERROR.IS_UNDEFINED_OR_NULL;
         }
-        //行列の指定された範囲内のうちの要素の最大値とその座標を返す
-        function maxAbsAndXY(ar, sx, sy, ex, ey){
-            //デフォルト値
-            if(cvUndefinedOrNull(sx)) sx = 0;
-            if(cvUndefinedOrNull(sy)) sy = 0;
-            if(cvUndefinedOrNull(ex)) ex = ar.cols;
-            if(cvUndefinedOrNull(ey)) ey = ar.rows;
-            
-            var max = Math.abs(ar.vals[sx + sy * ar.cols]);
-            var mx = sx;
-            var my = sy;
-            for(var y = sy ; y < ey ; y++){
-                for(var x = sx ; x < ex ; x++){
-                    var tmp = Math.abs(ar.vals[x + y * ar.cols]);
-                    if(max < tmp){
-                        max = tmp;
-                        mx = x;
-                        my = y;
-                    }
-                }
-            }
-            
-            return [max, mx, my];
+        if(vec1.rows != vec2.rows || vec1.cols != vec2.cols){
+            throw "vec1とvec2" + ERROR.DIFFERENT_ROWS_OR_COLS;
+        }
+        //横ベクトル同士か縦ベクトル同士か判断
+        var isRowVec = true;
+        var length = vec1.rows;
+        if(vec1.rows == 1){
+            isRowVec = false;
+            length = vec1.cols;
+        }
+        else if(vec1.cols != 1){
+            throw "vec1 and vec2 はベクトルではありません";
         }
         
-        //行列の指定した列ベクトルのノルムの二乗
-        function norm2MatrixCol(mat, col, start, end){
-            //デフォルト値
-            if(cvUndefinedOrNull(start)) start = 0;
-            if(cvUndefinedOrNull(end)) end = mat.rows;
-            
-            var vec = cvCreateMat(end - start, 1);
-            for(var i = 0 ; i < vec.rows ; i++){
-                vec.vals[i] = mat.vals[col + (i + start) * mat.cols];
-            }
-            
-            return cvmNorm(vec, null, CV_NORM.L2Square);
+        //初期化
+        if(cvUndefinedOrNull(cvTermCriteria))
+            cvTermCriteria = new CvTermCriteria();
+        
+        //ノルムが等しいかチェック
+        var vec1Nrm = cvmNorm(vec1, null, CV_NORM.L2);
+        var vec2Nrm = cvmNorm(vec2, null, CV_NORM.L2);
+        
+        if(Math.abs(vec1Nrm - vec2Nrm) > cvTermCriteria.eps){
+            throw "vec1とvec2のノルムが違います";
         }
         
-        //行列の指定した行ベクトルのノルムの二乗
-        function norm2MatrixRow(mat, row, start, end){
-            
-            //デフォルト値
-            if(cvUndefinedOrNull(start)) start = 0;
-            if(cvUndefinedOrNull(end)) end = mat.rows;
-            
-            var vec = cvCreateMat(end - start, 1);
-            for(var i = 0 ; i < vec.rows ; i++){
-                vec.vals[i] = mat.vals[i + start + row * mat.cols];
-            }
-            
-            return cvmNorm(vec, null, CV_NORM.L2Square);
-        }
         
-        //行列の列ベクトルと縦ベクトルのhouseholder変換行列
-        function householderMatColVec(mat, col, vec){
-            var rtn = null;
-            try{
-                if(mat.rows != vec.rows)
-                    throw "matとvec" + ERROR.DIFFERENT_LENGTH;
-                
-                var matV = cvCreateMat(mat.rows, 1);
-                for(var i = 0 ; i < matV.rows ; i++){
-                    matV.vals[i] = mat.vals[col + i * mat.cols];
-                }
-                
-                rtn = cvmHouseHolder(matV, vec);
-            }
-            catch(ex){
-                alert("householderMatColVec : " + ex);
-            }
-            return rtn;
-        }
+        //単位行列
+        var im = cvCreateIdentityMat(length, length);
         
-        //行列の行ベクトルと横ベクトルのhouseholder変換行列(ただし１次元配列として返す)
-        function householderMatRowVec(mat, row, vec){
-            var rtn = null;
-            try{
-                if(mat.cols != vec.cols)
-                    throw "matとvec" + ERROR.DIFFERENT_LENGTH;
-                
-                var matV = cvCreateMat(1, mat.cols);
-                var rw = row * mat.cols;
-                for(var i = 0 ; i < matV.cols ; i++){
-                    matV.vals[i] = mat.vals[i + rw];
-                }
-                
-                rtn = cvmHouseHolder(matV, vec);
-            }
-            catch(ex){
-                alert("householderMatRowVec : " + ex);
-            }
-            
-            return rtn;
-        }
-        //----------------------
+        //差分の正規化
+        var dstV = cvmSub(vec1, vec2);
+        var dstNrm = cvmNorm(dstV, null, CV_NORM.L2);
         
-        //matのコピー
-        var rtn = cvmCopy(mat);
+        //差がないようならそのまま単位行列がhouseholder行列となる
+        if(dstNrm < cvTermCriteria.eps) return im;
         
-        var sx = sy = 0;
-        while(true){
-            
-            //ar^(times)段階目の対角化を行う小行列を取得
-            var mar = partMatrix(rtn, sx, sy, rtn.cols, rtn.rows);
-            var mwidth = rtn.cols - sx;
-            var mheight = rtn.rows - sy;
-            
-            var maxVXY;
-            var vec;
-            var hhMat;
-            
-            //step6に到達するまでループ 基本はstep1 ~ 6と進む
-            var step = 1;
-            while(step != -1){
-                switch(step){
-                    case 1://ar^(times)の要素で絶対値が最大とるなる要素を探す。その値がeps以下なら二重対角化終了
-                        
-                        maxVXY = maxAbsAndXY(mar, mwidth);
-                        if(maxVXY[0] < eps){
-                            dWrite(0, "finish");
-                            step = -1; //二重対角化終了
-                            break;
-                        }
-                        
-                        step = 2;
-                        
-                        break;
-                        
-                    case 2://絶対値最大の要素を含む行とar^(times)の第１行を入れ替える
-                        for(var i = 0 ; i < mar.cols ; i++){
-                            var tmp = mar.vals[i];
-                            mar.vals[i] = mar.vals[i + maxVXY[2] * mar.cols];
-                            mar.vals[i + maxVXY[2] * mar.cols] = tmp;
-                        }
-                        
-                        step = 3;
-                        
-                        break;
-                        
-                    case 3://ar^(times)の第１列において、絶対値が最大となる要素を探す。その値がeps以下ならd_times=0とおきstep6へ
-                        maxVXY = maxAbsAndXY(mar, 0, 0, 1, mheight);
-                        
-                        if(maxVXY[0] > eps){
-                            step = 4;
-                        }
-                        else{
-                            mar[0] = 0;
-                            step = 6;
-                        }
-                        
-                        break;
-                        
-                    case 4://ar^(times)の第１列の第２項以下を0とするようなハウスホルダー変換を左からar^(times)に行う
-                        vec = cvCreateMat(mheight, 1);
-                        vec.vals[0] = Math.sqrt(norm2MatrixCol(mar, 0));
-                        for(var i = 1 ; i < vec.rows ; vec.vals[i++] = 0);
-                        
-                        hhMat = householderMatColVec(mar, 0, vec);
-                        
-                        mar = cvmMul(hhMat, mar);
-                        
-                        //最後の２行２列の場合は列方向だけハウスホルダー変換し、対角化が終了となる
-                        step = sx == mat.cols - 2 ? -1 : 5;
-                        
-                        break;
-                        
-                    case 5://ar^(times)の第１行において第２項以降で絶対値が最大となる要素を探す。その値がeps以下なら第１行第２項を0とおきstep7へ
-                        
-                        maxVXY = maxAbsAndXY(mar, 1, 0, mwidth, 1);
-                        
-                        if(maxVXY[0] > eps) step = 6;
-                        else{
-                            mar.vals[1] = 0;
-                            step = -1;
-                        }
-                        
-                        break;
-                        
-                    case 6://ar^(times)の第１行の第３項以降を０とするようなハウスホルダー変換を右から行う
-                        vec = cvCreateMat(1, mwidth);
-                        vec.vals[0] = mar.vals[0];
-                        vec.vals[1] = Math.sqrt(norm2MatrixRow(mar, 0, 1, mwidth));
-                        for(var i = 2 ; i < vec.cols ; vec.vals[i++] = 0);
-                        
-                        hhMat = householderMatRowVec(mar, 0, vec);
-                        
-                        mar = cvmMul(mar, hhMat);
-                        
-                        step = -1;
-                        
-                        break;
-                    default://ループ用パラメータ更新
-                        throw "ありえないstepが実行されました";
-                        break;
-                }
-            }
-            
-            //コピー
-            for(var i = 0 ; i < mheight ; i++){
-                for(var j = 0 ; j < mwidth ; j++){
-                    rtn.vals[sx + j + (sy + i) * rtn.cols] = mar.vals[j + i * mwidth];
-                }
-            }
-            
-            sx++;
-            sy++;
-            if(sx == mat.cols - 1 || sy == mat.rows - 1){ //終了条件
-                break;
-            }
-        }
+        for(var i = 0 ; i < dstV.rows * dstV.cols; dstV.vals[i++] /= dstNrm);
+        
+        var dstMat = cvmMul(dstV, cvmTranspose(dstV));
+        
+        for(var i = 0 ; i < dstMat.rows * dstMat.cols; dstMat.vals[i++] *= 2);
+        
+        //単位行列からひく
+        rtn = cvmSub(im, dstMat);
     }
     catch(ex){
-        alert("cvmDoubleDiagonalization : " + ex);
+        alert("cvmHouseHolder : " + ex);
     }
     
     return rtn;
 }
 
-//行列のrankを求める
-function cvmRank(org, eps){
-    
-    var rtn = -1;
-    try{
-        if(cvUndefinedOrNull(eps))
-            eps = CV_DEF_EPS;
-        
-        var mat = cvmCopy(org);
-        for(var k = 0; k < mat.rows; k++){
-            var p = mat.vals[k + k * mat.cols];//ピボット係数
-            if(p == 0){
-                //入れ替える
-                for(var kk = k + 1 ; kk < mat.rows ; kk++){
-                    if(Math.abs(mat.vals[k + kk * mat.cols]) > eps){
-                        p = mat.vals[k + kk * mat.cols];
-                        for(var i = 0 ; i < mat.cols ; i++){
-                            var tmp = mat.vals[i + k * mat.cols];
-                            mat.vals[i + k * mat.cols] = mat.vals[i + kk * mat.cols];
-                            mat.vals[i + kk * mat.cols] = tmp;
-                        }
-                        break;
-                    }
-                }
-                //入れ替える要素がない場合は次へ
-                if(p == 0){
-                    break;
-                }
-            }
-            
-            for (var i = k; i <  mat.cols; i++)
-                mat.vals[i + k * mat.cols] /= p;  // ピボット係数を１にするためピボット行を割り算
-            
-            for (var i = 0; i < mat.rows; i++){// ピボット列の掃き出し
-                if(i != k){
-                    var d = mat.vals[k + i * mat.cols];
-                    for(var j = k; j < mat.cols; j++)
-                        mat.vals[j + i * mat.cols] -= d * mat.vals[j + k * mat.cols];
-                }
-            }
-        }
-        
-        rtn = -1;
-        for(var i = 0 ; i < mat.rows; i++){
-            for(var j = 0 ; j < mat.cols; j++){
-                if(Math.abs(mat.vals[j + i * mat.cols]) > eps){
-                    break;
-                }
-                if(j == mat.cols - 1){
-                    rtn = i;
-                    break;
-                }
-            }
-            if(rtn != -1){
-                break;
-            }
-            else if(i == mat.rows - 1){
-                rtn = mat.rows;
-                break;
-            }
-        }
-        
-    }
-    catch(ex){
-        alert("cvmRank : " + ex);
-    }
-    
-    return rtn;
-}
 
 //row行cols列の疎行列を作る
 //入力
@@ -1323,8 +882,8 @@ function cvmRank(org, eps){
 //出力
 //CvMat型
 //備考
-//内部のvalssは{row:row, col:col, value:value}オブジェクトの配列
-//valssの座標以外は全て0を意味する
+//内部のvalsは{row:row, col:col, value:value}オブジェクトの配列
+//valsの座標以外は全て0を意味する
 function cvCreateSparseMat(rows, cols){
     var rtn = new CvSparseMat();
     rtn.rows = rows;
