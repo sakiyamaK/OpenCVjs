@@ -874,6 +874,119 @@ function cvmHouseHolder(vec1, vec2, cvTermCriteria){
     return rtn;
 }
 
+//実対称行列の固有値及び固有ベクトルを求める
+//　※実対称行列に限定しているのは固有値が実数であるから
+//　※固有値は大きい順にソートされて出力されるが小さい固有値ほど誤差が大きい、計算精度には常に注意せよ
+//入力
+//mat CvMat型 固有値と固有ベクトルを求める対称行列
+//cvTermCriteria CvTermCriteria型 対角化の精度
+//出力
+//[eValues, eVects]
+//eValues CvMat型 固有値が大きい順に並ぶ1列(行)の行列(つまりベクトル)
+//eVects CvMat型 固有ベクトルを縦ベクトルにして並べる
+function cvmEigen(mat, cvTermCriteria){
+    var rtn = null;
+    try{
+        //バリデーション
+        if(cvUndefinedOrNull(mat))
+            throw "mat" + ERROR.IS_UNDEFINED_OR_NULL;
+        if(mat.rows != mat.cols || mat.rows == 0 || mat.cols == 0)
+            throw "mat" + ERROR.PLEASE_SQUARE_MAT;
+        
+        //対称化のチェック
+        for(var i = 0 ; i < mat.rows ; i++){
+            for(var j = i + 1 ; j < mat.cols ; j++){
+                if(mat.vals[j + i * mat.cols] != mat.vals[i + j *mat.cols]){
+                    throw "matは対称行列ではありません";
+                }
+            }
+        }
+        
+        //精度の値を確認
+        if(cvUndefinedOrNull(cvTermCriteria))
+            cvTermCriteria = new CvTermCriteria();
+        
+        //オリジナルの配列をコピー、QR分解により三重対角行列が代入される
+        var rq = cvmCopy(mat);
+        
+        //固有ベクトルの組(行列として結果は求まる)
+        var eVects = cvCreateIdentityMat(mat.rows, mat.rows);
+        
+        //---QR法による三重対角化---
+        var isOK = true;
+        for(var loop = 0 ; loop < cvTermCriteria.max_iter ; loop++){
+            
+            var qr = cvmQR(rq);
+            if(qr == null) return rtn;
+            
+            var Qt = cvmTranspose(qr[0]);
+            
+            eVects = cvmMul(eVects, Qt);
+            
+            rq = cvmMul(qr[1], Qt);
+            
+            //精度のチェック(rqが三重対角行列か)
+            isOK = true;
+            for(var i = 0 ; i < rq.rows; i++){
+                for(var j = 0 ; j < rq.cols; j++){
+                    if(i != j && i - 1 != j && i + 1 != j && Math.abs(rq.vals[j + i * rq.cols]) > cvTermCriteria.eps){
+                        isOK = false;
+                        break;
+                    }
+                }
+                //精度のチェックでひっかかっているならループをぬける
+                if(!isOK) break;
+            }
+            
+            //精度が問題なければfor文を抜ける
+            if(isOK) break;
+        }
+        
+        //精度が問題ないか
+        if(!isOK){
+            throw "最大ループ回数(" + cvTermCriteria.max_iter + ")を超えましたが精度" + cvTermCriteria.eps + "が足りていません";
+        }
+        
+        //固有値を代入
+        var eValues = cvCreateMat(rq.rows, 1);
+        for(var i = 0 ; i < eValues.rows; i++){
+            eValues.vals[i] = rq.vals[i + i * rq.cols];
+        }
+        
+        //降順に並び替え
+        for(var i = 0 ; i < eValues.rows ; i++){
+            //最大値のindexを探索
+            var maxV = eValues.vals[i];
+            var maxIndex = i;
+            for(var j = i + 1 ; j < eValues.rows; j++){
+                if(maxV < eValues.vals[j]){
+                    maxV = eValues.vals[j];
+                    maxIndex = j;
+                }
+            }
+            
+            //固有値を入れ替える
+            var tmp = eValues.vals[i];
+            eValues.vals[i] = eValues.vals[maxIndex];
+            eValues.vals[maxIndex] = tmp;
+            
+            //固有ベクトルを入れ替える
+            for(var y = 0 ; y < eVects.rows ; y++){
+                tmp = eVects.vals[i + y * eVects.cols];
+                eVects.vals[i + y * eVects.cols] = eVects.vals[maxIndex + y * eVects.cols];
+                eVects.vals[maxIndex + y * eVects.cols] = tmp;
+            }
+        }
+        
+        rtn = [eValues, eVects];
+    }
+    catch(ex){
+        alert("cvmEigen : " + ex);
+    }
+    
+    return rtn;
+}
+
 
 //row行cols列の疎行列を作る
 //入力

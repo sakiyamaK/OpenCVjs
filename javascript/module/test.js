@@ -1,10 +1,12 @@
 var term = new CvTermCriteria();
-//term.max_iter = 100;
+//term.max_iter = 200000;
+term.eps = 0.01;
 var test_term = new CvTermCriteria();
+test_term.eps = 1;
 
-var maxTime = 1;
+var maxTime = 10000;
 for(var time = 0 ; time < maxTime ; time++){
-    var rows = Math.floor(Math.random() * 4) + 2;
+    var rows = Math.floor(Math.random() * 4) + 8;
     var cols = rows; //Math.floor(Math.random() * 4) + 2;
     var mat = cvCreateMat(rows, cols);
     for(var i = 0 ; i < mat.rows ; i++){
@@ -15,8 +17,8 @@ for(var time = 0 ; time < maxTime ; time++){
     
     var mm = cvmMul(mat, cvmTranspose(mat));
     
-//    mat = cvCreateMat(2, 2);
-//    mat.vals = [6,4,4,7];
+//    mm = cvCreateMat(2, 2);
+//    mm.vals = [1,1,1,1];
 
 //    var shortV = Math.floor(Math.random() * 4) + 2;
 //    var longV = shortV + Math.floor(Math.random() * 4);
@@ -32,17 +34,27 @@ for(var time = 0 ; time < maxTime ; time++){
 //    }
     
     
-//    if(!test_cvmQR(rowMat, false))
+//    if(!test_cvmQR(mm, false))
 //        document.write("QRのエラー" + "<br/><br/>");
     
-//    if(!test_cvmDiagonalization(mm, false, term, test_term)){
+//    if(!test_cvmTridiagonalization(mm, true, term, test_term)){
+//        
+//        document.write(time + "回目<br/>");
 //        cvDWriteMatrix(mm, "mat");
+//        var rank = cvmRank(mat);
+//        document.write("ランク = " + rank + "<br/>");
+//
 //        document.write("対角化のエラー" + "<br/><br/>");
+//        break;
 //    }
     
-    if(!test_cvmEigen(mm, true, term, test_term)){
+//    cvDWriteMatrix(mm, "mat");
+    
+    if(!test_cvmEigen(mm, false, term, test_term)){
+        document.write(time + "回目<br/>");
         cvDWriteMatrix(mm, "mat");
         document.write("eigenのエラー" + "<br/><br/>");
+        break;
     }
 
 //if(!test_cvmSVD(mat, true, term, test_term))
@@ -100,6 +112,7 @@ function test_cvmInverse(mat, isDraw, cvTermCriteria, test_cvTermCriteria){
 //mat CvMat型 調べる行列
 //isDraw bool型 計算途中の配列を描画するか
 //cvTermCriteria CvTermCriteria型 計算精度
+//test_cvTermCriteria CvTermCriteria型 計算が合っているかを確認する精度
 //出力
 //bool型 問題なければtrue
 function test_cvmQR(mat, isDraw, cvTermCriteria, test_cvTermCriteria){
@@ -125,10 +138,10 @@ function test_cvmQR(mat, isDraw, cvTermCriteria, test_cvTermCriteria){
         if(isDraw) cvDWriteMatrix(R, "R");
         
         
-        //Qの直交性のチェック
+        //----- Qの直交性のチェック [start]-------//
         var Qt = cvmTranspose(qr[0]);
         var QQt = cvmMul(Qt, Q);
-        
+        //閾値以下を0にする
         for(var i = 0 ; i < QQt.cols * QQt.rows ; i++){
             if(Math.abs(QQt.vals[i]) < test_cvTermCriteria.eps) QQt.vals[i] = 0;
         }
@@ -152,12 +165,13 @@ function test_cvmQR(mat, isDraw, cvTermCriteria, test_cvTermCriteria){
                 }
             }
         }
+        //----- Qの直交性のチェック [end]-------//
+
         
         //Rの三角化チェック
         for(var i = 1 ; i < R.rows ; i++){
             for(var j = 0 ; j < i - 1 ; j++){
                 if(R.vals[j + i * R.cols] > test_cvTermCriteria.eps){
-                    rtn = false;
                     throw "Rの三角化のチェック";
                 }
             }
@@ -168,7 +182,6 @@ function test_cvmQR(mat, isDraw, cvTermCriteria, test_cvTermCriteria){
         for(var i = 0 ; i < reverse.rows ; i++){
             for(var j = 0 ; j < reverse.cols ; j++){
                 if(Math.abs(reverse.vals[j + i * reverse.cols] - mat.vals[j + i * mat.cols]) > test_cvTermCriteria.eps){
-                    rtn = false;
                     throw "M = QtRのチェック";
                 }
             }
@@ -182,11 +195,13 @@ function test_cvmQR(mat, isDraw, cvTermCriteria, test_cvTermCriteria){
     
     return rtn;
 }
+
 //cvmEigenの結果をテスト
 //入力
 //mat CvMat型 調べる行列
 //isDraw bool型 計算途中の配列を描画するか
 //cvTermCriteria CvTermCriteria型 計算精度
+//test_cvTermCriteria CvTermCriteria型 計算が合っているかを確認する精度
 //出力
 //bool型 問題なければtrue
 function test_cvmEigen(mat, isDraw, cvTermCriteria, test_cvTermCriteria){
@@ -253,12 +268,28 @@ function test_cvmEigen(mat, isDraw, cvTermCriteria, test_cvTermCriteria){
     return true;
 }
 
-//QR分解を利用した対角化?三角化
-//http://kishou.u-gakugei.ac.jp/seminars/exercise_2010/math/doc03.pdf
-//対角行列になると書いているが実際は三角行列に収束した
-function test_cvmDiagonalization(mat, isDraw, cvTermCriteria, test_cvTermCriteria){
+//QR分解を利用した実対称行列の三重対角化
+//入力
+//mat CvMat型 調べる行列
+//isDraw bool型 計算途中の配列を描画するか
+//cvTermCriteria CvTermCriteria型 計算精度
+//test_cvTermCriteria CvTermCriteria型 計算が合っているかを確認する精度
+//出力
+//bool型 問題なければtrue
+
+function test_cvmTridiagonalization (mat, isDraw, cvTermCriteria, test_cvTermCriteria){
     
     try{
+        //対称化のチェック
+        for(var i = 0 ; i < mat.rows ; i++){
+            for(var j = i + 1 ; j < mat.cols ; j++){
+                if(mat.vals[j + i * mat.cols] != mat.vals[i + j *mat.cols]){
+                    throw "matは対称行列ではありません";
+                }
+            }
+        }
+
+
         //バリデーション
         if(cvUndefinedOrNull(cvTermCriteria))
             cvTermCriteria = new CvTermCriteria();
@@ -267,67 +298,47 @@ function test_cvmDiagonalization(mat, isDraw, cvTermCriteria, test_cvTermCriteri
             test_cvTermCriteria = new CvTermCriteria();
 
         var rq = cvmCopy(mat);
-        var qr = null;
         
-        //---QR法によるRの対角化？三角化？---
+        //---QR法による三重対角化---
         var isOK = false;
         for(var loop = 0 ; loop < cvTermCriteria.max_iter ; loop++){
             
             qr = cvmQR(rq);
             if(qr == null) return rtn;
             
-            //Rの閾値以下を0にする
-            for(var i = 0 ; i < qr[1].rows ; i++){
-                for(var j = 0 ; j < qr[1].cols ; j++){
-                    if(qr[1].vals[j + i * qr[1].cols] < cvTermCriteria.eps){
-                        qr[1].vals[j + i * qr[1].cols] = 0;
+            rq = cvmMul(qr[1],cvmTranspose(qr[0]));
+            
+            //精度のチェック(rqが三重対角行列か)
+            isOK = true;
+            for(var i = 0 ; i < rq.rows; i++){
+                for(var j = 0 ; j < rq.cols; j++){
+                    if(i != j && i - 1 != j && i + 1 != j && Math.abs(rq.vals[j + i * rq.cols]) > cvTermCriteria.eps){
+                        isOK = false;
+                        break;
                     }
                 }
+                //精度のチェックでひっかかっているならループをぬける
+                if(!isOK) break;
             }
             
-            var R = qr[1];
-//            //精度のチェック(Rが対角行列か)
-//            isOK = true;
-//            for(var i = 0 ; i < R.rows; i++){
-//                for(var j = 0 ; j < R.cols; j++){
-//                    if(i != j && Math.abs(R.vals[j + i * rq.cols]) > cvTermCriteria.eps){
-//                        isOK = false;
-//                        break;
-//                    }
-//                }
-//                //精度のチェックでひっかかっているならループをぬける
-//                if(!isOK) break;
-//            }
-            //精度のチェック(Rが上三角行列か)
-            isOK = true;
-            for(var j = 0 ; j < R.cols - 1 ; j++){
-                for(var i = j + 1 ; i < R.rows ; i++){
-                    if(Math.abs(R.vals[j + i * R.cols]) > test_cvTermCriteria.eps){
-                        return false;
-                    }
-                }
+            if(isDraw){
+                cvDWriteMatrix(qr[0], "Q");
+                cvDWriteMatrix(qr[1], "R");
+                cvDWriteMatrix(rq, "変換mat");
             }
             
             //精度が問題なければfor文を抜ける
             if(isOK) break;
-
-            //精度が問題あるなら新たなrqを計算して次のループに
-            rq = cvmMul(qr[1],qr[0]);
         }
         
         //精度が問題ないか
         if(!isOK){
-            alert( "最大ループ回数(" + cvTermCriteria.max_iter + ")を超えましたが精度" + cvTermCriteria.eps + "が足りていません");
-        }
-        
-        if(isDraw){
-            cvDWriteMatrix(rq, "変換mat");
-            cvDWriteMatrix(qr[0], "Q");
-            cvDWriteMatrix(qr[1], "R");
+            throw "最大ループ回数(" + cvTermCriteria.max_iter + ")を超えましたが精度" + cvTermCriteria.eps + "が足りていません";
         }
     }
     catch(ex){
-        alert("testcvmSVD  " + ex);
+        alert("test_cvmTridiagonalization : " + ex);
+        cvDWriteMatrix(rq, "変換mat");
         return false;
     }
     return true;
@@ -338,6 +349,7 @@ function test_cvmDiagonalization(mat, isDraw, cvTermCriteria, test_cvTermCriteri
 //mat CvMat型 調べる行列
 //isDraw bool型 計算途中の配列を描画するか
 //cvTermCriteria CvTermCriteria型 計算精度
+//test_cvTermCriteria CvTermCriteria型 計算が合っているかを確認する精度
 //出力
 //bool型 問題なければtrue
 function test_cvmSVD(mat, isDraw, cvTermCriteria, test_cvTermCriteria){
