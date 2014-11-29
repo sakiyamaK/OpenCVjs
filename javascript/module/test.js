@@ -1,67 +1,282 @@
 var term = new CvTermCriteria();
-//term.max_iter = 200000;
-term.eps = 0.01;
+//term.max_iter = 100;
+//term.eps = 0.01;
 var test_term = new CvTermCriteria();
-test_term.eps = 1;
+test_term.eps = 0.1;
 
 var maxTime = 10000;
 for(var time = 0 ; time < maxTime ; time++){
-    var rows = Math.floor(Math.random() * 4) + 8;
-    var cols = rows; //Math.floor(Math.random() * 4) + 2;
+    var rows = Math.floor(Math.random() * 8) + 2;
+    var cols = Math.floor(Math.random() * 8) + 2;
     var mat = cvCreateMat(rows, cols);
     for(var i = 0 ; i < mat.rows ; i++){
         for(var j = 0 ; j < mat.cols ; j++){
-            mat.vals[j + i * mat.cols] = Math.floor(Math.random() * 10) + 1;
+            mat.vals[j + i * mat.cols] = Math.floor(Math.random() * 254) + 1;
         }
     }
     
-    var mm = cvmMul(mat, cvmTranspose(mat));
+//    mat.rows = 2;
+//    mat.cols = 2;
+//    mat.vals = [81, 54,
+//                54, 153];
+//    mm = mat;
     
-//    mm = cvCreateMat(2, 2);
-//    mm.vals = [1,1,1,1];
-
-//    var shortV = Math.floor(Math.random() * 4) + 2;
-//    var longV = shortV + Math.floor(Math.random() * 4);
-//    ////
-//    ////shortV = 1;
-//    ////longV = 2;
-//    ////
-//    var rowMat = cvCreateMat(longV, shortV);
-//    for(var i = 0 ; i < rowMat.rows ; i++){
-//        for(var j = 0 ; j < rowMat.cols ; j++){
-//            rowMat.vals[j + i * rowMat.cols] = Math.floor(Math.random() * 10) + 1;
-//        }
-//    }
-    
-    
-//    if(!test_cvmQR(mm, false))
-//        document.write("QRのエラー" + "<br/><br/>");
-    
-//    if(!test_cvmTridiagonalization(mm, true, term, test_term)){
-//        
-//        document.write(time + "回目<br/>");
-//        cvDWriteMatrix(mm, "mat");
-//        var rank = cvmRank(mat);
-//        document.write("ランク = " + rank + "<br/>");
-//
-//        document.write("対角化のエラー" + "<br/><br/>");
-//        break;
-//    }
+//    var mm = cvmMul(cvmTranspose(mat),mat);
     
 //    cvDWriteMatrix(mm, "mat");
     
-    if(!test_cvmEigen(mm, false, term, test_term)){
+//    if(!test_cvmEigen(mm, false, term, test_term)){
+//    
+//        document.write(time + "回目<br/>");
+//        document.write("eigenのエラー" + "<br/><br/>");
+//        
+//        break;
+//    }
+
+
+//    cvDWriteMatrix(mat, "mat");
+
+    if(!test_cvmSVD(mat, false, term, test_term)){
         document.write(time + "回目<br/>");
-        cvDWriteMatrix(mm, "mat");
-        document.write("eigenのエラー" + "<br/><br/>");
+        document.write("svdのエラー" + "<br/>");
+        cvDWriteMatrix(mat, "mat");
+        
+        document.write("固有値のチェック" + "<br/>");
+
+        var mm = cvmMul(cvmTranspose(mat), mat);
+    
+        cvDWriteMatrix(mm, "mm");
+
+        if(!test_cvmEigen(mm, false, term, test_term)){
+            document.write("eigenのエラー" + "<br/><br/>");
+        }
+
         break;
     }
 
-//if(!test_cvmSVD(mat, true, term, test_term))
-//    document.write("SVDのエラー" + "<br/><br/>");
-
 //if(!test_cvmInverse(mm, true, term, test_term))
 //    document.write("cvmInverseのエラー" + "<br/><br/>");
+}
+
+function test_cvmOrthogonalMatrix(mat, isDraw, test_cvTermCriteria){
+    var rtn = false;
+    try{
+        var mattr = cvmTranspose(mat);
+        var mm1 = cvmMul(mat, mattr);
+        var mm2 = cvmMul(mattr, mat);
+        
+        for(var i = 0 ; i  < mm1.rows ; i++){
+            for(var j = 0 ; j < mm1.cols ; j++){
+                if(Math.abs(mm1.vals[j + i * mm1.cols] - (i == j ? 1 : 0)) > test_cvTermCriteria.eps){
+                    throw "mat * mat^trが直交ではありません";
+                }
+            }
+        }
+        for(var i = 0 ; i  < mm2.rows ; i++){
+            for(var j = 0 ; j < mm2.cols ; j++){
+                if(Math.abs(mm2.vals[j + i * mm2.cols] - (i == j ? 1 : 0)) > test_cvTermCriteria.eps){
+                    throw "mat^tr * matが直交ではありません";
+                }
+            }
+        }
+        
+        rtn = true;
+    }
+    catch(ex){
+        alert("test_cvmOrthogonalMatrix : " + ex);
+    }
+    return rtn;
+}
+
+
+//cvmSVDの結果をテスト
+//入力
+//mat CvMat型 調べる行列
+//isDraw bool型 計算途中の配列を描画するか
+//cvTermCriteria CvTermCriteria型 計算精度
+//test_cvTermCriteria CvTermCriteria型 計算が合っているかを確認する精度
+//出力
+//bool型 問題なければtrue
+function test_cvmSVD(mat, isDraw, cvTermCriteria, test_cvTermCriteria){
+    
+    var rtn = false;
+    try{
+        //バリデーション
+        if(cvUndefinedOrNull(cvTermCriteria))
+            cvTermCriteria = new CvTermCriteria();
+        
+        if(cvUndefinedOrNull(test_cvTermCriteria))
+            test_cvTermCriteria = new CvTermCriteria();
+        
+        var WLR = cvmSVD(mat, cvTermCriteria);
+        if(!WLR) throw "cvmSVDが求まりませんでした";
+        
+        var W = WLR[0];
+        var L = WLR[1];
+        var R = WLR[2];
+        
+        //L,Rがユニタリー行列か
+        //L,Rの縦横サイズのチェック
+        if(cvUndefinedOrNull(L) || L.rows != L.cols){
+            if(isDraw)cvDWriteMatrix(L, "L");
+            throw "Lが正方行列ではありません";
+        }
+        if(cvUndefinedOrNull(R) || R.rows != R.cols)
+            throw "Rが正方行列ではありません";
+        
+        if(isDraw) document.write("Lの大きさチェック<br/>");
+        
+        //列ベクトルの大きさチェック
+        for(var j = 0 ; j < L.cols ; j++){
+            var norm = 0;
+            for(var i = 0 ; i < L.rows ; i++){
+                norm += L.vals[j + i * L.cols] * L.vals[j + i * L.cols];
+            }
+            if(isDraw) document.write(norm + ", ");
+            
+            if(Math.abs(norm - 1) > test_cvTermCriteria.eps)
+                throw "Lの各列ベクトルの大きさでエラー";
+        }
+        if(isDraw) document.write("<br/><br/>");
+        
+        if(isDraw) document.write("Rの列の大きさ<br/>");
+        for(var j = 0 ; j < R.cols ; j++){
+            var norm = 0;
+            for(var i = 0 ; i < R.rows ; i++){
+                norm += R.vals[j + i * R.cols] * R.vals[j + i * R.cols];
+            }
+            if(isDraw) document.write(norm + ", ");
+            
+            if(Math.abs(norm - 1) > test_cvTermCriteria.eps)
+                throw "Rの各列ベクトルの大きさでエラー";
+        }
+        if(isDraw) document.write("<br/><br/>");
+        
+        //直交性のチェック
+        var rr = cvmMul(cvmTranspose(R), R);
+        for(var i = 0 ; i < rr.rows*rr.cols ; i++){
+            if(rr.vals[i] < term.eps) rr.vals[i] = 0;
+        }
+        if(isDraw) cvDWriteMatrix(rr, "Rの直交性");
+        
+        for(var i = 0 ; i < rr.rows ; i++){
+            for(var j = 0 ; j < rr.cols ; j++){
+                if(Math.abs(rr.vals[j + i * rr.cols] - (i == j ? 1 : 0)) > test_cvTermCriteria.eps)
+                    throw "Rの直交性の大きさでエラー";
+            }
+        }
+        
+        var ll = cvmMul(cvmTranspose(L), L);
+        for(var i = 0 ; i < ll.rows*ll.cols ; i++){
+            if(ll.vals[i] < term.eps) ll.vals[i] = 0;
+        }
+        if(isDraw)cvDWriteMatrix(ll, "Lの直交性");
+        
+        for(var i = 0 ; i < ll.rows ; i++){
+            for(var j = 0 ; j < ll.cols ; j++){
+                if(Math.abs(ll.vals[j + i * ll.cols] - (i == j ? 1 : 0)) > test_cvTermCriteria.eps)
+                    throw "Lの直交性でエラー";
+            }
+        }
+
+        
+        //元に戻るか
+        if(isDraw) document.write("元に戻るか<br/>");
+        var ai = cvmMul(cvmMul(L, W), cvmTranspose(R));
+        
+        if(isDraw) cvDWriteMatrix(ai, "LWRt");
+        
+        var sabun = cvmSub(mat, ai);
+        for(var i = 0 ; i < sabun.rows*sabun.cols ; i++){
+            if(sabun.vals[i] > test_cvTermCriteria.eps)
+                throw "元に戻るかチェックでエラー";
+        }
+        
+        rtn = true;
+        
+    }catch(ex){
+        alert("test_cvmSVD  " + ex);
+    }
+    
+    if(isDraw){
+        cvDWriteMatrix(W, "W");
+        cvDWriteMatrix(L, "L");
+        cvDWriteMatrix(cvmTranspose(R), "R^tr");
+    }
+    
+    return rtn;
+}
+
+
+
+//cvmAddNewOrthogonalVecのテスト
+//入力
+//mat CvMat型 調べる行列
+//isDraw bool型 計算途中の配列を描画するか
+//test_cvTermCriteria CvTermCriteria型 計算が合っているかを確認する精度
+//出力
+//bool型 問題なければtrue
+function test_cvmAddNewOrthogonalVec(mat, isDraw, test_cvTermCriteria){
+    var rtn = false;
+    try{
+        //そもそもmatは直交行列か
+        for(var j = 0 ; j < mat.cols ; j++){
+            var vec1 = cvCreateMat(mat.rows, 1);
+            for(var m = 0 ; m < vec1.rows ; m++){
+                vec1.vals[m] = mat.vals[j + m * mat.cols];
+            }
+            for(var j2 = j + 1 ; j2 < mat.cols; j2++){
+                var vec2 = cvCreateMat(mat.rows, 1);
+                for(var m = 0 ; m < vec2.rows ; m++){
+                    vec2.vals[m] = mat.vals[j2 + m * mat.cols];
+                }
+                var sum = 0;
+                for(var m = 0 ; m < vec2.rows ; m++){
+                    sum += vec1.vals[m] * vec2.vals[m];
+                }
+                if(isDraw){
+                    cvDWriteMatrix(cvmTranspose(vec1), "vec1");
+                    cvDWriteMatrix(cvmTranspose(vec2), "vec2");
+                    document.write("直交性判断 : " + sum + "<br/><br/>");
+                }
+
+                if(Math.abs(sum) > test_cvTermCriteria.eps){
+                    throw "そもそも直交じゃねえ！";
+                }
+            }
+        }
+        
+        var noVec = cvmAddNewOrthogonalVec(mat);
+        
+        if(isDraw) cvDWriteMatrix(cvmTranspose(noVec), "新しいベクトル");
+        
+        //新しいベクトルの直交性判断
+        for(var j = 0 ; j < mat.cols ; j++){
+            //既存ベクトル
+            var vec1 = cvCreateMat(mat.rows, 1);
+            for(var m = 0 ; m < vec1.rows ; m++){
+                vec1.vals[m] = mat.vals[j + m * mat.cols];
+            }
+            if(isDraw) cvDWriteMatrix(cvmTranspose(vec1), "直交か判断するベクトル");
+
+            //内積
+            var sum = 0;
+            for(var m = 0 ; m < vec1.rows ; m++){
+                sum += noVec.vals[m] * vec1.vals[m];
+            }
+            
+            if(isDraw) document.write("直交性判断 : " + sum + "<br/><br/>");
+            if(Math.abs(sum) > test_cvTermCriteria.eps){
+                throw "新しいベクトルは直交じゃねえ！";
+            }
+        }
+        
+        rtn = true;
+    }
+    catch(ex){
+        alert("test_cvmAddNewOrthogonalVec : " + ex);
+    }
+    return rtn;
 }
 
 
@@ -251,15 +466,16 @@ function test_cvmEigen(mat, isDraw, cvTermCriteria, test_cvTermCriteria){
 
             for(var i = 0 ; i < eVect.rows ; i++){
                 if(Math.abs(a.vals[i] - eVect.vals[i]) > test_cvTermCriteria.eps){
-                    document.write(i +"列目<br/>");
-                    document.write("mat * 固有ベクトル - 固有値 * 固有ベクトル<br/>");
-                    document.write(Math.abs(a.vals[i] - eVect.vals[i]) + "<br/>");
-                    document.write("精度 = " + test_cvTermCriteria.eps + "<br/><br/>");
+                    if(isDraw){
+                        document.write(i +"列目<br/>");
+                        document.write("mat * 固有ベクトル - 固有値 * 固有ベクトル<br/>");
+                        document.write(Math.abs(a.vals[i] - eVect.vals[i]) + "<br/>");
+                        document.write("精度 = " + test_cvTermCriteria.eps + "<br/><br/>");
+                    }
                     return false;
                 }
             }
         }
-        
     }
     catch(ex){
         alert("test_cvmEigen : " + ex);
@@ -344,102 +560,6 @@ function test_cvmTridiagonalization (mat, isDraw, cvTermCriteria, test_cvTermCri
     return true;
 }
 
-//cvmSVDの結果をテスト
-//入力
-//mat CvMat型 調べる行列
-//isDraw bool型 計算途中の配列を描画するか
-//cvTermCriteria CvTermCriteria型 計算精度
-//test_cvTermCriteria CvTermCriteria型 計算が合っているかを確認する精度
-//出力
-//bool型 問題なければtrue
-function test_cvmSVD(mat, isDraw, cvTermCriteria, test_cvTermCriteria){
-	try{
-		//バリデーション
-        if(cvUndefinedOrNull(cvTermCriteria))
-            cvTermCriteria = new CvTermCriteria();
-
-        if(cvUndefinedOrNull(test_cvTermCriteria))
-            test_cvTermCriteria = new CvTermCriteria();
-        
-        var WLR = cvmSVD(mat, cvTermCriteria);
-        var W = WLR[0];
-        var L = WLR[1];
-        var R = WLR[2];
-        
-		//L,Rがユニタリー行列か
-		if(isDraw) document.write("Lの大きさチェック<br/>");
-
-		//列ベクトルの大きさチェック		
-		for(var j = 0 ; j < L.cols ; j++){
-		    var norm = 0;
-		    for(var i = 0 ; i < L.rows ; i++){
-		        norm += L.vals[j + i * L.cols] * L.vals[j + i * L.cols];
-		    }
-		    if(isDraw) document.write(norm + ", ");
-		    
-		    if(Math.abs(norm - 1) > test_cvTermCriteria.eps)
-		    	return false;
-		}
-		if(isDraw) document.write("<br/><br/>");
-
-		if(isDraw) document.write("Rの列の大きさ<br/>");
-		for(var j = 0 ; j < R.cols ; j++){
-		    var norm = 0;
-		    for(var i = 0 ; i < R.rows ; i++){
-		        norm += R.vals[j + i * R.cols] * R.vals[j + i * R.cols];
-		    }
-		    if(isDraw) document.write(norm + ", ");
-		    
-		    if(Math.abs(norm - 1) > test_cvTermCriteria.eps)
-		    	return false;
-		}
-		if(isDraw) document.write("<br/><br/>");
-
-		//直交性のチェック
-		var ll = cvmMul(cvmTranspose(L), L);
-		for(var i = 0 ; i < ll.rows*ll.cols ; i++){
-		    if(ll.vals[i] < term.eps) ll.vals[i] = 0;
-		}
-		if(isDraw)cvDWriteMatrix(ll, "Lの直交性");
-		
-		for(var i = 0 ; i < ll.rows ; i++){
-			for(var j = 0 ; j < ll.cols ; j++){
-				if(Math.abs(ll.vals[j + i * ll.cols] - (i == j ? 1 : 0)) > test_cvTermCriteria.eps)
-					return false;
-			}
-		}
-
-		var rr = cvmMul(cvmTranspose(R), R);
-		for(var i = 0 ; i < rr.rows*rr.cols ; i++){
-		    if(rr.vals[i] < term.eps) rr.vals[i] = 0;
-		}
-		if(isDraw) cvDWriteMatrix(rr, "Rの直交性");
-		
-		for(var i = 0 ; i < rr.rows ; i++){
-			for(var j = 0 ; j < rr.cols ; j++){
-				if(Math.abs(rr.vals[j + i * rr.cols] - (i == j ? 1 : 0)) > test_cvTermCriteria.eps)
-					return false;
-			}
-		}
-
-        //元に戻るか
-        if(isDraw) document.write("元に戻るか<br/>");
-        var ai = cvmMul(cvmMul(L, W), cvmTranspose(R));
-        
-        if(isDraw) cvDWriteMatrix(ai, "LWRt");
-        
-        var sabun = cvmSub(mat, ai);
-        for(var i = 0 ; i < sabun.rows*sabun.cols ; i++){
-            if(sabun.vals[i] > test_cvTermCriteria.eps)
-                return false;
-        }
-
-	}catch(ex){
-		alert("testcvmSVD  " + ex);
-	}
-    
-    return true;
-}
 
 //cvmLUの結果をテスト
 //入力

@@ -162,157 +162,35 @@ function cvmInverse(mat, cvTermCriteria,  method){
     return invMat;
 }
 
-//特異値分解の演算
-//入力
-//A CvMat型 特異値分解される行列(M*N)
-//cvTermCriteria CvTermCriteria型 計算精度
-//flags CV_SVD型 svdの種類 CV_SVD.ZEROのみサポート　デフォルト = CV_SVD.ZERO
-//出力
-//[W, L, R]
-//W CvMat型 特異値行列の非負の行列(M*NまたはN*N)
-//L CvMat型 左直交行列(M*MまたはM*N)
-//R CvMat型 右直交行列(N*N)
-function cvmSVD(A, cvTermCriteria, flags){
-    
+//行列内のどの縦ベクトルとも直交する正規ベクトルを求める
+function cvmAddNewOrthogonalVec(mat){
     var rtn = null;
     try{
-        //バリデーション
-        if(cvUndefinedOrNull(A))
-            throw "第一引数" + ERROR.IS_UNDEFINED_OR_NULL;
-        
-        //デフォルト
-        if(cvUndefinedOrNull(cvTermCriteria))
-            cvTermCriteria = new CvTermCriteria();
-        
-        if(cvUndefinedOrNull(flags)) flags = CV_SVD.ZERO;
-        
-        switch(flags){
-            case CV_SVD.ZERO:
-            {
-                var trA = cvmTranspose(A);
-                /*
-                 //左特異ベクトル
-                 var AtrA = cvmMul(A, trA);
-                 AtrA = cvmMul(AtrA, AtrA);
-                 var left = cvmEigen(AtrA, cvTermCriteria);
-                 L = left[1];
-                 
-                 //右特異ベクトル
-                 var trAA = cvmMul(trA, A);
-                 trAA = cvmMul(trAA, trAA);
-                 var right = cvmEigen(trAA, cvTermCriteria);
-                 R = right[1];
-                 
-                 //閾値以下の固有値の個数
-                 var r = 0;
-                 for(var i = 0 ; i < left[0].rows ; i++){
-                 if(left[0].vals[i] < cvTermCriteria.eps)
-                 break;
-                 r++;
-                 }
-                 
-                 cvDWriteMatrix(left[0], "left0");
-                 cvDWriteMatrix(right[0], "right0");
-                 //特異値
-                 var W = cvCreateMat(A.rows, A.cols);
-                 for(var i = 0 ; i < W.rows * W.cols ; W.vals[i++]=0);
-                 for(var i = 0 ; i < r; i++)
-                 W.vals[i + i * W.cols] = Math.sqrt(Math.sqrt(left[0].vals[i]));
-                 */
-                var trAA = cvmMul(trA,A);
-                
-                var ee = cvmEigen(trAA, cvTermCriteria);
-                
-                //ee[1]を正規化したものがR(右特異ベクトル)
-                var R = cvmCopy(ee[1]);
-                for(var j = 0 ; j < R.cols ; j++){
-                    var norm = 0;
-                    for(var i = 0 ; i < R.rows ; i++){
-                        norm += R.vals[j + i * R.cols] *  R.vals[j + i * R.cols];
-                    }
-                    norm = Math.sqrt(norm);
-                    
-                    for(var i = 0 ; i < R.rows ; i++){
-                        R.vals[j + i * R.cols] /= norm;
-                    }
-                }
-                
-                //閾値以下の固有値の個数
-                var r = 0;
-                for(var i = 0 ; i < ee[0].rows ; i++){
-                    if(ee[0].vals[i] < cvTermCriteria.eps)
-                        break;
-                    r++;
-                }
-                r = Math.min(A.cols, Math.min(A.rows, r));
-                
-                //固有値の個数分だけRからベクトルを抜き出す
-                var R1 = cvCreateMat(trAA.rows, r);
-                for(var j = 0 ; j < R1.cols ; j++){
-                    for(var i = 0 ; i < R1.rows ; i++){
-                        R1.vals[j + i * R1.cols] = ee[1].vals[j + i * ee[1].cols];
-                    }
-                }
-                
-                //固有値ベクトルの二乗根
-                var d = cvCreateMat(r, r);
-                for(var i = 0 ; i < r * r ; d.vals[i++]=0);
-                for(var i = 0 ; i < r ; i++)
-                    d.vals[i + i * d.cols] = Math.sqrt(ee[0].vals[i]);
-                
-                //特異値
-                var W = cvCreateMat(A.rows, A.cols);
-                for(var i = 0 ; i < W.rows * W.cols ; W.vals[i++]=0);
-                for(var i = 0 ; i < d.rows; i++)
-                    W.vals[i + i * W.cols] = d.vals[i + i * d.cols];
-                
-                
-                //固有値ベクトルの二乗根の逆数
-                var invD = cvCreateMat(r, r);
-                for(var i = 0 ; i < r * r ; invD.vals[i++]=0);
-                for(var i = 0 ; i < r ; i++)
-                    invD.vals[i + i * invD.cols] = 1.0/d.vals[i + i * d.cols];
-                
-                //                cvDWriteMatrix(trAA, "trAA");
-                //                cvDWriteMatrix(ee[0], "evecs");
-                //                cvDWriteMatrix(R, "R");
-                //                cvDWriteMatrix(R1, "R1");
-                //                cvDWriteMatrix(invD, "invD");
-                
-                //
-                var L1 = cvmMul(cvmMul(A, R1), invD);
-                
-                //                cvDWriteMatrix(L1, "L1");
-                
-                var L = null;
-                if(L1.rows < L1.cols){
-                    //[todo]
-                    //ユニタリー行列となるようにする
-                    L = cvCreateMat(A.rows, A.rows);
-                    for(var i = 0 ; i < L1.rows ; i++){
-                        for(var j = 0 ; j < L1.cols ; j++){
-                            L.vals[j + i * L.cols] = L1.vals[j + i * L1.cols];
-                            L.vals[L.cols / 2 + j + i * L.cols] = L1.vals[j + i * L1.cols];
-                        }
-                    }
-                }
-                else{
-                    L = L1;
-                }
-                
-                rtn = [W, L, R];
+        //追加する横ベクトルの初期化を乱数で生成
+        var tmpV = cvCreateMat(1, mat.rows);
+        for(var i = 0 ; i < tmpV.cols ; tmpV.vals[i++] = Math.random());
+
+        //新たな直交の縦ベクトルが代入される
+        rtn = cvmTranspose(cvmCopy(tmpV));
+        for(var j = 0 ; j < mat.cols ; j++){
+            //matからj番目の縦ベクトルを抽出
+            var matV = cvCreateMat(mat.rows, 1);
+            for(var i = 0 ; i < mat.rows ; i++){
+                matV.vals[i] = mat.vals[j + i * mat.cols];
             }
-                break;
-                
-            default:
-                throw "flagsはCV_SVD.ZEROしか現在サポートされていません";
-                break;
+            //シュミットの直交化法のアルゴリズムに従って計算
+            var tmp = cvmMul(tmpV, matV);
+            for(var i = 0 ; i < matV.rows ; matV.vals[i++] *= tmp.vals[0]);
+            rtn = cvmSub(rtn, matV);
         }
+        
+        //正規化
+        var norm = cvmNorm(rtn, null, CV_NORM.L2);
+        for(var i = 0 ; i < rtn.rows ; rtn.vals[i++] /= norm);
     }
     catch(ex){
-        alert("cvmSVD : " + ex);
+        alert("cvmAddNewOrthogonalVec : " + ex);
     }
-    
     return rtn;
 }
 
@@ -586,10 +464,10 @@ function cvmOMP(vec, dic, cvTermCriteria){
         //バリデーション
         if(dic.rows != mat.rows * mat.cols)
             throw "辞書行列とmatの大きさが合っていません";
-
+        
         if(cvUndefinedOrNull(cvTermCriteria))
             cvTermCriteria = new CvTermCriteria();
-
+        
         //係数ベクトル
         rtn = cvCreateMat(vec.rows, 1);
         for(var i = 0 ; i < rtn.rows ; rtn.vals[i++] = 0);
@@ -602,12 +480,12 @@ function cvmOMP(vec, dic, cvTermCriteria){
         
         //残差ベクトル
         var residualError = cvmCopy(vec);
-
+        
         for(var times = 0 ; times < cvTermCriteria.max_iter ; times++){
             
             var maxIndex = -1;
             var maxDist = -1;
-
+            
             //残差ベクトルとの内積を最も大きくなる辞書内の縦ベクトルのindexを探索する
             for(var dicIndex = 0 ; dicIndex < dic.cols ; dicIndex++){
                 //すでに係数ベクトルに存在するindexなら飛ばす

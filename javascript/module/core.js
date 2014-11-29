@@ -913,7 +913,8 @@ function cvmEigen(mat, cvTermCriteria){
         var eVects = cvCreateIdentityMat(mat.rows, mat.rows);
         
         //---QR法による三重対角化---
-        var isOK = true;
+        var isOK = false;
+        var length = rq.rows * rq.cols;
         for(var loop = 0 ; loop < cvTermCriteria.max_iter ; loop++){
             
             var qr = cvmQR(rq);
@@ -923,13 +924,41 @@ function cvmEigen(mat, cvTermCriteria){
             
             eVects = cvmMul(eVects, Qt);
             
-            rq = cvmMul(qr[1], Qt);
-            
-            //精度のチェック(rqが三重対角行列か)
+            var tmp = cvmMul(qr[1], Qt);
+
             isOK = true;
-            for(var i = 0 ; i < rq.rows; i++){
-                for(var j = 0 ; j < rq.cols; j++){
-                    if(i != j && i - 1 != j && i + 1 != j && Math.abs(rq.vals[j + i * rq.cols]) > cvTermCriteria.eps){
+
+            //前回のループとの差があるかチェック
+            //ただしこのアルゴリズムではループを抜ける条件が厳しすぎて時間がかかるので要検討
+            var ssum = 0;
+            for(var i = 0 ; i < length ; i++){
+                ssum += Math.abs(tmp.vals[i] - rq.vals[i]);
+            }
+            //差がなければループを抜ける
+            if(ssum < cvTermCriteria.eps * length){
+                isOK = true;
+                break;
+            }
+            rq = tmp;
+            
+/*
+            //精度のチェック(rqが対角行列か三重対角行列に収束するのでそれをチェック)
+            for(var i = 0 ; i < tmp.rows; i++){
+                for(var j = 0 ; j < tmp.cols; j++){
+                    
+                    //前回との差
+                    var s = Math.abs(tmp.vals[j + i * tmp.cols] - rq.vals[j + i * rq.cols]);
+                    
+                    //三重対角化の成分についてチェック
+                    if(i - 1 == j || i + 1 == j){
+                        //前回のループとの差があるなら次のループへ
+                        if(s > cvTermCriteria.eps){
+                            isOK = false;
+                            break;
+                        }
+                    }
+                    //対角成分ではなく、かつ前回のと差があり、現在の値が閾値より大きい
+                    else if(s > cvTermCriteria.eps && Math.abs(tmp.vals[j + i * tmp.cols]) > cvTermCriteria.eps){
                         isOK = false;
                         break;
                     }
@@ -940,10 +969,12 @@ function cvmEigen(mat, cvTermCriteria){
             
             //精度が問題なければfor文を抜ける
             if(isOK) break;
+*/
         }
         
         //精度が問題ないか
         if(!isOK){
+            cvDWriteMatrix(rq, "rq");
             throw "最大ループ回数(" + cvTermCriteria.max_iter + ")を超えましたが精度" + cvTermCriteria.eps + "が足りていません";
         }
         
@@ -986,6 +1017,163 @@ function cvmEigen(mat, cvTermCriteria){
     
     return rtn;
 }
+
+//特異値分解の演算 LWR
+//入力
+//A CvMat型 特異値分解される行列(M*N)
+//cvTermCriteria CvTermCriteria型 計算精度
+//flags CV_SVD型 svdの種類 CV_SVD.ZEROのみサポート　デフォルト = CV_SVD.ZERO
+//出力
+//[W, L, R]
+//W CvMat型 特異値行列の非負の行列(M*NまたはN*N)
+//L CvMat型 左直交行列(M*MまたはM*N)
+//R CvMat型 右直交行列(N*N)
+function cvmSVD(A, cvTermCriteria, flags){
+    
+    var rtn = null;
+    try{
+        //バリデーション
+        if(cvUndefinedOrNull(A))
+            throw "第一引数" + ERROR.IS_UNDEFINED_OR_NULL;
+        
+        //デフォルト
+        if(cvUndefinedOrNull(cvTermCriteria))
+            cvTermCriteria = new CvTermCriteria();
+        
+        if(cvUndefinedOrNull(flags)) flags = CV_SVD.ZERO;
+        
+        switch(flags){
+            case CV_SVD.ZERO:
+            {
+                var trA = cvmTranspose(A);
+                /*
+                 //こちらでも特異値が求まるはずだが精度が良くない
+                 
+                 //左特異ベクトル
+                 var AtrA = cvmMul(A, trA);
+                 AtrA = cvmMul(AtrA, AtrA);
+                 var left = cvmEigen(AtrA, cvTermCriteria);
+                 L = left[1];
+                 
+                 //右特異ベクトル
+                 var trAA = cvmMul(trA, A);
+                 trAA = cvmMul(trAA, trAA);
+                 var right = cvmEigen(trAA, cvTermCriteria);
+                 R = right[1];
+                 
+                 //閾値以下の固有値の個数
+                 var r = 0;
+                 for(var i = 0 ; i < left[0].rows ; i++){
+                 if(left[0].vals[i] < cvTermCriteria.eps)
+                 break;
+                 r++;
+                 }
+                 
+                 //                 cvDWriteMatrix(left[0], "left0");
+                 //                 cvDWriteMatrix(right[0], "right0");
+                 //特異値
+                 var W = cvCreateMat(A.rows, A.cols);
+                 for(var i = 0 ; i < W.rows * W.cols ; W.vals[i++]=0);
+                 for(var i = 0 ; i < r; i++)
+                 W.vals[i + i * W.cols] = Math.sqrt(Math.sqrt(left[0].vals[i]));
+                 */
+                var trAA = cvmMul(trA,A);
+                
+                var ee = cvmEigen(trAA, cvTermCriteria);
+                
+                //ee[1]を正規化したものがR(右特異ベクトル)
+                var R = cvmCopy(ee[1]);
+                for(var j = 0 ; j < R.cols ; j++){
+                    var norm = 0;
+                    for(var i = 0 ; i < R.rows ; i++){
+                        norm += R.vals[j + i * R.cols] *  R.vals[j + i * R.cols];
+                    }
+                    norm = Math.sqrt(norm);
+                    
+                    for(var i = 0 ; i < R.rows ; i++){
+                        R.vals[j + i * R.cols] /= norm;
+                    }
+                }
+                
+                //閾値以下の固有値の個数
+                var r = 0;
+                for(var i = 0 ; i < ee[0].rows ; i++){
+                    if(ee[0].vals[i] < cvTermCriteria.eps)
+                        break;
+                    r++;
+                }
+                r = Math.min(A.cols, Math.min(A.rows, r));
+                
+                //固有値の個数分だけRからベクトルを抜き出す
+                var R1 = cvCreateMat(trAA.rows, r);
+                for(var j = 0 ; j < R1.cols ; j++){
+                    for(var i = 0 ; i < R1.rows ; i++){
+                        R1.vals[j + i * R1.cols] = ee[1].vals[j + i * ee[1].cols];
+                    }
+                }
+                
+                //固有値ベクトルの二乗根
+                var d = cvCreateMat(r, r);
+                for(var i = 0 ; i < r * r ; d.vals[i++]=0);
+                for(var i = 0 ; i < r ; i++)
+                    d.vals[i + i * d.cols] = Math.sqrt(ee[0].vals[i]);
+                
+                //特異値
+                var W = cvCreateMat(A.rows, A.cols);
+                for(var i = 0 ; i < W.rows * W.cols ; W.vals[i++]=0);
+                for(var i = 0 ; i < d.rows; i++)
+                    W.vals[i + i * W.cols] = d.vals[i + i * d.cols];
+                
+                
+                //固有値ベクトルの二乗根の逆数
+                var invD = cvCreateMat(r, r);
+                for(var i = 0 ; i < r * r ; invD.vals[i++]=0);
+                for(var i = 0 ; i < r ; i++)
+                    invD.vals[i + i * invD.cols] = 1.0/d.vals[i + i * d.cols];
+                
+                var L1 = cvmMul(cvmMul(A, R1), invD);
+                
+                var L = null;
+                if(L1.rows > L1.cols){
+                    
+                    //ユニタリー行列となるようにする
+                    //グラムシュミットにより新たな直交ベクトルを加えていく
+                    var last = A.rows - L1.cols;
+                    L = L1;
+                    for(var t = 0 ; t < last ; t++){
+                        var tmp = cvCreateMat(L.rows, L.cols + 1);
+                        for(var i = 0 ; i < L.rows ; i++){
+                            for(var j = 0 ; j < L.cols ; j++){
+                                tmp.vals[j + i * tmp.cols] = L.vals[j + i * L.cols];
+                            }
+                        }
+                        
+                        var ov = cvmAddNewOrthogonalVec(L);
+                        for(var i = 0 ; i < L.rows ; i++){
+                            tmp.vals[(tmp.cols - 1) + i * tmp.cols] = ov.vals[i];
+                        }
+                        L = tmp;
+                    }
+                }
+                else{
+                    L = L1;
+                }
+                rtn = [W, L, R];
+            }
+                break;
+                
+            default:
+                throw "flagsはCV_SVD.ZEROしか現在サポートされていません";
+                break;
+        }
+    }
+    catch(ex){
+        alert("cvmSVD : " + ex);
+    }
+    
+    return rtn;
+}
+
 
 
 //row行cols列の疎行列を作る
