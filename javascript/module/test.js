@@ -4,7 +4,7 @@ var term = new CvTermCriteria();
 var test_term = new CvTermCriteria();
 test_term.eps = 0.1;
 
-var maxTime = 10000;
+var maxTime = 1000;
 for(var time = 0 ; time < maxTime ; time++){
     var rows = Math.floor(Math.random() * 8) + 2;
     var cols = Math.floor(Math.random() * 8) + 2;
@@ -14,15 +14,7 @@ for(var time = 0 ; time < maxTime ; time++){
             mat.vals[j + i * mat.cols] = Math.floor(Math.random() * 254) + 1;
         }
     }
-    
-//    mat.rows = 2;
-//    mat.cols = 2;
-//    mat.vals = [81, 54,
-//                54, 153];
-//    mm = mat;
-    
-//    var mm = cvmMul(cvmTranspose(mat),mat);
-    
+        
 //    cvDWriteMatrix(mm, "mat");
     
 //    if(!test_cvmEigen(mm, false, term, test_term)){
@@ -36,34 +28,59 @@ for(var time = 0 ; time < maxTime ; time++){
 
 //    cvDWriteMatrix(mat, "mat");
 
-    if(!test_cvmSVD(mat, false, term, test_term)){
+//    if(!test_cvmSVD(mat, false, term, test_term)){
+//        document.write(time + "回目<br/>");
+//        document.write("svdのエラー" + "<br/>");
+//        cvDWriteMatrix(mat, "mat");
+//        
+//        document.write("固有値のチェック" + "<br/>");
+//
+//        var mm = cvmMul(cvmTranspose(mat), mat);
+//    
+//        cvDWriteMatrix(mm, "mm");
+//
+//        if(!test_cvmEigen(mm, false, term, test_term)){
+//            document.write("eigenのエラー" + "<br/><br/>");
+//        }
+//
+//        break;
+//    }
+
+    if(!test_cvmInverse(mat, false, term, test_term)){
         document.write(time + "回目<br/>");
-        document.write("svdのエラー" + "<br/>");
+        document.write("cvmInverseのエラー" + "<br/><br/>");
         cvDWriteMatrix(mat, "mat");
         
         document.write("固有値のチェック" + "<br/>");
-
+        
         var mm = cvmMul(cvmTranspose(mat), mat);
-    
+        
         cvDWriteMatrix(mm, "mm");
-
+        
         if(!test_cvmEigen(mm, false, term, test_term)){
             document.write("eigenのエラー" + "<br/><br/>");
         }
-
+        
         break;
     }
-
-//if(!test_cvmInverse(mm, true, term, test_term))
-//    document.write("cvmInverseのエラー" + "<br/><br/>");
 }
 
+//直交性のテスト
+//入力
+//mat CvMat型 調べる行列
+//isDraw bool型 計算途中の配列を描画するか
+//test_cvTermCriteria CvTermCriteria型 計算が合っているかを確認する精度
+//出力
+//bool型 問題なければtrue
 function test_cvmOrthogonalMatrix(mat, isDraw, test_cvTermCriteria){
     var rtn = false;
     try{
         var mattr = cvmTranspose(mat);
         var mm1 = cvmMul(mat, mattr);
         var mm2 = cvmMul(mattr, mat);
+        
+        if(isDraw) cvDWriteMatrix(mm1, "mat * mat^tr");
+        if(isDraw) cvDWriteMatrix(mm2, "mat^tr * mat");
         
         for(var i = 0 ; i  < mm1.rows ; i++){
             for(var j = 0 ; j < mm1.cols ; j++){
@@ -280,7 +297,14 @@ function test_cvmAddNewOrthogonalVec(mat, isDraw, test_cvTermCriteria){
 }
 
 
-
+//cvmInverseのテスト
+//入力
+//mat CvMat型 調べる行列
+//isDraw bool型 計算途中の配列を描画するか
+//cvTermCriteria CvTermCriteria型 計算精度
+//test_cvTermCriteria CvTermCriteria型 計算が合っているかを確認する精度
+//出力
+//bool型 問題なければtrue
 function test_cvmInverse(mat, isDraw, cvTermCriteria, test_cvTermCriteria){
     try{
         //デフォルト
@@ -294,22 +318,85 @@ function test_cvmInverse(mat, isDraw, cvTermCriteria, test_cvTermCriteria){
         
         var invM = cvmInverse(mat, cvTermCriteria);
         
-        if(isDraw) cvDWriteMatrix(invM, "逆行列");
+        //逆行列のチェック
+        if(mat.rows == mat.cols){
         
-        var mm = cvmMul(invM, mat);
-        
-        if(isDraw) cvDWriteMatrix(mm, "逆行列*行列");
+            if(isDraw) cvDWriteMatrix(invM, "逆行列");
+            
+            var mm = cvmMul(invM, mat);
+            
+            if(isDraw) cvDWriteMatrix(mm, "逆行列*行列");
 
-        
-        for(var i = 0 ; i < mm.rows ; i++){
-            for(var j = 0 ; j < mm.cols ; j++){
-                if(i == j){
-                    if(Math.abs(mm.vals[j + i * mm.cols]) > test_cvTermCriteria.eps &&
-                       Math.abs(mm.vals[j + i * mm.cols] -1) > test_cvTermCriteria.eps)
+            
+            for(var i = 0 ; i < mm.rows ; i++){
+                for(var j = 0 ; j < mm.cols ; j++){
+                    if(Math.abs(mm.vals[j + i * mm.cols] + (i==j ? -1 : 0)) > test_cvTermCriteria.eps)
                         return false;
                 }
-                else{
-                    if(Math.abs(mm.vals[j + i * mm.cols]) > test_cvTermCriteria.eps)
+            }
+        }
+        //擬似逆行列のチェック
+        else{
+            if(isDraw) cvDWriteMatrix(invM, "擬似逆行列");
+            
+            //チェック1
+            var mm = cvmMul(cvmMul(mat, invM), mat);
+            
+            if(isDraw) cvDWriteMatrix(mm, "行列 * 擬似逆行列 * 行列");
+            
+            var sabun = cvmSub(mat, mm);
+            
+            for(var i = 0 ; i < sabun.rows ; i++){
+                for(var j = 0 ; j < sabun.cols ; j++){
+                    if(Math.abs(sabun.vals[j + i * sabun.cols]) > test_cvTermCriteria.eps)
+                        return false;
+                }
+            }
+            
+            //チェック2
+            mm = cvmMul(cvmMul(invM, mat), invM);
+            
+            if(isDraw) cvDWriteMatrix(mm, "擬似逆行列 * 行列 * 擬似逆行列");
+
+            sabun = cvmSub(invM, mm);
+            
+            for(var i = 0 ; i < sabun.rows ; i++){
+                for(var j = 0 ; j < sabun.cols ; j++){
+                    if(Math.abs(sabun.vals[j + i * sabun.cols]) > test_cvTermCriteria.eps)
+                        return false;
+                }
+            }
+            
+            //チェック3
+            mm = cvmMul(mat, invM);
+            
+            if(isDraw) cvDWriteMatrix(mm, "行列 * 擬似逆行列");
+
+            
+            var mmtr = cvmTranspose(mm);
+            
+            sabun = cvmSub(mm, mmtr);
+            
+            for(var i = 0 ; i < sabun.rows ; i++){
+                for(var j = 0 ; j < sabun.cols ; j++){
+                    if(Math.abs(sabun.vals[j + i * sabun.cols]) > test_cvTermCriteria.eps)
+                        return false;
+                }
+            }
+            
+            //チェック4
+            mm = cvmMul(invM, mat);
+            
+            if(isDraw) cvDWriteMatrix(mm, "擬似逆行列 * 行列");
+            
+            
+            var mmtr = cvmTranspose(mm);
+            
+            sabun = cvmSub(mm, mmtr);
+            
+            for(var i = 0 ; i < sabun.rows ; i++){
+                for(var j = 0 ; j < sabun.cols ; j++){
+                    if(Math.abs(sabun.vals[j + i * sabun.cols]) > test_cvTermCriteria.eps)
                         return false;
                 }
             }

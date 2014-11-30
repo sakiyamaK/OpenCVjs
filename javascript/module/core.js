@@ -1174,6 +1174,127 @@ function cvmSVD(A, cvTermCriteria, flags){
     return rtn;
 }
 
+//(擬似)逆行列の演算
+//入力
+//mat CvMat型 逆行列を求める行列
+//cvTermCriteria CvCriteria型　計算精度
+//method CV_INV配列 アルゴリズムの種類
+//出力
+//CvMat型　求まった行列が代入される
+function cvmInverse(mat, cvTermCriteria,  method){
+    var invMat = null;
+    try{
+        //バリデーション
+        if(cvUndefinedOrNull(mat))
+            throw "mat" + ERROR.IS_UNDEFINED_OR_NULL;
+        
+        //初期化
+        if(cvUndefinedOrNull(method)){
+            if(mat.rows == mat.cols) method = CV_INV.LU;
+            else method = CV_INV.SVD;
+        }
+        
+        if(method == CV_INV.LU){
+            //逆行列の存在確認
+            var det = cvmDet(mat);
+            if(Math.abs(det) < cvTermCriteria.eps){
+                throw "cvmInverse : 逆行列は存在しません";
+            }
+        }
+        
+        if(method == CV_INV.SVD_SYM)
+            throw "CV_INV.SVD_SYM は現在サポートされていません";
+        
+        invMat = cvCreateMat(mat.rows, mat.cols);
+        
+        switch(method){
+            case CV_INV.LU:
+                if(mat.cols != mat.rows)
+                    throw "CV_INV.LUの場合、mat" + ERROR.PLEASE_SQUARE_MAT;
+                
+                //前進代入
+                function Lforwardsubs(L, b, y){
+                    for(var i = 0 ; i < L.rows ; i++)
+                        y.vals[i * y.cols] = b.vals[i * b.cols];
+                    
+                    for(var i = 0 ; i < L.rows ; i++){
+                        y.vals[i * y.cols] /= L.vals[i + i * L.cols];
+                        for(var j = i + 1 ; j < L.cols ; j++){
+                            y.vals[j * y.cols] -= y.vals[i * y.cols] * L.vals[ i + j * L.cols];
+                        }
+                    }
+                }
+                //後退代入
+                function Ubackwardsubs(U, y, x){
+                    for(var i = 0 ; i < U.rows; i++)
+                        x.vals[i * x.cols] = y.vals[i * y.cols];
+                    
+                    for(var i = U.rows-1 ; i >= 0; i--){
+                        x.vals[i * x.cols] /= U.vals[i + i * U.cols];
+                        for(var j = i-1 ; j >= 0 ; j--){
+                            x.vals[j * x.cols] -= x.vals[i * x.cols] * U.vals[i + j * U.cols];
+                        }
+                    }
+                }
+                
+                // -- matのLU分解 --
+                var LU = cvmLU(mat, L, U);
+                var L = LU[0];
+                var U = LU[1];
+                
+                for(var i = 0 ; i < mat.cols ; i++)
+                {
+                    var initVec = cvCreateMat(mat.rows, 1);
+                    for(var v = 0 ;  v < mat.rows ; v++)
+                        initVec.vals[v] = (v == i) ? 1 : 0 ;
+                    
+                    var dmyVec = cvCreateMat(mat.rows, 1);
+                    var inverseVec = cvCreateMat(mat.rows, 1);
+                    
+                    Lforwardsubs(L, initVec, dmyVec);
+                    Ubackwardsubs(U, dmyVec, inverseVec);
+                    
+                    for(var v = 0 ; v < mat.rows ; v++){
+                        invMat.vals[i + v * invMat.cols] = inverseVec.vals[v * inverseVec.cols];
+                    }
+                }
+                
+                break;
+            case CV_INV.SVD:
+                //デフォルト
+                if(cvUndefinedOrNull(cvTermCriteria))
+                    cvTermCriteria = new CvTermCriteria();
+                
+                var svd = cvmSVD(mat, cvTermCriteria);
+                var W = svd[0];
+                var L = svd[1];
+                var R = svd[2];
+                
+                var short =Math.min(W.rows, W.cols);
+                
+                var WW = cvCreateMat(W.cols, W.rows);
+                //初期化
+                for(var i = 0 ; i < WW.rows * WW.cols ; WW.vals[i++] = 0);
+                
+                for(var i = 0 ; i < short ; i++){
+                    WW.vals[i + i * WW.cols] = (W.vals[i + i * W.cols] != 0) ? 1.0/W.vals[i + i * W.cols] : 0;
+                }
+                
+                var trL = cvmTranspose(L);
+                
+                invMat = cvmMul(cvmMul(R, WW), trL);
+                
+                break;
+            case CV_INV.SVD_SYM: break;
+        }
+    }
+    catch(ex){
+        alert("cvmInverse : " + ex);
+    }
+    
+    return invMat;
+}
+
 
 
 //row行cols列の疎行列を作る
