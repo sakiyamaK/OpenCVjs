@@ -467,7 +467,7 @@ function cvmNorm(mat1, mat2, normType, mask){
                 if(cvUndefinedOrNull(mat2)){
                     var length = mat1.rows * mat1.cols;
                     for(var i = 0 ; i < length ; i++){
-                        rtn += mat1.vals[i];
+                        rtn += Math.abs(mat1.vals[i]);
                     }
                 }
                 else{
@@ -1293,6 +1293,116 @@ function cvmInverse(mat, cvTermCriteria,  method){
     }
     
     return invMat;
+}
+
+//Orthogonal Matching Pursuit
+//スパースコーディングの係数選択法
+//入力
+//vec CvMat型 スパース表現にする行列を１列に並べ替えた縦ベクトル
+//dic CvMat型 辞書行列 dic.rows == vec.rows
+//cvTermCriteria CvTermCriteria型 計算精度
+//eigenCriteria CvTermCriteria型 内部の固有値計算の精度
+//出力
+//CvMat型  辞書係数 rows = vec.rowsの縦ベクトル
+function cvmOMP(vec, dic, cvTermCriteria, eigenTermCriteria){
+    var rtn = null;
+    try{
+        //バリデーション
+        if(cvUndefinedOrNull(vec) || cvUndefinedOrNull(dic))
+            throw "vec or dic" + ERROR.IS_UNDEFINED_OR_NULL;
+        
+        //バリデーション
+        if(dic.rows != mat.rows * mat.cols)
+            throw "辞書行列とmatの大きさが合っていません";
+        
+        if(cvUndefinedOrNull(cvTermCriteria))
+            cvTermCriteria = new CvTermCriteria();
+        
+        if(cvUndefinedOrNull(eigenTermCriteria))
+            eigenTermCriteria = cvTermCriteria;
+        
+        //係数ベクトル
+        rtn = cvCreateMat(vec.rows, 1);
+        for(var i = 0 ; i < rtn.rows ; rtn.vals[i++] = 0);
+        
+        //係数ベクトルに追加されたdicのindex
+        var support = new Array();
+        
+        //選択辞書
+        var selectdic = cvCreateMat(dic.rows, 0);
+        
+        //残差ベクトル
+        var residualError = cvmCopy(vec);
+        
+        //仮の係数ベクトル
+        var tmpVec = cvmCopy(rtn);
+        
+        var isError = true;
+        for(var times = 0 ; times < dic.cols ; times++){
+            var maxIndex = -1;
+            var maxDist = -1;
+            
+            //残差ベクトルとの内積を最も大きくなる辞書内の縦ベクトルのindexを探索する
+            for(var dicIndex = 0 ; dicIndex < dic.cols ; dicIndex++){
+                //すでに係数ベクトルに存在するindexなら飛ばす
+                if(support.indexOf(dicIndex) != -1)
+                    continue;
+                
+                //内積
+                var dist = 0;
+                for(var i = 0 ; i < dic.rows ; i++){
+                    dist += dic.vals[dicIndex + i * dic.cols] * residualError.vals[i];
+                }
+                
+                
+                //最初の１回
+                if(maxIndex < 0){
+                    maxIndex = dicIndex;
+                    maxDist = dist;
+                }
+                else if(maxDist < dist){
+                    maxIndex = dicIndex;
+                    maxDist = dist;
+                }
+            }
+            
+            //サポートにインデックスを追加
+            support.push(maxIndex);
+            
+            //辞書の更新
+            selectdic = cvmInsertCol(selectdic, dic, maxIndex);
+            
+            //係数の更新
+            var selectdicInv = cvmInverse(selectdic, eigenTermCriteria, CV_INV.SVD);
+            tmpVec = cvmMul(selectdicInv, vec);
+            
+            //残差の更新
+            residualError = cvmSub(cvmMul(selectdic, tmpVec), vec);
+            
+            //残差の大きさをベクトルの長さで割る
+            var norm = cvmNorm(residualError) / residualError.rows;
+            
+            if(norm  < cvTermCriteria.eps){
+                isError = false;
+                break;
+            }
+        }
+        
+        //係数ベクトルを辞書に合わせて入れ替える
+        for(var i = 0 ; i < support.length ; i++){
+            rtn.vals[support[i]]=tmpVec.vals[i];
+        }
+        
+        if(isError){
+            throw "全ての基底を辞書に登録しても残差が閾値より小さくなりません";
+        }
+        
+    }
+    catch(ex){
+        alert("cvmOMP : " + ex);
+    }
+    
+    return rtn;
 }
 
 
