@@ -1,68 +1,49 @@
-var term = new CvTermCriteria();
-//term.max_iter = 100;
-//term.eps = 0.01;
-var test_term = new CvTermCriteria();
-test_term.eps = 0.1;
 
-var maxTime = 1000;
-for(var time = 0 ; time < maxTime ; time++){
-    var rows = Math.floor(Math.random() * 8) + 2;
-    var cols = Math.floor(Math.random() * 8) + 2;
-    var mat = cvCreateMat(rows, cols);
-    for(var i = 0 ; i < mat.rows ; i++){
-        for(var j = 0 ; j < mat.cols ; j++){
-            mat.vals[j + i * mat.cols] = Math.floor(Math.random() * 254) + 1;
-        }
-    }
-        
-//    cvDWriteMatrix(mm, "mat");
-    
-//    if(!test_cvmEigen(mm, false, term, test_term)){
-//    
-//        document.write(time + "回目<br/>");
-//        document.write("eigenのエラー" + "<br/><br/>");
-//        
-//        break;
-//    }
-
-
-//    cvDWriteMatrix(mat, "mat");
-
-//    if(!test_cvmSVD(mat, false, term, test_term)){
-//        document.write(time + "回目<br/>");
-//        document.write("svdのエラー" + "<br/>");
-//        cvDWriteMatrix(mat, "mat");
-//        
-//        document.write("固有値のチェック" + "<br/>");
-//
-//        var mm = cvmMul(cvmTranspose(mat), mat);
-//    
-//        cvDWriteMatrix(mm, "mm");
-//
-//        if(!test_cvmEigen(mm, false, term, test_term)){
-//            document.write("eigenのエラー" + "<br/><br/>");
-//        }
-//
-//        break;
-//    }
-
-    if(!test_cvmInverse(mat, false, term, test_term)){
-        document.write(time + "回目<br/>");
-        document.write("cvmInverseのエラー" + "<br/><br/>");
-        cvDWriteMatrix(mat, "mat");
-        
-        document.write("固有値のチェック" + "<br/>");
-        
-        var mm = cvmMul(cvmTranspose(mat), mat);
-        
-        cvDWriteMatrix(mm, "mm");
-        
-        if(!test_cvmEigen(mm, false, term, test_term)){
-            document.write("eigenのエラー" + "<br/><br/>");
+//cvmOMPのテスト
+//入力
+//mat CvMat型 係数を求める行列
+//dic CvMat型 辞書行列 dic.rows = dic.cols = mat.rows * mat.cols
+//isDraw bool型 計算途中の配列を描画するか
+//cvTermCriteria CvTermCriteria型 計算精度
+//eigenCriteria CvTermCriteria型 内部の固有値計算の精度
+//test_cvTermCriteria CvTermCriteria型 最終的に計算が合っているか確認する精度
+//出力
+//bool型 問題なければtrue
+function test_cvmOMP(mat, dic, isDraw,
+                     cvTermCriteria, eigenTermCriteria, test_cvTermCriteria){
+    var rtn = true;
+    try{
+        //matを1列の縦ベクトルに変換
+        var vec = cvCreateMat(mat.rows * mat.cols, 1);
+        for(var i = 0 ; i < vec.rows ; i++){
+            vec.vals[i] = mat.vals[i];
         }
         
-        break;
+        var omp = cvmOMP(vec, dic, cvTermCriteria, eigenTermCriteria);
+
+        var recon = cvmMul(dic, omp);
+        
+        var subv = cvmSub(vec, recon);
+
+        if(isDraw){
+            cvDWriteMatrix(dic, "辞書行列");
+            cvDWriteMatrix(cvmTranspose(omp), "係数ベクトル");
+            cvDWriteMatrix(cvmTranspose(recon), "再構成ベクトル");
+            cvDWriteMatrix(cvmTranspose(vec), "オリジナルベクトル");
+            cvDWriteMatrix(cvmTranspose(subv), "差分ベクトル");
+        }
+        
+        for(var i = 0 ; i < subv.rows ; i++){
+            if(Math.abs(subv.vals[i]) > test_cvTermCriteria.eps){
+                rtn = false;
+                break;
+            }
+        }
     }
+    catch(ex){
+        alert("test_cvmOMP : " + ex);
+    }
+    return rtn;
 }
 
 //直交性のテスト
