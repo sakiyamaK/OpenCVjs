@@ -8,38 +8,51 @@ TELEA: 1
 
 //------------------メソッド------------------------
 
-
-//行列内のどの縦ベクトルとも直交する正規ベクトルを求める
-function cvmAddNewOrthogonalVec(mat){
-    var rtn = null;
+//k-SVD法により辞書行列を更新する
+//入力
+//signals cvMat型 ひとつの観測信号を縦ベクトルとして並べた行列
+//dic cvMat型 更新前の辞書
+//coess cvMat型 係数の縦ベクトルを並べた行列 dic.cols == coess.rows
+//cvTermCriteria CvTermCriteria型 計算精度
+//出力
+//cvMat型 更新された辞書
+function cvmKSVD(signals, dic, coess, cvTermCriteria){
+    var upDic = null;
     try{
-        //追加する横ベクトルの初期化を乱数で生成
-        var tmpV = cvCreateMat(1, mat.rows);
-        for(var i = 0 ; i < tmpV.cols ; tmpV.vals[i++] = Math.random());
-
-        //新たな直交の縦ベクトルが代入される
-        rtn = cvmTranspose(cvmCopy(tmpV));
-        for(var j = 0 ; j < mat.cols ; j++){
-            //matからj番目の縦ベクトルを抽出
-            var matV = cvCreateMat(mat.rows, 1);
-            for(var i = 0 ; i < mat.rows ; i++){
-                matV.vals[i] = mat.vals[j + i * mat.cols];
+        //k番目の基底を更新する
+        for(var k = 0 ; k < dic.cols ; k++){
+            //
+            //coessのk行目から閾値以上の値をもつindexを抜き出す
+            var w = new Array();
+            for(var i = 0 ; i < coess.cols ; i++){
+                if(Math.abs(coess.vals[i + k * coess.cols]) > cvTermCriteria.eps){
+                    w.push(i);
+                }
             }
-            //シュミットの直交化法のアルゴリズムに従って計算
-            var tmp = cvmMul(tmpV, matV);
-            for(var i = 0 ; i < matV.rows ; matV.vals[i++] *= tmp.vals[0]);
-            rtn = cvmSub(rtn, matV);
+            
+            //辞書更新用のオメガ行列を生成する
+            var omega = cvCreateMat(dic.rows, w.length);
+            for(var i = 0 ; i < omega.rows * omega.cols ; omega.vals[i++] = 0);
+            for(var i = 0 ; i < w.length ; i++){
+            	omega.vals[i + w[i] * omega.cols] = 1;
+            }
+            
+            var ncoess = cvmMul(coess, omega);
+            
+            cvDWriteMatrix(ncoess, "ncoess");
+            
+            
+            break;
         }
-        
-        //正規化
-        var norm = cvmNorm(rtn, null, CV_NORM.L2);
-        for(var i = 0 ; i < rtn.rows ; rtn.vals[i++] /= norm);
     }
     catch(ex){
-        alert("cvmAddNewOrthogonalVec : " + ex);
+        alert("cvmKSVD : " + ex);
     }
-    return rtn;
+    return upDic;
 }
+
+
+
 
 
 //行列の二重対角化

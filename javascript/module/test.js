@@ -1,4 +1,25 @@
 
+
+//cvmK-SVDのテスト
+//入力
+//signals cvMat型 ひとつの観測信号を縦ベクトルとして並べた行列
+//dic cvMat型 更新前の辞書
+//coess cvMat型 係数の縦ベクトルを並べた行列 dic.cols == coess.rows
+//cvTermCriteria CvTermCriteria型 計算精度
+//出力
+//bool型 問題なければtrue
+function test_cvmKSVD(signals, dic, coess, cvTermCriteria, test_cvTermCriteria){
+    var rtn = true;
+    try{
+        cvmKSVD(signals, dic, coess, cvTermCriteria);
+    }
+    catch(ex){
+        alert("test_cvmK-SVD : " + ex);
+    }
+    return rtn;
+}
+
+
 //cvmOMPのテスト
 //入力
 //mat CvMat型 係数を求める行列

@@ -1174,6 +1174,38 @@ function cvmSVD(A, cvTermCriteria, flags){
     return rtn;
 }
 
+//行列内のどの縦ベクトルとも直交する正規ベクトルを求める
+function cvmAddNewOrthogonalVec(mat){
+    var rtn = null;
+    try{
+        //追加する横ベクトルの初期化を乱数で生成
+        var tmpV = cvCreateMat(1, mat.rows);
+        for(var i = 0 ; i < tmpV.cols ; tmpV.vals[i++] = Math.random());
+        
+        //新たな直交の縦ベクトルが代入される
+        rtn = cvmTranspose(cvmCopy(tmpV));
+        for(var j = 0 ; j < mat.cols ; j++){
+            //matからj番目の縦ベクトルを抽出
+            var matV = cvCreateMat(mat.rows, 1);
+            for(var i = 0 ; i < mat.rows ; i++){
+                matV.vals[i] = mat.vals[j + i * mat.cols];
+            }
+            //シュミットの直交化法のアルゴリズムに従って計算
+            var tmp = cvmMul(tmpV, matV);
+            for(var i = 0 ; i < matV.rows ; matV.vals[i++] *= tmp.vals[0]);
+            rtn = cvmSub(rtn, matV);
+        }
+        
+        //正規化
+        var norm = cvmNorm(rtn, null, CV_NORM.L2);
+        for(var i = 0 ; i < rtn.rows ; rtn.vals[i++] /= norm);
+    }
+    catch(ex){
+        alert("cvmAddNewOrthogonalVec : " + ex);
+    }
+    return rtn;
+}
+
 //(擬似)逆行列の演算
 //入力
 //mat CvMat型 逆行列を求める行列
@@ -1342,7 +1374,7 @@ function cvmOMP(vec, dic, cvTermCriteria, eigenTermCriteria){
             var maxIndex = -1;
             var maxDist = -1;
             
-            //残差ベクトルとの内積を最も大きくなる辞書内の縦ベクトルのindexを探索する
+            //残差ベクトルとの内積が最も大きくなる辞書内の縦ベクトルのindexを探索する
             for(var dicIndex = 0 ; dicIndex < dic.cols ; dicIndex++){
                 //すでに係数ベクトルに存在するindexなら飛ばす
                 if(support.indexOf(dicIndex) != -1)
@@ -1387,16 +1419,14 @@ function cvmOMP(vec, dic, cvTermCriteria, eigenTermCriteria){
                 break;
             }
         }
+        if(isError){
+            throw "全ての基底を辞書に登録しても残差が閾値より小さくなりません";
+        }
         
         //係数ベクトルを辞書に合わせて入れ替える
         for(var i = 0 ; i < support.length ; i++){
             rtn.vals[support[i]]=tmpVec.vals[i];
         }
-        
-        if(isError){
-            throw "全ての基底を辞書に登録しても残差が閾値より小さくなりません";
-        }
-        
     }
     catch(ex){
         alert("cvmOMP : " + ex);
