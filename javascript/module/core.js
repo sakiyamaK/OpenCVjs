@@ -64,7 +64,7 @@ var CvTermCriteria = function(){
 //画像読み込み時に利用される変数
 //任意のダミー画像のパスを指定
 //1*1の画像を推奨
-const DMY_IMG = "/module/dmy.jpg";
+const DMY_IMG = MODULE_PATH +  "dmy.jpg";
 //チャンネル数
 const CHANNELS = 4;
 
