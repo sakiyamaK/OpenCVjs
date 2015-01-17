@@ -86,7 +86,7 @@ function cvLoadImageAtEventFile(file, imgId, iplImage, maxSize)
         reader.readAsDataURL(file);
         reader.onload = function(event){
             var imgElement = document.getElementById(imgId);
-            imgElement.src = DMY_IMG;
+            imgElement.src = "data:image/gif;base64,R0lGODlhAQABAIAAAP///////yH5BAEHAAEALAAAAAABAAEAAAICTAEAOw==";
             imgElement.onload = function(){
                 imgElement.src = event.target.result;
                 imgElement.onload = function(){
