@@ -8,53 +8,6 @@ TELEA: 1
 
 //------------------メソッド------------------------
 
-//k-SVD法により辞書行列を更新する
-//入力
-//signals cvMat型 ひとつの観測信号を縦ベクトルとして並べた行列
-//dic cvMat型 更新前の辞書
-//coess cvMat型 係数の縦ベクトルを並べた行列 dic.cols == coess.rows
-//cvTermCriteria CvTermCriteria型 計算精度
-//出力
-//cvMat型 更新された辞書
-function cvmKSVD(signals, dic, coess, cvTermCriteria){
-    var upDic = null;
-    try{
-        //k番目の基底を更新する
-        for(var k = 0 ; k < dic.cols ; k++){
-            //
-            //coessのk行目から閾値以上の値をもつindexを抜き出す
-            var w = new Array();
-            for(var i = 0 ; i < coess.cols ; i++){
-                if(Math.abs(coess.vals[i + k * coess.cols]) > cvTermCriteria.eps){
-                    w.push(i);
-                }
-            }
-            
-            //辞書更新用のオメガ行列を生成する
-            var omega = cvCreateMat(dic.rows, w.length);
-            for(var i = 0 ; i < omega.rows * omega.cols ; omega.vals[i++] = 0);
-            for(var i = 0 ; i < w.length ; i++){
-            	omega.vals[i + w[i] * omega.cols] = 1;
-            }
-            
-            var ncoess = cvmMul(coess, omega);
-            
-            cvDWriteMatrix(ncoess, "ncoess");
-            
-            
-            break;
-        }
-    }
-    catch(ex){
-        alert("cvmKSVD : " + ex);
-    }
-    return upDic;
-}
-
-
-
-
-
 //行列の二重対角化
 //入力
 //mat CvMat型 対角化する行列

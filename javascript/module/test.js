@@ -5,16 +5,23 @@
 //signals cvMat型 ひとつの観測信号を縦ベクトルとして並べた行列
 //dic cvMat型 更新前の辞書
 //coess cvMat型 係数の縦ベクトルを並べた行列 dic.cols == coess.rows
-//cvTermCriteria CvTermCriteria型 計算精度
+//cvTermCriteriaCoessZero CvTermCriteria型 epsの値が基底ベクトルの値を0とする閾値
+//cvTermCriteriaDiff CvTermCriteria型  epsの値が復元信号と原信号の差の絶対値の総和の閾値
 //出力
 //bool型 問題なければtrue
-function test_cvmKSVD(signals, dic, coess, cvTermCriteria, test_cvTermCriteria){
+function test_cvmK_SVD(signals, dic, coess, cvTermCriteria, cvTermCriteriaDiff, test_cvTermCriteria){
     var rtn = true;
     try{
-        cvmKSVD(signals, dic, coess, cvTermCriteria);
+        var ups = cvmK_SVD(signals, dic, coess, cvTermCriteria, cvTermCriteriaDiff);
+        
+        var upDic = ups[0];
+        var upCoess = ups[1];
+        
+        cvDWriteMatrix(upDic, "更新した辞書");
+        cvDWriteMatrix(upCoess, "更新した係数");
     }
     catch(ex){
-        alert("test_cvmK-SVD : " + ex);
+        alert("test_cvmK_SVD : " + ex);
     }
     return rtn;
 }

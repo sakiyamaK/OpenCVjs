@@ -1430,6 +1430,110 @@ function cvmOMP(vec, dic, cvTermCriteria, eigenTermCriteria){
     return rtn;
 }
 
+//k-SVD法により辞書行列と係数行列を更新する
+//入力
+//signals cvMat型 ひとつの観測信号を縦ベクトルとして並べた行列
+//dic cvMat型 更新前の辞書
+//coess cvMat型 係数の縦ベクトルを並べた行列 dic.cols == coess.rows
+//cvTermCriteria CvTermCriteria型 epsの値が基底ベクトルの値を0とする閾値と内部の特異値分解で使われる計算精度
+//cvTermCriteriaDiff CvTermCriteria型  epsの値が復元信号と原信号の差の絶対値の総和の閾値
+//出力
+//[upDic, upCoess]
+//upDic CvMat型 更新された辞書
+//upCoess CvMat型 更新された係数ベクトルの行列
+function cvmK_SVD(signals, dic, coess, cvTermCriteria, cvTermCriteriaDiff){
+    var upDic = null;
+    var upCoess = null;
+    try{
+        var eps2 = cvTermCriteriaDiff.eps * cvTermCriteriaDiff.eps;
+        var k = 0;
+        //k番目の基底を更新する
+        for(; k < dic.cols ; k++){
+            //coessのk行目から閾値以上の値をもつindexを抜き出す
+            var indexs = new Array();
+            for(var i = 0 ; i < coess.cols ; i++){
+                if(Math.abs(coess.vals[i + k * coess.cols]) > cvTermCriteria.eps){
+                    indexs.push(i);
+                }
+            }
+            
+            //辞書更新用のオメガ行列を生成する
+            var omega = cvCreateMat(dic.rows, indexs.length);
+            for(var i = 0 ; i < omega.rows * omega.cols ; omega.vals[i++] = 0);
+            for(var i = 0 ; i < indexs.length ; i++){
+                omega.vals[i + indexs[i] * omega.cols] = 1;
+            }
+            
+            //係数行列から必要な部分だけ抜き出す
+            var ncoess = cvmMul(coess, omega);
+            
+            //元の信号から、辞書行列からk列目の縦ベクトルと、係数行列からk行目の横ベクトルを省いた行列同士の掛け算を引いた行列
+            //つまり辞書からk列目のベクトルを省いた時に元の信号との誤差を求める
+            var ek = cvCreateMat(dic.rows, dic.cols);
+            for(var i = 0 ; i < dic.rows ; i++){
+                for(var j = 0; j < dic.cols ; j++){
+                    var val = 0;
+                    for(var x = 0 ; x < dic.cols ; x++){
+                        if(x == k) continue;
+                        val += dic.vals[x + i * dic.cols] * coess.vals[j + x * coess.cols];
+                    }
+                    ek.vals[j + i * ek.cols] = signals.vals[j + i * signals.cols] - val;
+                }
+            }
+            
+            var ekOmega = cvmMul(ek, omega);
+            
+            //ekOmegaを特異値分解することで誤差を最小にするための行列を求める
+            var svd = cvmSVD(ekOmega, cvTermCriteria);
+            var w = svd[0];
+            var left = svd[1];
+            var right = svd[2];
+            
+            
+            //辞書行列と係数行列のk列目の縦ベクトルを更新する
+            for(var i = 0 ; i < dic.rows ; i++){
+                dic.vals[k + i * dic.cols] = left.vals[i * left.cols];
+            }
+            for(var i = 0 ; i < indexs.length ; i++){
+                coess.vals[indexs[i] + k * coess.cols] =  right.vals[i * right.cols];
+            }
+            
+            //復元画像との差分
+            var fukugen = cvmMul(dic, coess);
+            var sub = cvmSub(signals, fukugen);
+            
+            //差分画像の総和
+            var sum = 0;
+            for(var i = 0 ; i < sub.rows ; i++){
+                for(var j = 0 ; j < sub.cols ; j++){
+                    sum += sub.vals[j + i * sub.cols] * sub.vals[j + i * sub.cols];
+                }
+            }
+            
+            //閾値より小さければループを抜ける
+            if(sum < eps2){
+                k++;
+                break;
+            }
+        }
+        
+        //新しい辞書と係数行列へ代入
+        upDic = cvCreateMat(dic.rows, k);
+        upCoess = cvCreateMat(k, coess.cols);
+        for(var i = 0 ; i < upDic.rows; i++){
+            for(var j = 0 ; j < upDic.cols; j++){
+                upDic.vals[j + i * upDic.cols] = dic.vals[j + i * dic.cols]
+                upCoess.vals[i + j * upCoess.cols] = coess.vals[i + j * coess.cols];
+            }
+        }
+    }
+    catch(ex){
+        alert("cvmK_SVD : " + ex);
+    }
+    
+    return [upDic, upCoess];
+}
+
 
 
 //row行cols列の疎行列を作る
