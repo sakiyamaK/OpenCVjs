@@ -18,7 +18,7 @@ function cvShowImage(imgId, iplImage){
             imgElement.width = iplImage.width;
             imgElement.height = iplImage.height;
             
-            imgElement.src = DMY_IMG;
+            imgElement.src = "data:image/gif;base64,R0lGODlhAQABAIAAAP///////yH5BAEHAAEALAAAAAABAAEAAAICTAEAOw==";
             imgElement.onload = function(event){
                 imgElement.src = iplImage.canvas.toDataURL('image/jpeg');
             };

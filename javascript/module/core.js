@@ -86,7 +86,7 @@ var CV_DXT = {
 FORWARD: 0, //順変換 スケーリングなし
 INVERSE: 1, //逆変換 スケーリングなし
 FORWARD_SCALE: 2, //順変換 スケーリングあり
-INVERSE_SCALE: 3, //逆変換 スケーリングあり
+INVERSE_SCALE: 3 //逆変換 スケーリングあり
 }
 
 //特異値分解のアルゴリズム
