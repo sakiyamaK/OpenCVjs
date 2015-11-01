@@ -5,4 +5,5 @@ OpenCVjsは画像処理ライブラリのOpenCVをjavascriptに移植したラ�
 このライブラリだけで動作可能でありjavascriptだけで実装されているので、ダウンロードすればそのままブラウザ上で実行できます。
 メソッドは基本的にOpenCV1.0系と同様の名前と機能となっており、使い方の説明はアメーバブログ「画像処理だけで飯が食えるかっ！？」に記しています。
 
-初期設定としてOpenCvjs/javascript/opencv.js内のMODULE_PATHの値をindexに対する相対パスか絶対パスにして下さい
+初期設定としてOpenCVjs/opencv.js内のOPENCVJS_PATHの値を同ディレクトリのパスにして下さい
+それからOpenCVjs/opencv.jsを読み込んで下さい
